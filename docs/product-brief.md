@@ -1,0 +1,106 @@
+# Ride Tracker – product brief v0.2
+
+Working name: Ride Tracker (final name not chosen). Last updated 7 October 2026.
+
+This is the public, trimmed version of the brief: no personal earnings data and no business plan.
+
+## What it is
+
+A simple money app for ride-sharing drivers (Uber, Bolt and others) that answers one question:
+**how much did I actually keep?** It records income and expenses and shows what is left for a day,
+week, month or custom period.
+
+It is **not** an accounting service, a tax filing service, a GPS or kilometre tracker, or a fleet tool.
+Services like Pick, SOLO or PFA Ride sell accounting; this app helps the driver see their own numbers.
+
+Terminology: we say **ride-sharing** (what drivers and Romanian sites use), even though Uber and Bolt are
+technically "ride-hailing". Inside the app the word is rarely needed: "apps", "Uber", "Bolt".
+
+## Principles
+
+1. **Simple and fast.** Adding an entry takes under 10 seconds.
+2. **One question first.** Home answers "how much did I keep?"
+3. **Manual first.** Imports and APIs later fill the same records.
+4. **Honest numbers.** Every figure is Known, Estimated or Missing; partial metrics say so ("Uber only").
+5. **Local-first and private.** Data stays on the device, no account, rider personal data never stored,
+   backup and export from the start.
+6. **Not tax advice.** Estimates are informational; thresholds are editable, never hard-coded.
+7. **Platform-agnostic.** Uber and Bolt are values, not screens; adding an app adds a value.
+8. **Calm, not gamified.** No streaks, goals or decorative charts.
+
+## Users
+
+- **Primary:** drivers in Romania working for Uber, Bolt or both, either as a **PFA** (own business)
+  or **through a fleet** (a partner company that pays them).
+- **Later:** drivers in other countries, through country packs.
+- **Not for:** fleet managers, accountants as primary users, people wanting trip analytics.
+
+## Onboarding
+
+1. Country: **Romania** (currency RON) or **Other** (pick a currency). *(Built in 0.0.2.)*
+2. Romania only: **How do you drive?** PFA or through a fleet. *(Planned.)*
+   - PFA: tax estimate, cash-register (Z report) and fiscal receipt (CUI) features are offered.
+   - Fleet: those are hidden (the fleet handles them); fleet commission becomes an income field.
+   - Other countries: none of the Romanian tax features.
+
+## Scope
+
+| Phase | Contents |
+| --- | --- |
+| **v0** (now) | Income entry per app, expenses, money kept summary, day/week/month/custom periods, backup and restore, CSV export, Romanian and English, light and dark, country onboarding |
+| **v0.5** | Cash collected per app, PFA/Fleet onboarding, vehicle (consumption, fuel price, estimated fuel cost), optional import of the Uber payments file and the Bolt monthly summary |
+| **v1** (PFA, Romania) | Tax estimate (income tax, CAS, CASS) with editable thresholds; Z-report capture with month-end cash match; fuel receipt capture with CUI check |
+| **Later** | Uber/Bolt API connections where possible, trips viewer, insights, other country packs, iPhone app |
+
+Out of scope: GPS/kilometre tracking, tax filing, accounts and cloud sync, fleet management.
+
+## Requirements (v0)
+
+- **Income.** Default entry is one amount (what the app paid you) per app and date. Optional
+  "details" splits it into fares, platform fee, bonuses, tips, cancellation fees and cash collected;
+  net is calculated but can be overridden with the platform's own figure.
+- **Expenses.** Amount, category (Fuel, Maintenance, Repairs, Insurance, Parking, Car wash,
+  Accounting, Other), date, optional note.
+- **Summary.** Money kept = income − expenses (and − platform fees when entered as details);
+  income by app and expenses by category; period selector. Label "Earnings so far" until the
+  first expense exists, then "Money kept".
+- **Data safety.** Backup and restore of the whole database to a file; CSV export per period.
+- **General.** Works offline, no account, 48 dp touch targets, Romanian and English, RON, European dates.
+
+## Data model
+
+- `Platform`: name, colour, order, archived. *(Built.)*
+- `IncomeEntry`: platform, date, amount; later: details (fares, fee, bonuses, tips, cancellations,
+  cash), source (manual, import, api), quality (known, estimated, missing). *(Amount built.)*
+- `Expense`: amount, category, date, note; later receipt photo, CUI present, deductible %.
+- `Vehicle`, `ZReport`, `TaxSettings`, `ImportBatch`: later phases.
+- Money is stored as integers in minor units; one SQLite database on the device; schema changes always
+  ship a migration so updates never lose data.
+
+Privacy: never store rider names, phone numbers or addresses. The Bolt rider-invoice export contains them,
+so an importer keeps only date, payment method and amount.
+
+## Navigation
+
+Proposed for manual-first: **Home, Income, Expenses, Vehicle, More** (replacing the current Trips
+placeholder; a trips viewer comes back only with imports).
+
+## Design
+
+"Rideshare cockpit" design system: Material 3 Expressive on Android, iOS 27 style on iPhone; seed
+`#0A6C8B`, light and dark; Roboto with tabular numerals; 8/12/16/28 corner shapes; one custom green
+for kept money; rounded-square app badges (no brand logos).
+
+## Technology
+
+Kotlin Multiplatform: shared Kotlin for data, money maths and future importers; Android UI in Jetpack
+Compose (Material 3 Expressive); iPhone UI later in SwiftUI. Room (SQLite) and DataStore on device.
+See the README for build, versioning and signing rules.
+
+## Open decisions
+
+- [ ] App name (candidates: Tura, Kept, Ridey).
+- [ ] Confirm the tabs: Home, Income, Expenses, Vehicle, More.
+- [ ] Income granularity: per day per app by default, with an optional date range for weekly totals?
+- [ ] Is the Uber/Bolt file import part of v0 or v0.5?
+- [ ] Receipt scanning at v1: on-device or server-side?

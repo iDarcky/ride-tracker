@@ -1,0 +1,123 @@
+package app.ridetracker.ui.overview
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import app.ridetracker.shared.data.EntryWithPlatform
+import app.ridetracker.shared.data.IncomeEntryEntity
+import app.ridetracker.shared.data.PlatformTotal
+import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.domain.DateRange
+import app.ridetracker.shared.domain.IncomeRepository
+import app.ridetracker.shared.domain.Period
+import app.ridetracker.shared.domain.PeriodType
+import app.ridetracker.shared.domain.periodOf
+import app.ridetracker.shared.domain.type
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
+
+data class DayGroup(val date: LocalDate, val totalMinor: Long, val entries: List<EntryWithPlatform>)
+
+data class OverviewUiState(
+    val period: Period,
+    val today: LocalDate,
+    /** App currency code, or null for the device default. */
+    val currencyCode: String?,
+    val totalMinor: Long = 0,
+    val totals: List<PlatformTotal> = emptyList(),
+    val days: List<DayGroup> = emptyList(),
+    val entryCount: Int = 0,
+    val loading: Boolean = true,
+)
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class OverviewViewModel(
+    private val incomeRepository: IncomeRepository,
+    private val settingsRepository: SettingsRepository,
+) : ViewModel() {
+
+    private fun today() = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+    private val selected = MutableStateFlow<Period>(Period.Month.containing(today()))
+
+    val uiState: StateFlow<OverviewUiState> = combine(selected, settingsRepository.settings) { period, settings ->
+        // Re-align weeks when the first-day-of-week setting changes.
+        val aligned = if (period is Period.Week) Period.Week.containing(period.start, settings.firstDayOfWeek) else period
+        aligned to settings.currencyCode
+    }.flatMapLatest { (period, currencyCode) ->
+        combine(
+            incomeRepository.observeEntries(period.range),
+            incomeRepository.observeTotals(period.range),
+        ) { entries, totals ->
+            OverviewUiState(
+                period = period,
+                today = today(),
+                currencyCode = currencyCode,
+                totalMinor = totals.sumOf { it.totalMinor },
+                totals = totals,
+                days = entries.groupBy { it.date }.map { (day, list) ->
+                    DayGroup(LocalDate.fromEpochDays(day), list.sumOf { it.amountMinor }, list)
+                },
+                entryCount = entries.size,
+                loading = false,
+            )
+        }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        OverviewUiState(period = selected.value, today = today(), currencyCode = null),
+    )
+
+    fun selectType(type: PeriodType) {
+        val current = uiState.value.period
+        if (current.type == type) return
+        val today = today()
+        val anchor = if (today in current.range.start..current.range.endInclusive) today else current.range.start
+        viewModelScope.launch {
+            val firstDay = settingsRepository.settings.first().firstDayOfWeek
+            selected.value = periodOf(type, anchor, firstDay, current)
+        }
+    }
+
+    fun setCustomRange(range: DateRange) {
+        selected.value = Period.Custom(range)
+    }
+
+    fun next() {
+        selected.value = uiState.value.period.next()
+    }
+
+    fun previous() {
+        selected.value = uiState.value.period.previous()
+    }
+
+    fun goToToday() {
+        val current = uiState.value.period
+        if (current is Period.Custom) return
+        viewModelScope.launch {
+            val firstDay = settingsRepository.settings.first().firstDayOfWeek
+            selected.value = periodOf(current.type, today(), firstDay)
+        }
+    }
+
+    /** Deletes the entry and returns it so the UI can offer Undo. */
+    suspend fun delete(id: Long): IncomeEntryEntity? {
+        val entry = incomeRepository.getEntry(id) ?: return null
+        incomeRepository.deleteEntry(id)
+        return entry
+    }
+
+    fun restore(entry: IncomeEntryEntity) {
+        viewModelScope.launch { incomeRepository.restoreEntry(entry) }
+    }
+}

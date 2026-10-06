@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="back">Înapoi</string>
+    <string name="cancel">Anulează</string>
+    <string name="ok">OK</string>
+    <string name="save">Salvează</string>
+    <string name="close">Închide</string>
+    <string name="delete">Șterge</string>
+    <string name="undo">Anulează</string>
+    <string name="search">Caută</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">Rezumat</string>
+    <string name="nav_trips">Curse</string>
+    <string name="nav_vehicle">Mașină</string>
+    <string name="nav_expenses">Cheltuieli</string>
+    <string name="nav_more">Mai mult</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Bun venit în Ride Tracker</string>
+    <string name="welcome_body">Urmărește cât câștigi din Uber, Bolt și alte aplicații. Datele tale rămân pe acest dispozitiv.</string>
+    <string name="welcome_country_question">Unde conduci?</string>
+    <string name="welcome_continue">Continuă</string>
+
+    <!-- Country and currency -->
+    <string name="country">Țară</string>
+    <string name="country_romania">România</string>
+    <string name="country_romania_detail">Sume în lei (RON)</string>
+    <string name="country_other">Altă țară</string>
+    <string name="country_other_detail">Alege moneda</string>
+    <string name="currency">Monedă</string>
+    <string name="currency_no_conversion">Sumele nu sunt convertite. Schimbarea monedei schimbă doar modul în care sunt afișate.</string>
+
+    <!-- Overview -->
+    <string name="period_day">Zi</string>
+    <string name="period_week">Săpt.</string>
+    <string name="period_month">Lună</string>
+    <string name="period_custom">Interval</string>
+    <string name="previous_period">Perioada anterioară</string>
+    <string name="next_period">Perioada următoare</string>
+    <string name="back_to_today">Înapoi la azi</string>
+    <string name="total_income">Venit total</string>
+    <string name="by_app">Pe aplicații</string>
+    <string name="empty_period">Niciun venit în această perioadă.\nApasă „Adaugă venit” ca să-l înregistrezi.</string>
+    <string name="add_income">Adaugă venit</string>
+    <string name="entry_deleted">Înregistrare ștearsă</string>
+    <plurals name="entry_count">
+        <item quantity="one">%d înregistrare</item>
+        <item quantity="few">%d înregistrări</item>
+        <item quantity="other">%d de înregistrări</item>
+    </plurals>
+
+    <!-- Add / edit income -->
+    <string name="edit_income">Editează venitul</string>
+    <string name="amount">Sumă</string>
+    <string name="app">Aplicație</string>
+    <string name="manage_apps">Gestionează aplicațiile</string>
+    <string name="date">Data</string>
+    <string name="note_optional">Notă (opțional)</string>
+    <string name="invalid_amount">Introdu o sumă validă</string>
+    <string name="delete_entry">Șterge înregistrarea</string>
+    <string name="delete_entry_title">Ștergi această înregistrare?</string>
+    <string name="delete_entry_body">Acțiunea nu poate fi anulată.</string>
+
+    <!-- Apps (platforms) -->
+    <string name="apps">Aplicații</string>
+    <string name="apps_summary">Adaugă, redenumește sau arhivează aplicații</string>
+    <string name="add_app">Adaugă aplicație</string>
+    <string name="edit_app">Editează aplicația</string>
+    <string name="name">Nume</string>
+    <string name="colour">Culoare</string>
+    <string name="colour_selected">Culoare selectată</string>
+    <string name="colour_option">Opțiune de culoare</string>
+    <string name="app_active">Activă</string>
+    <string name="app_archived">Arhivată – ascunsă la adăugarea venitului</string>
+
+    <!-- More -->
+    <string name="language">Limbă</string>
+    <string name="language_system">Limba sistemului</string>
+    <string name="theme">Temă</string>
+    <string name="theme_system">Tema sistemului</string>
+    <string name="theme_light">Luminoasă</string>
+    <string name="theme_dark">Întunecată</string>
+    <string name="first_day_of_week">Prima zi a săptămânii</string>
+    <string name="version">Versiune</string>
+    <string name="local_first">Datele tale rămân pe acest dispozitiv.</string>
+
+    <!-- Coming soon -->
+    <string name="coming_soon">În curând</string>
+    <string name="trips_coming_soon">Importă rapoartele Uber și Bolt ca să vezi aici fiecare cursă.</string>
+    <string name="vehicle_coming_soon">Urmărește mașina, kilometrajul și costul combustibilului pe km.</string>
+    <string name="expenses_coming_soon">Notează combustibilul, întreținerea și alte costuri ca să vezi cât îți rămâne.</string>
+</resources>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Ride Tracker</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="delete">Delete</string>
+    <string name="undo">Undo</string>
+    <string name="search">Search</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">Overview</string>
+    <string name="nav_trips">Trips</string>
+    <string name="nav_vehicle">Vehicle</string>
+    <string name="nav_expenses">Expenses</string>
+    <string name="nav_more">More</string>
+
+    <!-- Welcome -->
+    <string name="welcome_title">Welcome to Ride Tracker</string>
+    <string name="welcome_body">Track what you earn across Uber, Bolt and other apps. Your data stays on this device.</string>
+    <string name="welcome_country_question">Where do you drive?</string>
+    <string name="welcome_continue">Continue</string>
+
+    <!-- Country and currency -->
+    <string name="country">Country</string>
+    <string name="country_romania">Romania</string>
+    <string name="country_romania_detail">Amounts in lei (RON)</string>
+    <string name="country_other">Other country</string>
+    <string name="country_other_detail">Choose your currency</string>
+    <string name="currency">Currency</string>
+    <string name="currency_no_conversion">Amounts are not converted. Changing the currency only changes how they are shown.</string>
+
+    <!-- Overview -->
+    <string name="period_day">Day</string>
+    <string name="period_week">Week</string>
+    <string name="period_month">Month</string>
+    <string name="period_custom">Custom</string>
+    <string name="previous_period">Previous period</string>
+    <string name="next_period">Next period</string>
+    <string name="back_to_today">Back to today</string>
+    <string name="total_income">Total income</string>
+    <string name="by_app">By app</string>
+    <string name="empty_period">No income for this period yet.\nTap “Add income” to log your earnings.</string>
+    <string name="add_income">Add income</string>
+    <string name="entry_deleted">Entry deleted</string>
+    <plurals name="entry_count">
+        <item quantity="one">%d entry</item>
+        <item quantity="other">%d entries</item>
+    </plurals>
+
+    <!-- Add / edit income -->
+    <string name="edit_income">Edit income</string>
+    <string name="amount">Amount</string>
+    <string name="app">App</string>
+    <string name="manage_apps">Manage apps</string>
+    <string name="date">Date</string>
+    <string name="note_optional">Note (optional)</string>
+    <string name="invalid_amount">Enter a valid amount</string>
+    <string name="delete_entry">Delete entry</string>
+    <string name="delete_entry_title">Delete this entry?</string>
+    <string name="delete_entry_body">This can\'t be undone.</string>
+
+    <!-- Apps (platforms) -->
+    <string name="apps">Apps</string>
+    <string name="apps_summary">Add, rename or archive ride-sharing apps</string>
+    <string name="add_app">Add app</string>
+    <string name="edit_app">Edit app</string>
+    <string name="name">Name</string>
+    <string name="colour">Colour</string>
+    <string name="colour_selected">Selected colour</string>
+    <string name="colour_option">Colour option</string>
+    <string name="app_active">Active</string>
+    <string name="app_archived">Archived – hidden when adding income</string>
+
+    <!-- More -->
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="first_day_of_week">First day of the week</string>
+    <string name="version">Version</string>
+    <string name="local_first">Your data stays on this device.</string>
+
+    <!-- Coming soon -->
+    <string name="coming_soon">Coming soon</string>
+    <string name="trips_coming_soon">Import your Uber and Bolt reports to see every trip here.</string>
+    <string name="vehicle_coming_soon">Track your car, odometer and fuel cost per km.</string>
+    <string name="expenses_coming_soon">Log fuel, maintenance and other costs to see how much you keep.</string>
+</resources>
