@@ -123,4 +123,10 @@
     <string name="erase_confirm_title">Ștergi toate datele?</string>
     <string name="erase_confirm_body">Toate veniturile, aplicațiile și setările vor fi șterse, iar aplicația o ia de la capăt. Acțiunea nu poate fi anulată, așa că fă o copie de rezervă dacă s-ar putea să ai nevoie de date.</string>
     <string name="erase_action">Șterge</string>
+
+    <!-- 0.0.5: menu panel and settings pages -->
+    <string name="open_menu">Meniu</string>
+    <string name="your_data_summary">Copie de rezervă, restaurare sau ștergere</string>
+    <string name="version_footer">Versiunea %1$s</string>
+    <string name="search_currency">Caută o monedă</string>
 </resources>

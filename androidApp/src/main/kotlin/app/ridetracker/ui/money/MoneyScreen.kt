@@ -41,6 +41,7 @@ import app.ridetracker.R
 import app.ridetracker.ui.common.DateFormats
 import app.ridetracker.ui.common.EntryRow
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.MenuButton
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.SectionHeader
 import app.ridetracker.ui.common.container
@@ -65,7 +66,7 @@ fun MoneyScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             Column {
-                TopAppBar(title = { Text(stringResource(R.string.nav_money)) })
+                TopAppBar(title = { Text(stringResource(R.string.nav_money)) }, actions = { MenuButton() })
                 PrimaryTabRow(selectedTabIndex = tab) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.income)) })
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.nav_expenses)) })

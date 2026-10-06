@@ -59,8 +59,12 @@ Out of scope: GPS/kilometre tracking, tax filing, accounts and cloud sync, fleet
 - **Income.** Default entry is one amount (what the app paid you) per app and date. Optional
   "details" splits it into fares, platform fee, bonuses, tips, cancellation fees and cash collected;
   net is calculated but can be overridden with the platform's own figure.
-- **Expenses.** Amount, category (Fuel, Maintenance, Repairs, Insurance, Parking, Car wash,
-  Accounting, Other), date, optional note.
+- **Expenses.** Amount, date, optional note, and a category inside one of three groups:
+  - **Vehicle:** fuel, charging, maintenance, repairs, insurance (RCA/CASCO), inspection (ITP),
+    road tax and tolls, parking, car wash, rent or lease.
+  - **Business:** accountant, bank fees, phone and data, fleet partner fees, other business costs.
+  - **Other:** anything else.
+  Home shows expenses by group; the category list can grow without new screens.
 - **Summary.** Money kept = income − expenses (and − platform fees when entered as details);
   income by app and expenses by category; period selector. Label "Earnings so far" until the
   first expense exists, then "Money kept".
@@ -82,8 +86,13 @@ so an importer keeps only date, payment method and amount.
 
 ## Navigation
 
-Floating navigation bar (Google Photos style) with **Home, Trips, Money, Vehicle, Settings**.
+Floating navigation bar (Google Photos style) with **Home, Money, Trips, Vehicle**.
 Money holds Income and Expenses as two tabs. Trips stays as a tab and fills up once imports exist.
+
+A top-right button (where Google apps show the account picture) opens a full-screen panel with
+everything that is not a daily task: Apps, Your data (backup, restore, erase), Settings. Later: cloud
+backup (paid), help, feedback, privacy policy. Settings follow the Android pattern: each setting opens
+its own page.
 
 ## Backup and sync
 
@@ -108,6 +117,6 @@ See the README for build, versioning and signing rules.
 ## Open decisions
 
 - [ ] App name (candidates: Tura, Kept, Ridey).
-- [ ] Receipt scanning at v1: on-device first; server-side as part of the paid tier?
+Receipt scanning at v1: on-device (ML Kit) first; server-side only later, if needed and funded.
 
 Decided: tabs as above; income is entered per day per app; Uber/Bolt file import is v0.5.

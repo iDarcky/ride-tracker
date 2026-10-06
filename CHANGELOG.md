@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.5
+- Tabs reordered to Home, Money, Trips, Vehicle.
+- Top-right menu button opens a full-screen panel (Google Photos / Google Health style) with Apps,
+  Your data and Settings, using Material 3 Expressive segmented lists.
+- Settings: every setting opens its own page with a back arrow and a large title that collapses on scroll.
+- Your data page: back up, restore, erase all data.
+
 ## 0.0.4
 - Floating navigation bar (Google Photos style) with Home, Trips, Money, Vehicle and Settings.
 - Money tab: Income (full history, swipe to delete with undo) and Expenses (coming soon).

@@ -16,12 +16,10 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Route
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Route
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -47,25 +45,29 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.ridetracker.R
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.LocalOpenMenu
 import app.ridetracker.ui.entry.EntryScreen
 import app.ridetracker.ui.money.MoneyScreen
 import app.ridetracker.ui.overview.OverviewScreen
 import app.ridetracker.ui.placeholder.ComingSoonScreen
 import app.ridetracker.ui.platforms.PlatformsScreen
+import app.ridetracker.ui.menu.MenuScreen
+import app.ridetracker.ui.settings.SettingsChoicePage
+import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
+import app.ridetracker.ui.settings.YourDataScreen
 
 private enum class Tab(val route: String, @StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
     HOME("home", R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
-    TRIPS("trips", R.string.nav_trips, Icons.Outlined.Route, Icons.Filled.Route),
     MONEY("money", R.string.nav_money, Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
+    TRIPS("trips", R.string.nav_trips, Icons.Outlined.Route, Icons.Filled.Route),
     VEHICLE("vehicle", R.string.nav_vehicle, Icons.Outlined.DirectionsCar, Icons.Filled.DirectionsCar),
-    SETTINGS("settings", R.string.nav_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
 }
 
 /** Height of the floating bar plus its margins. */
 private val FloatingBarHeight = 64.dp + 16.dp + 8.dp
 
-/** Top-level screens share a floating navigation bar; detail screens (add income, apps) cover it. */
+/** Main tabs share a floating navigation bar; everything else (menu, settings, add income) opens over it. */
 @Composable
 fun AppNavigation() {
     val nav = rememberNavController()
@@ -78,7 +80,7 @@ fun AppNavigation() {
     }
 
     Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalBottomBarSpace provides barSpace) {
+        CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
             NavHost(navController = nav, startDestination = Tab.HOME.route) {
                 composable(Tab.HOME.route) { OverviewScreen(onAddEntry = { nav.navigate("entry") }) }
                 composable(Tab.TRIPS.route) {
@@ -93,7 +95,23 @@ fun AppNavigation() {
                 composable(Tab.VEHICLE.route) {
                     ComingSoonScreen(R.string.nav_vehicle, Icons.Outlined.DirectionsCar, R.string.vehicle_coming_soon)
                 }
-                composable(Tab.SETTINGS.route) { SettingsScreen(onManagePlatforms = { nav.navigate("platforms") }) }
+                composable("menu") {
+                    MenuScreen(
+                        onClose = { nav.popBackStack() },
+                        onManagePlatforms = { nav.navigate("platforms") },
+                        onYourData = { nav.navigate("data") },
+                        onSettings = { nav.navigate("settings") },
+                    )
+                }
+                composable("settings") {
+                    SettingsScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
+                }
+                SettingsPage.entries.forEach { page ->
+                    composable(page.route) {
+                        SettingsChoicePage(page, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
+                    }
+                }
+                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }) }
                 composable(
                     "entry?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),

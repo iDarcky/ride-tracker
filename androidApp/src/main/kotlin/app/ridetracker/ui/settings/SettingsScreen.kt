@@ -4,26 +4,33 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Contrast
 import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -44,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,13 +61,11 @@ import app.ridetracker.R
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.ThemeMode
-import app.ridetracker.ui.common.ChoiceDialog
 import app.ridetracker.ui.common.ConfirmDialog
-import app.ridetracker.ui.common.CurrencyDialog
-import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.container
 import app.ridetracker.ui.common.currentLocale
 import app.ridetracker.ui.common.resolveCurrency
+import app.ridetracker.ui.common.selectableCurrencies
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,34 +77,244 @@ import java.time.format.TextStyle
 import java.util.Date
 import java.util.Locale
 
+/** Settings sub-pages, each a full screen (Android/Google Health settings pattern). */
+enum class SettingsPage(val route: String) {
+    COUNTRY("settings/country"),
+    CURRENCY("settings/currency"),
+    DRIVING("settings/driving"),
+    LANGUAGE("settings/language"),
+    THEME("settings/theme"),
+    WEEK_START("settings/week"),
+}
+
 private val weekStartOptions = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
 
 /** In-app languages: empty tag = follow the system. Names are shown in their own language. */
-private val languageOptions = listOf("", "en", "ro")
+val languageOptions = listOf("", "en", "ro")
 
-private enum class Dialog { COUNTRY, CURRENCY, DRIVING, LANGUAGE, THEME, WEEK_START, ERASE }
-
-/** Settings in the Google Health style: large title, coloured section headers, icon rows. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    onManagePlatforms: () -> Unit,
-    viewModel: SettingsViewModel = viewModel { SettingsViewModel(container.settingsRepository, container.backupService) },
+private fun settingsViewModel(): SettingsViewModel =
+    viewModel { SettingsViewModel(container.settingsRepository, container.backupService) }
+
+/** Shared frame: back arrow, large title that collapses into the bar on scroll, same colour throughout. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SettingsFrame(
+    title: String,
+    onBack: () -> Unit,
+    snackbar: SnackbarHostState? = null,
+    content: LazyListScope.() -> Unit,
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text(title) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                ),
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        snackbarHost = { snackbar?.let { SnackbarHost(it) } },
+    ) { padding ->
+        LazyColumn(
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+fun SettingsScreen(onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
+    val viewModel = settingsViewModel()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val locale = currentLocale()
+    val country = settings?.country
+    val currency = resolveCurrency(settings?.currencyCode)
+    val languageTag = currentLanguageTag()
+
+    SettingsFrame(stringResource(R.string.nav_settings), onBack) {
+        item { Section(stringResource(R.string.section_app_settings)) }
+        item {
+            Row(Icons.Outlined.Public, stringResource(R.string.country), "${countryName(country)} · ${currency.currencyCode}") {
+                onOpen(SettingsPage.COUNTRY)
+            }
+        }
+        if (country == Country.ROMANIA) {
+            item {
+                Row(
+                    Icons.Outlined.Badge,
+                    stringResource(R.string.driving_type),
+                    settings?.drivingType?.let { drivingName(it) } ?: stringResource(R.string.not_set),
+                ) { onOpen(SettingsPage.DRIVING) }
+            }
+        }
+        item { Row(Icons.Outlined.Language, stringResource(R.string.language), languageName(languageTag)) { onOpen(SettingsPage.LANGUAGE) } }
+        item {
+            Row(Icons.Outlined.Contrast, stringResource(R.string.theme), themeName(settings?.themeMode ?: ThemeMode.SYSTEM)) {
+                onOpen(SettingsPage.THEME)
+            }
+        }
+        item {
+            Row(
+                Icons.Outlined.CalendarMonth,
+                stringResource(R.string.first_day_of_week),
+                dayName(settings?.firstDayOfWeek ?: DayOfWeek.MONDAY, locale),
+            ) { onOpen(SettingsPage.WEEK_START) }
+        }
+    }
+}
+
+/** Single-choice page with the radio on the right, like Google Health's Theme page. */
+@Composable
+private fun <T> ChoicePage(
+    title: String,
+    options: List<T>,
+    selected: T?,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+    onBack: () -> Unit,
+    description: (@Composable (T) -> String)? = null,
+) {
+    SettingsFrame(title, onBack) {
+        items(options.size) { index ->
+            val option = options[index]
+            ListItem(
+                modifier = Modifier.selectable(selected = option == selected, role = Role.RadioButton) { onSelect(option) },
+                headlineContent = { Text(label(option), style = MaterialTheme.typography.titleLarge) },
+                supportingContent = description?.let { { Text(it(option)) } },
+                trailingContent = { RadioButton(selected = option == selected, onClick = null) },
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
+    val viewModel = settingsViewModel()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val locale = currentLocale()
+    when (page) {
+        SettingsPage.COUNTRY -> ChoicePage(
+            title = stringResource(R.string.country),
+            options = Country.entries,
+            selected = settings?.country,
+            label = { countryName(it) },
+            description = {
+                when (it) {
+                    Country.ROMANIA -> stringResource(R.string.country_romania_detail)
+                    Country.OTHER -> if (settings?.country == Country.OTHER) {
+                        resolveCurrency(settings?.currencyCode).let { c -> "${c.currencyCode} – ${c.getDisplayName(locale)}" }
+                    } else {
+                        stringResource(R.string.country_other_detail)
+                    }
+                }
+            },
+            onSelect = { if (it == Country.OTHER) onOpen(SettingsPage.CURRENCY) else viewModel.setCountry(it) },
+            onBack = onBack,
+        )
+        SettingsPage.CURRENCY -> CurrencyPage(
+            selected = if (settings?.country == Country.OTHER) settings?.currencyCode else null,
+            onSelect = {
+                viewModel.setCountry(Country.OTHER, it)
+                onBack()
+            },
+            onBack = onBack,
+        )
+        SettingsPage.DRIVING -> ChoicePage(
+            title = stringResource(R.string.driving_type),
+            options = DrivingType.entries,
+            selected = settings?.drivingType,
+            label = { drivingName(it) },
+            description = { drivingDetail(it) },
+            onSelect = viewModel::setDrivingType,
+            onBack = onBack,
+        )
+        SettingsPage.LANGUAGE -> ChoicePage(
+            title = stringResource(R.string.language),
+            options = languageOptions,
+            selected = currentLanguageTag(),
+            label = { languageName(it) },
+            onSelect = ::setAppLanguage,
+            onBack = onBack,
+        )
+        SettingsPage.THEME -> ChoicePage(
+            title = stringResource(R.string.theme),
+            options = ThemeMode.entries,
+            selected = settings?.themeMode,
+            label = { themeName(it) },
+            onSelect = viewModel::setThemeMode,
+            onBack = onBack,
+        )
+        SettingsPage.WEEK_START -> ChoicePage(
+            title = stringResource(R.string.first_day_of_week),
+            options = weekStartOptions,
+            selected = settings?.firstDayOfWeek,
+            label = { dayName(it, locale) },
+            onSelect = viewModel::setFirstDayOfWeek,
+            onBack = onBack,
+        )
+    }
+}
+
+@Composable
+private fun CurrencyPage(selected: String?, onSelect: (String) -> Unit, onBack: () -> Unit) {
+    val locale = currentLocale()
+    var query by rememberSaveable { mutableStateOf("") }
+    val filtered = remember(query, locale) {
+        selectableCurrencies.filter {
+            query.isBlank() || it.currencyCode.contains(query, ignoreCase = true) ||
+                it.getDisplayName(locale).contains(query, ignoreCase = true)
+        }
+    }
+    SettingsFrame(stringResource(R.string.currency), onBack) {
+        item {
+            Text(
+                stringResource(R.string.currency_no_conversion),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                placeholder = { Text(stringResource(R.string.search_currency)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+            )
+        }
+        items(filtered, key = { it.currencyCode }) { c ->
+            ListItem(
+                modifier = Modifier.selectable(selected = c.currencyCode == selected, role = Role.RadioButton) { onSelect(c.currencyCode) },
+                headlineContent = { Text(c.currencyCode, style = MaterialTheme.typography.titleLarge) },
+                supportingContent = { Text(c.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }) },
+                trailingContent = { RadioButton(selected = c.currencyCode == selected, onClick = null) },
+            )
+        }
+    }
+}
+
+/** Back up, restore and erase, on one page. */
+@Composable
+fun YourDataScreen(onBack: () -> Unit) {
+    val viewModel = settingsViewModel()
     val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val locale = currentLocale()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    var dialog by rememberSaveable { mutableStateOf<Dialog?>(null) }
-    val country = settings?.country
-    val currency = resolveCurrency(settings?.currencyCode)
-    val weekStart = settings?.firstDayOfWeek ?: DayOfWeek.MONDAY
-    val themeMode = settings?.themeMode ?: ThemeMode.SYSTEM
-    val languageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    var confirmErase by rememberSaveable { mutableStateOf(false) }
 
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -121,7 +337,6 @@ fun SettingsScreen(
             viewModel.onRestoreFileRead(text)
         }
     }
-
     val messageText = message?.let {
         stringResource(
             when (it) {
@@ -140,65 +355,24 @@ fun SettingsScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentWindowInsets = WindowInsets(0),
-        topBar = {
-            LargeTopAppBar(title = { Text(stringResource(R.string.nav_settings)) }, scrollBehavior = scrollBehavior)
-        },
-        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
-    ) { padding ->
-        LazyColumn(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                top = padding.calculateTopPadding(),
-                bottom = LocalBottomBarSpace.current + 24.dp,
-            ),
-        ) {
-            item { Section(stringResource(R.string.section_app_settings)) }
-            item {
-                Row(Icons.Outlined.Public, stringResource(R.string.country), "${countryName(country)} · ${currency.currencyCode}") {
-                    dialog = Dialog.COUNTRY
-                }
+    SettingsFrame(stringResource(R.string.section_data), onBack, snackbar) {
+        item {
+            Row(Icons.Outlined.Save, stringResource(R.string.backup), stringResource(R.string.backup_summary)) {
+                createBackup.launch("ridetracker-backup-${LocalDate.now()}.json")
             }
-            if (country == Country.ROMANIA) {
-                item {
-                    Row(Icons.Outlined.Badge, stringResource(R.string.driving_type), settings?.drivingType?.let { drivingName(it) } ?: stringResource(R.string.not_set)) {
-                        dialog = Dialog.DRIVING
-                    }
-                }
+        }
+        item {
+            Row(Icons.Outlined.Restore, stringResource(R.string.restore), stringResource(R.string.restore_summary)) {
+                openBackup.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
             }
-            item { Row(Icons.Outlined.Apps, stringResource(R.string.apps), stringResource(R.string.apps_summary), onClick = onManagePlatforms) }
-            item { Row(Icons.Outlined.Language, stringResource(R.string.language), languageName(languageTag)) { dialog = Dialog.LANGUAGE } }
-            item { Row(Icons.Outlined.Contrast, stringResource(R.string.theme), themeName(themeMode)) { dialog = Dialog.THEME } }
-            item {
-                Row(Icons.Outlined.CalendarMonth, stringResource(R.string.first_day_of_week), dayName(weekStart, locale)) {
-                    dialog = Dialog.WEEK_START
-                }
-            }
-
-            item { Section(stringResource(R.string.section_data)) }
-            item {
-                Row(Icons.Outlined.Save, stringResource(R.string.backup), stringResource(R.string.backup_summary)) {
-                    createBackup.launch("ridetracker-backup-${LocalDate.now()}.json")
-                }
-            }
-            item {
-                Row(Icons.Outlined.Restore, stringResource(R.string.restore), stringResource(R.string.restore_summary)) {
-                    openBackup.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
-                }
-            }
-            item {
-                Row(
-                    Icons.Outlined.DeleteForever,
-                    stringResource(R.string.erase),
-                    stringResource(R.string.erase_summary),
-                    tint = MaterialTheme.colorScheme.error,
-                ) { dialog = Dialog.ERASE }
-            }
-
-            item { Section(stringResource(R.string.section_about)) }
-            item { Row(Icons.Outlined.Shield, stringResource(R.string.local_first), null, onClick = null) }
-            item { Row(Icons.Outlined.Info, stringResource(R.string.version), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", onClick = null) }
+        }
+        item {
+            Row(
+                Icons.Outlined.DeleteForever,
+                stringResource(R.string.erase),
+                stringResource(R.string.erase_summary),
+                tint = MaterialTheme.colorScheme.error,
+            ) { confirmErase = true }
         }
     }
 
@@ -213,91 +387,23 @@ fun SettingsScreen(
             onConfirm = viewModel::confirmRestore,
         )
     }
-
-    when (dialog) {
-        Dialog.COUNTRY -> ChoiceDialog(
-            title = stringResource(R.string.country),
-            options = Country.entries,
-            selected = country,
-            label = { countryName(it) },
-            onDismiss = { dialog = null },
-            onSelect = {
-                if (it == Country.OTHER) {
-                    dialog = Dialog.CURRENCY
-                } else {
-                    viewModel.setCountry(it)
-                    dialog = null
-                }
-            },
-        )
-        Dialog.CURRENCY -> CurrencyDialog(
-            selected = if (country == Country.OTHER) currency else null,
-            onDismiss = { dialog = null },
-            onSelect = {
-                viewModel.setCountry(Country.OTHER, it.currencyCode)
-                dialog = null
-            },
-        )
-        Dialog.DRIVING -> ChoiceDialog(
-            title = stringResource(R.string.driving_type),
-            options = DrivingType.entries,
-            selected = settings?.drivingType,
-            label = { drivingName(it) },
-            description = { drivingDetail(it) },
-            onDismiss = { dialog = null },
-            onSelect = {
-                viewModel.setDrivingType(it)
-                dialog = null
-            },
-        )
-        Dialog.LANGUAGE -> ChoiceDialog(
-            title = stringResource(R.string.language),
-            options = languageOptions,
-            selected = languageTag,
-            label = { languageName(it) },
-            onDismiss = { dialog = null },
-            onSelect = {
-                dialog = null
-                setAppLanguage(it)
-            },
-        )
-        Dialog.THEME -> ChoiceDialog(
-            title = stringResource(R.string.theme),
-            options = ThemeMode.entries,
-            selected = themeMode,
-            label = { themeName(it) },
-            onDismiss = { dialog = null },
-            onSelect = {
-                dialog = null
-                viewModel.setThemeMode(it)
-            },
-        )
-        Dialog.WEEK_START -> ChoiceDialog(
-            title = stringResource(R.string.first_day_of_week),
-            options = weekStartOptions,
-            selected = weekStart,
-            label = { dayName(it, locale) },
-            onDismiss = { dialog = null },
-            onSelect = {
-                viewModel.setFirstDayOfWeek(it)
-                dialog = null
-            },
-        )
-        Dialog.ERASE -> ConfirmDialog(
+    if (confirmErase) {
+        ConfirmDialog(
             title = stringResource(R.string.erase_confirm_title),
             body = stringResource(R.string.erase_confirm_body),
             confirmLabel = stringResource(R.string.erase_action),
             destructive = true,
-            onDismiss = { dialog = null },
+            onDismiss = { confirmErase = false },
             onConfirm = {
-                dialog = null
+                confirmErase = false
                 // Language is stored by AppCompat, not in our settings: reset it too.
                 viewModel.eraseAll { setAppLanguage("") }
             },
         )
-        null -> Unit
     }
 }
+
+fun currentLanguageTag(): String = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
 
 /** Recreates the activity in the new language; AppCompat stores the choice. */
 fun setAppLanguage(tag: String) {
@@ -310,7 +416,7 @@ fun setAppLanguage(tag: String) {
 private fun Section(title: String) {
     Text(
         title,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 8.dp),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
     )
@@ -322,11 +428,13 @@ private fun Row(
     title: String,
     summary: String?,
     tint: Color = Color.Unspecified,
-    onClick: (() -> Unit)?,
+    onClick: () -> Unit,
 ) {
     ListItem(
-        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
-        leadingContent = { Icon(icon, contentDescription = null, tint = if (tint == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint) },
+        modifier = Modifier.clickable(onClick = onClick),
+        leadingContent = {
+            Icon(icon, contentDescription = null, tint = if (tint == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else tint)
+        },
         headlineContent = {
             Text(title, style = MaterialTheme.typography.titleLarge, color = if (tint == Color.Unspecified) Color.Unspecified else tint)
         },

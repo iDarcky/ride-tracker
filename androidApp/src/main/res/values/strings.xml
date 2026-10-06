@@ -124,4 +124,10 @@
     <string name="erase_confirm_title">Erase all data?</string>
     <string name="erase_confirm_body">All income entries, apps and settings will be deleted and the app starts over. This can’t be undone, so make a backup first if you might need the data.</string>
     <string name="erase_action">Erase</string>
+
+    <!-- 0.0.5: menu panel and settings pages -->
+    <string name="open_menu">Menu</string>
+    <string name="your_data_summary">Back up, restore or erase</string>
+    <string name="version_footer">Version %1$s</string>
+    <string name="search_currency">Search currencies</string>
 </resources>

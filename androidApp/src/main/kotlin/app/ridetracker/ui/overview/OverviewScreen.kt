@@ -77,6 +77,7 @@ import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
 import app.ridetracker.shared.domain.type
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.MenuButton
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.SectionHeader
 import app.ridetracker.ui.common.PlatformBadge
@@ -107,7 +108,7 @@ fun OverviewScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }, actions = { MenuButton() }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddEntry,

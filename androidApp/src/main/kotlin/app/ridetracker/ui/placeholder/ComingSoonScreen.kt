@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.ridetracker.R
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.MenuButton
 
 /** Empty state for tabs from the design that are not built yet. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +33,7 @@ import app.ridetracker.ui.common.LocalBottomBarSpace
 fun ComingSoonScreen(@StringRes title: Int, icon: ImageVector, @StringRes body: Int) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(title)) }) },
+        topBar = { TopAppBar(title = { Text(stringResource(title)) }, actions = { MenuButton() }) },
     ) { padding ->
         ComingSoonContent(icon, body, Modifier.padding(padding).padding(bottom = LocalBottomBarSpace.current))
     }
