@@ -76,7 +76,9 @@ import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
 import app.ridetracker.shared.domain.type
+import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.MoneyFormat
+import app.ridetracker.ui.common.SectionHeader
 import app.ridetracker.ui.common.PlatformBadge
 import app.ridetracker.ui.common.container
 import app.ridetracker.ui.common.DateFormats
@@ -92,7 +94,6 @@ import java.text.NumberFormat
 @Composable
 fun OverviewScreen(
     onAddEntry: () -> Unit,
-    onEditEntry: (Long) -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(container.incomeRepository, container.settingsRepository)
     },
@@ -102,29 +103,25 @@ fun OverviewScreen(
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
     val percent = remember(locale) { NumberFormat.getPercentInstance(locale) }
-    val deletedMessage = stringResource(R.string.entry_deleted)
-    val undoLabel = stringResource(R.string.undo)
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var showRangePicker by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_overview)) }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddEntry,
+                modifier = Modifier.padding(bottom = LocalBottomBarSpace.current),
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.add_income)) },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 96.dp,
+                bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 96.dp,
             ),
         ) {
             item {
@@ -182,30 +179,6 @@ fun OverviewScreen(
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            state.days.forEach { day ->
-                item(key = "day-${day.date}") {
-                    SectionHeader(dates.day(day.date), trailing = money.format(day.totalMinor))
-                }
-                items(day.entries, key = { "entry-${it.id}" }) { entry ->
-                    EntryRow(
-                        entry = entry,
-                        money = money,
-                        onClick = { onEditEntry(entry.id) },
-                        onDelete = {
-                            scope.launch {
-                                val deleted = viewModel.delete(entry.id) ?: return@launch
-                                val result = snackbar.showSnackbar(
-                                    message = deletedMessage,
-                                    actionLabel = undoLabel,
-                                    duration = SnackbarDuration.Short,
-                                )
-                                if (result == SnackbarResult.ActionPerformed) viewModel.restore(deleted)
-                            }
-                        },
-                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -320,58 +293,6 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, trailing: String? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        if (trailing != null) {
-            Text(trailing, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-private fun EntryRow(
-    entry: EntryWithPlatform,
-    money: MoneyFormat,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val dismissState = rememberSwipeToDismissBoxState()
-    SwipeToDismissBox(
-        state = dismissState,
-        modifier = modifier,
-        enableDismissFromStartToEnd = false,
-        onDismiss = { value -> if (value == SwipeToDismissBoxValue.EndToStart) onDelete() },
-        backgroundContent = {
-            Box(
-                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 24.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onErrorContainer)
-            }
-        },
-    ) {
-        ListItem(
-            modifier = Modifier.clickable(onClick = onClick),
-            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-            leadingContent = { PlatformBadge(entry.platformName, entry.platformColorArgb) },
-            headlineContent = { Text(entry.platformName) },
-            supportingContent = entry.note?.let { note -> { Text(note, maxLines = 2) } },
-            trailingContent = { Text(money.format(entry.amountMinor), style = MaterialTheme.typography.titleMedium.tabular()) },
-        )
     }
 }
 

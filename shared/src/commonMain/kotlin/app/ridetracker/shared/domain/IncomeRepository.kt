@@ -19,6 +19,8 @@ class IncomeRepository(database: AppDatabase) {
 
     suspend fun updatePlatform(platform: PlatformEntity) = platforms.update(platform.copy(name = platform.name.trim()))
 
+    fun observeAllEntries(): Flow<List<EntryWithPlatform>> = entries.observeAll()
+
     fun observeEntries(range: DateRange): Flow<List<EntryWithPlatform>> =
         entries.observeInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 

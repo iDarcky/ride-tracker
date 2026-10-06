@@ -11,11 +11,9 @@
     <string name="search">Caută</string>
 
     <!-- Navigation -->
-    <string name="nav_overview">Rezumat</string>
     <string name="nav_trips">Curse</string>
     <string name="nav_vehicle">Mașină</string>
     <string name="nav_expenses">Cheltuieli</string>
-    <string name="nav_more">Mai mult</string>
 
     <!-- Welcome -->
     <string name="welcome_title">Bun venit în Ride Tracker</string>
@@ -91,4 +89,38 @@
     <string name="trips_coming_soon">Importă rapoartele Uber și Bolt ca să vezi aici fiecare cursă.</string>
     <string name="vehicle_coming_soon">Urmărește mașina, kilometrajul și costul combustibilului pe km.</string>
     <string name="expenses_coming_soon">Notează combustibilul, întreținerea și alte costuri ca să vezi cât îți rămâne.</string>
+
+    <!-- 0.0.4: navigation, money tab, settings, backup -->
+    <string name="nav_home">Acasă</string>
+    <string name="nav_money">Bani</string>
+    <string name="nav_settings">Setări</string>
+    <string name="income">Venituri</string>
+    <string name="no_income_yet">Niciun venit încă.\nApasă „Adaugă venit” ca să-l înregistrezi.</string>
+    <string name="section_app_settings">Setările aplicației</string>
+    <string name="section_data">Datele tale</string>
+    <string name="section_about">Despre</string>
+    <string name="not_set">Nesetat</string>
+    <string name="driving_type">Cum lucrezi</string>
+    <string name="welcome_driving_question">Cum lucrezi?</string>
+    <string name="driving_pfa">PFA (firmă proprie)</string>
+    <string name="driving_pfa_detail">Lucrezi direct cu aplicațiile</string>
+    <string name="driving_fleet">Printr-un partener de flotă</string>
+    <string name="driving_fleet_detail">O firmă parteneră te plătește pentru curse</string>
+    <string name="backup">Fă o copie de rezervă</string>
+    <string name="backup_summary">Salvează toate datele într-un fișier</string>
+    <string name="backup_saved">Copia de rezervă a fost salvată</string>
+    <string name="backup_failed">Copia de rezervă nu a putut fi salvată</string>
+    <string name="restore">Restaurează din copie</string>
+    <string name="restore_summary">Înlocuiește toate datele cu cele dintr-un fișier de rezervă</string>
+    <string name="restore_confirm_title">Restaurezi această copie?</string>
+    <string name="restore_confirm_body">Tot ce este acum în aplicație va fi înlocuit cu această copie din %1$s (%2$s).</string>
+    <string name="restore_action">Restaurează</string>
+    <string name="restore_done">Copia a fost restaurată</string>
+    <string name="restore_invalid">Acest fișier nu este o copie Ride Tracker</string>
+    <string name="restore_newer">Copia este dintr-o versiune mai nouă. Actualizează mai întâi aplicația.</string>
+    <string name="erase">Șterge toate datele</string>
+    <string name="erase_summary">Șterge toate înregistrările, aplicațiile și setările</string>
+    <string name="erase_confirm_title">Ștergi toate datele?</string>
+    <string name="erase_confirm_body">Toate veniturile, aplicațiile și setările vor fi șterse, iar aplicația o ia de la capăt. Acțiunea nu poate fi anulată, așa că fă o copie de rezervă dacă s-ar putea să ai nevoie de date.</string>
+    <string name="erase_action">Șterge</string>
 </resources>

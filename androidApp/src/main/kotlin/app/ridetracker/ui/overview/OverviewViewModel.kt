@@ -3,7 +3,6 @@ package app.ridetracker.ui.overview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.EntryWithPlatform
-import app.ridetracker.shared.data.IncomeEntryEntity
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.DateRange
@@ -108,16 +107,5 @@ class OverviewViewModel(
             val firstDay = settingsRepository.settings.first().firstDayOfWeek
             selected.value = periodOf(current.type, today(), firstDay)
         }
-    }
-
-    /** Deletes the entry and returns it so the UI can offer Undo. */
-    suspend fun delete(id: Long): IncomeEntryEntity? {
-        val entry = incomeRepository.getEntry(id) ?: return null
-        incomeRepository.deleteEntry(id)
-        return entry
-    }
-
-    fun restore(entry: IncomeEntryEntity) {
-        viewModelScope.launch { incomeRepository.restoreEntry(entry) }
     }
 }

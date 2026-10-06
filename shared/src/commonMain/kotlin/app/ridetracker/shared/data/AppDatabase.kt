@@ -36,13 +36,17 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
     override fun initialize(): AppDatabase
 }
 
+/** Apps every new install (and every reset) starts with. */
+val defaultPlatforms: List<PlatformEntity> = listOf(
+    PlatformEntity(name = "Uber", colorArgb = 0xFF000000, sortOrder = 0),
+    PlatformEntity(name = "Bolt", colorArgb = 0xFF34D186, sortOrder = 1),
+)
+
 /** Seeds the default platforms the first time the database is created (never on upgrade). */
 private object SeedCallback : RoomDatabase.Callback() {
     override fun onCreate(connection: SQLiteConnection) {
-        connection.execSQL(
-            "INSERT INTO platform (name, colorArgb, sortOrder, archived) VALUES " +
-                "('Uber', ${0xFF000000}, 0, 0), ('Bolt', ${0xFF34D186}, 1, 0)",
-        )
+        val values = defaultPlatforms.joinToString { "('${it.name}', ${it.colorArgb}, ${it.sortOrder}, 0)" }
+        connection.execSQL("INSERT INTO platform (name, colorArgb, sortOrder, archived) VALUES $values")
     }
 }
 

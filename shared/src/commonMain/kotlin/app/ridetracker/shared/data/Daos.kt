@@ -19,6 +19,15 @@ interface PlatformDao {
 
     @Update
     suspend fun update(platform: PlatformEntity)
+
+    @Query("SELECT * FROM platform ORDER BY id")
+    suspend fun getAll(): List<PlatformEntity>
+
+    @Insert
+    suspend fun insertAll(platforms: List<PlatformEntity>)
+
+    @Query("DELETE FROM platform")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -56,4 +65,23 @@ interface IncomeEntryDao {
 
     @Query("DELETE FROM income_entry WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query(
+        """
+        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt,
+               p.name AS platformName, p.colorArgb AS platformColorArgb
+        FROM income_entry e JOIN platform p ON p.id = e.platformId
+        ORDER BY e.date DESC, e.createdAt DESC
+        """,
+    )
+    fun observeAll(): Flow<List<EntryWithPlatform>>
+
+    @Query("SELECT * FROM income_entry ORDER BY id")
+    suspend fun getAll(): List<IncomeEntryEntity>
+
+    @Insert
+    suspend fun insertAll(entries: List<IncomeEntryEntity>)
+
+    @Query("DELETE FROM income_entry")
+    suspend fun deleteAll()
 }

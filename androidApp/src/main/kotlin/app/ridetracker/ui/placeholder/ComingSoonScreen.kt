@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.ridetracker.R
+import app.ridetracker.ui.common.LocalBottomBarSpace
 
 /** Empty state for tabs from the design that are not built yet. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,28 +34,33 @@ fun ComingSoonScreen(@StringRes title: Int, icon: ImageVector, @StringRes body: 
         contentWindowInsets = WindowInsets(0),
         topBar = { TopAppBar(title = { Text(stringResource(title)) }) },
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        ComingSoonContent(icon, body, Modifier.padding(padding).padding(bottom = LocalBottomBarSpace.current))
+    }
+}
+
+@Composable
+fun ComingSoonContent(icon: ImageVector, @StringRes body: Int, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            Modifier.size(96.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                Modifier.size(96.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            }
-            Text(
-                stringResource(R.string.coming_soon),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-            )
-            Text(
-                stringResource(body),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
+            Icon(icon, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
         }
+        Text(
+            stringResource(R.string.coming_soon),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+        )
+        Text(
+            stringResource(body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }

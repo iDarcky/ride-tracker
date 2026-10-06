@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.4
+- Floating navigation bar (Google Photos style) with Home, Trips, Money, Vehicle and Settings.
+- Money tab: Income (full history, swipe to delete with undo) and Expenses (coming soon).
+- Settings redesigned in the Google Health style: large title and sections (App settings, Your data, About).
+- Backup and restore: save everything (income, apps, settings) to a JSON file and restore it in any later version.
+- Erase all data, with confirmation; the app starts over at the welcome screen.
+- Onboarding: language picker on the welcome screen; drivers in Romania choose PFA or fleet partner.
+
 ## 0.0.3
 - New permanent app ID `app.ridetracker` and a new signing key. Installs as a new app, so data from 0.0.1–0.0.2 test builds does not carry over.
 - Theme setting: system, light or dark.

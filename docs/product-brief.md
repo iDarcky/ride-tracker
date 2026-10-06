@@ -47,7 +47,7 @@ technically "ride-hailing". Inside the app the word is rarely needed: "apps", "U
 
 | Phase | Contents |
 | --- | --- |
-| **v0** (now) | Income entry per app, expenses, money kept summary, day/week/month/custom periods, backup and restore, CSV export, Romanian and English, light and dark, country onboarding |
+| **v0** (now) | Income entry per app per day, expenses, money kept summary, day/week/month/custom periods, backup and restore, CSV export, erase all data, Romanian and English, light and dark, country and PFA/fleet onboarding |
 | **v0.5** | Cash collected per app, PFA/Fleet onboarding, vehicle (consumption, fuel price, estimated fuel cost), optional import of the Uber payments file and the Bolt monthly summary |
 | **v1** (PFA, Romania) | Tax estimate (income tax, CAS, CASS) with editable thresholds; Z-report capture with month-end cash match; fuel receipt capture with CUI check |
 | **Later** | Uber/Bolt API connections where possible, trips viewer, insights, other country packs, iPhone app |
@@ -82,8 +82,16 @@ so an importer keeps only date, payment method and amount.
 
 ## Navigation
 
-Proposed for manual-first: **Home, Income, Expenses, Vehicle, More** (replacing the current Trips
-placeholder; a trips viewer comes back only with imports).
+Floating navigation bar (Google Photos style) with **Home, Trips, Money, Vehicle, Settings**.
+Money holds Income and Expenses as two tabs. Trips stays as a tab and fills up once imports exist.
+
+## Backup and sync
+
+- **Local backup (free, built in 0.0.4):** one JSON file with all income, apps and settings, saved
+  wherever the user chooses; "Restore" replaces everything with a backup. The format is versioned
+  and independent of the database, so any backup restores into any later version. "Restore" is only
+  for the app's own backups; importing Uber/Bolt reports is a separate feature.
+- **Cloud backup and multi-device sync (paid, later):** with a web page explaining it. Not built yet.
 
 ## Design
 
@@ -100,7 +108,6 @@ See the README for build, versioning and signing rules.
 ## Open decisions
 
 - [ ] App name (candidates: Tura, Kept, Ridey).
-- [ ] Confirm the tabs: Home, Income, Expenses, Vehicle, More.
-- [ ] Income granularity: per day per app by default, with an optional date range for weekly totals?
-- [ ] Is the Uber/Bolt file import part of v0 or v0.5?
-- [ ] Receipt scanning at v1: on-device or server-side?
+- [ ] Receipt scanning at v1: on-device first; server-side as part of the paid tier?
+
+Decided: tabs as above; income is entered per day per app; Uber/Bolt file import is v0.5.

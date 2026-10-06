@@ -3,6 +3,7 @@ package app.ridetracker
 import android.app.Application
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import app.ridetracker.shared.data.BackupService
 import app.ridetracker.shared.data.createAppDatabase
 import app.ridetracker.shared.data.createSettingsRepository
 import app.ridetracker.shared.domain.IncomeRepository
@@ -12,8 +13,10 @@ import kotlinx.coroutines.runBlocking
 
 /** App-wide singletons (manual dependency injection). */
 class AppContainer(context: Context) {
-    val incomeRepository = IncomeRepository(createAppDatabase(context))
+    private val database = createAppDatabase(context)
+    val incomeRepository = IncomeRepository(database)
     val settingsRepository = createSettingsRepository(context)
+    val backupService = BackupService(database, settingsRepository)
 }
 
 class RideTrackerApplication : Application() {
