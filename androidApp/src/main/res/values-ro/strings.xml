@@ -86,7 +86,6 @@
     <!-- Coming soon -->
     <string name="coming_soon">În curând</string>
     <string name="trips_coming_soon">Importă rapoartele Uber și Bolt ca să vezi aici fiecare cursă.</string>
-    <string name="vehicle_coming_soon">Urmărește mașina, kilometrajul și costul combustibilului pe km.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Acasă</string>
@@ -156,4 +155,60 @@
     <string name="cat_fleet_fees">Comision partener de flotă</string>
     <string name="cat_other_business">Alte costuri de afaceri</string>
     <string name="cat_other">Altele</string>
+
+    <!-- 0.0.7: CSV export -->
+    <string name="export_csv">Exportă în CSV</string>
+    <string name="export_csv_summary">Pentru Excel, Google Sheets sau contabil</string>
+    <string name="this_month">Luna aceasta</string>
+    <string name="last_month">Luna trecută</string>
+    <string name="this_year">Anul acesta</string>
+    <string name="all_time">Tot istoricul</string>
+    <string name="custom_range">Interval personalizat…</string>
+    <string name="export_saved">CSV exportat</string>
+    <string name="export_failed">Fișierul nu a putut fi exportat</string>
+    <string name="csv_date">Data</string>
+    <string name="csv_type">Tip</string>
+    <string name="csv_item">Aplicație sau categorie</string>
+    <string name="csv_group">Grupă</string>
+    <string name="csv_amount">Sumă</string>
+    <string name="csv_currency">Monedă</string>
+    <string name="csv_note">Notă</string>
+    <string name="csv_income">Venit</string>
+    <string name="csv_expense">Cheltuială</string>
+
+    <!-- 0.0.7: vehicle -->
+    <string name="add_vehicle">Adaugă mașina</string>
+    <string name="no_vehicle_body">Adaugă mașina ca să urmărești kilometrajul, km parcurși și cât te costă un km.</string>
+    <string name="edit_vehicle">Editează mașina</string>
+    <string name="vehicle_name">Nume (ex. Peugeot 508)</string>
+    <string name="vehicle_year">An (opțional)</string>
+    <string name="fuel_type">Combustibil</string>
+    <string name="fuel_diesel">Motorină</string>
+    <string name="fuel_petrol">Benzină</string>
+    <string name="fuel_hybrid">Hibrid</string>
+    <string name="fuel_lpg">GPL</string>
+    <string name="fuel_electric">Electric</string>
+    <string name="consumption_litres">Consum mediu (L/100 km, opțional)</string>
+    <string name="consumption_kwh">Consum mediu (kWh/100 km, opțional)</string>
+    <string name="fuel_price_litre">Preț combustibil pe litru (opțional)</string>
+    <string name="fuel_price_kwh">Preț pe kWh (opțional)</string>
+    <string name="invalid_number">Introdu un număr valid</string>
+    <string name="odometer">Kilometraj</string>
+    <string name="update_odometer">Actualizează kilometrajul</string>
+    <string name="odometer_reading_km">Kilometri la bord</string>
+    <string name="odometer_updated">Actualizat %1$s</string>
+    <string name="odometer_none">Nicio citire încă</string>
+    <string name="odometer_out_of_order">Valoarea e mai mică decât o citire anterioară sau mai mare decât una ulterioară.</string>
+    <string name="odometer_implausible">E mai mult decât poate parcurge o mașină de la ultima citire. Verifică numărul.</string>
+    <string name="odometer_history">Istoric kilometraj</string>
+    <string name="delete_reading_title">Ștergi această citire?</string>
+    <string name="reading_deleted">Citire ștearsă</string>
+    <string name="km_value">%1$s km</string>
+    <string name="km_driven">Km parcurși</string>
+    <string name="vehicle_costs">Costuri mașină</string>
+    <string name="cost_per_km">Cost pe km</string>
+    <string name="fuel_spent">Combustibil și încărcare</string>
+    <string name="fuel_estimate">Cost combustibil (estimat)</string>
+    <string name="needs_two_readings">Adaugă o citire a kilometrajului la începutul și la sfârșitul perioadei ca să vezi km parcurși.</string>
+    <string name="vehicle_costs_by_category">Costuri mașină pe categorii</string>
 </resources>

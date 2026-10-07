@@ -51,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -150,11 +151,14 @@ fun SwipeToDeleteRow(
     modifier: Modifier = Modifier,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
+    // React to where the swipe ends up, so both slow drags and quick flings delete.
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) onDelete()
+    }
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier,
         enableDismissFromStartToEnd = false,
-        onDismiss = { value -> if (value == SwipeToDismissBoxValue.EndToStart) onDelete() },
         backgroundContent = {
             Box(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 24.dp),

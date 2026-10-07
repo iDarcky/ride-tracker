@@ -11,6 +11,9 @@ class ExpenseRepository(database: AppDatabase) {
     fun observeInRange(range: DateRange): Flow<List<ExpenseEntity>> =
         expenses.observeInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 
+    suspend fun getInRange(range: DateRange): List<ExpenseEntity> =
+        expenses.getInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
+
     fun observeAll(): Flow<List<ExpenseEntity>> = expenses.observeAll()
 
     /** True once the user has logged any expense; Home then shows "money kept". */

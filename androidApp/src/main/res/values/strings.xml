@@ -87,7 +87,6 @@
     <!-- Coming soon -->
     <string name="coming_soon">Coming soon</string>
     <string name="trips_coming_soon">Import your Uber and Bolt reports to see every trip here.</string>
-    <string name="vehicle_coming_soon">Track your car, odometer and fuel cost per km.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Home</string>
@@ -157,4 +156,60 @@
     <string name="cat_fleet_fees">Fleet partner fees</string>
     <string name="cat_other_business">Other business costs</string>
     <string name="cat_other">Other</string>
+
+    <!-- 0.0.7: CSV export -->
+    <string name="export_csv">Export to CSV</string>
+    <string name="export_csv_summary">For Excel, Google Sheets or your accountant</string>
+    <string name="this_month">This month</string>
+    <string name="last_month">Last month</string>
+    <string name="this_year">This year</string>
+    <string name="all_time">All time</string>
+    <string name="custom_range">Custom range…</string>
+    <string name="export_saved">CSV exported</string>
+    <string name="export_failed">Couldn’t export the file</string>
+    <string name="csv_date">Date</string>
+    <string name="csv_type">Type</string>
+    <string name="csv_item">App or category</string>
+    <string name="csv_group">Group</string>
+    <string name="csv_amount">Amount</string>
+    <string name="csv_currency">Currency</string>
+    <string name="csv_note">Note</string>
+    <string name="csv_income">Income</string>
+    <string name="csv_expense">Expense</string>
+
+    <!-- 0.0.7: vehicle -->
+    <string name="add_vehicle">Add your vehicle</string>
+    <string name="no_vehicle_body">Add your car to track the odometer, kilometres driven and what driving costs per km.</string>
+    <string name="edit_vehicle">Edit vehicle</string>
+    <string name="vehicle_name">Name (e.g. Peugeot 508)</string>
+    <string name="vehicle_year">Year (optional)</string>
+    <string name="fuel_type">Fuel</string>
+    <string name="fuel_diesel">Diesel</string>
+    <string name="fuel_petrol">Petrol</string>
+    <string name="fuel_hybrid">Hybrid</string>
+    <string name="fuel_lpg">LPG</string>
+    <string name="fuel_electric">Electric</string>
+    <string name="consumption_litres">Average consumption (L/100 km, optional)</string>
+    <string name="consumption_kwh">Average consumption (kWh/100 km, optional)</string>
+    <string name="fuel_price_litre">Fuel price per litre (optional)</string>
+    <string name="fuel_price_kwh">Price per kWh (optional)</string>
+    <string name="invalid_number">Enter a valid number</string>
+    <string name="odometer">Odometer</string>
+    <string name="update_odometer">Update odometer</string>
+    <string name="odometer_reading_km">Reading (km)</string>
+    <string name="odometer_updated">Updated %1$s</string>
+    <string name="odometer_none">No reading yet</string>
+    <string name="odometer_out_of_order">This is lower than an earlier reading or higher than a later one.</string>
+    <string name="odometer_implausible">That’s more than a car can drive since the last reading. Check the number.</string>
+    <string name="odometer_history">Odometer history</string>
+    <string name="delete_reading_title">Delete this reading?</string>
+    <string name="reading_deleted">Reading deleted</string>
+    <string name="km_value">%1$s km</string>
+    <string name="km_driven">Km driven</string>
+    <string name="vehicle_costs">Vehicle costs</string>
+    <string name="cost_per_km">Cost per km</string>
+    <string name="fuel_spent">Fuel and charging spent</string>
+    <string name="fuel_estimate">Fuel cost (estimated)</string>
+    <string name="needs_two_readings">Add an odometer reading at the start and end of the period to see km driven.</string>
+    <string name="vehicle_costs_by_category">Vehicle costs by category</string>
 </resources>

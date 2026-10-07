@@ -53,10 +53,13 @@ import app.ridetracker.ui.overview.OverviewScreen
 import app.ridetracker.ui.placeholder.ComingSoonScreen
 import app.ridetracker.ui.platforms.PlatformsScreen
 import app.ridetracker.ui.menu.MenuScreen
+import app.ridetracker.ui.settings.ExportScreen
 import app.ridetracker.ui.settings.SettingsChoicePage
 import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
 import app.ridetracker.ui.settings.YourDataScreen
+import app.ridetracker.ui.vehicle.VehicleEditScreen
+import app.ridetracker.ui.vehicle.VehicleScreen
 
 private enum class Tab(val route: String, @StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
     HOME("home", R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
@@ -96,7 +99,7 @@ fun AppNavigation() {
                     )
                 }
                 composable(Tab.VEHICLE.route) {
-                    ComingSoonScreen(R.string.nav_vehicle, Icons.Outlined.DirectionsCar, R.string.vehicle_coming_soon)
+                    VehicleScreen(onEditVehicle = { nav.navigate("vehicle/edit") })
                 }
                 composable("menu") {
                     MenuScreen(
@@ -114,7 +117,9 @@ fun AppNavigation() {
                         SettingsChoicePage(page, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                     }
                 }
-                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }) }
+                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
+                composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
+                composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
                 composable(
                     "entry?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),

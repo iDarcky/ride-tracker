@@ -42,4 +42,19 @@ class BackupFormatTest {
         assertEquals("fuel", expense.category)
         assertEquals(25000, expense.amountMinor)
     }
+
+    @Test
+    fun readsVersion3BackupWithVehicle() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 3, "appVersion": "0.0.7",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "vehicles": [ { "id": 1, "name": "Test car", "year": 2012, "fuelType": "diesel", "consumptionCenti": 700, "fuelPriceMinor": 750 } ],
+              "odometerReadings": [ { "id": 1, "vehicleId": 1, "date": "2026-09-28", "km": 235000, "createdAtEpochMillis": 0 } ]
+            }
+        """.trimIndent()
+        val file = json.decodeFromString(BackupFile.serializer(), text)
+        assertEquals(700, file.vehicles.single().consumptionCenti)
+        assertEquals(235000, file.odometerReadings.single().km)
+    }
 }

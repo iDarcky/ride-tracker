@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.TableView
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -306,7 +307,7 @@ private fun CurrencyPage(selected: String?, onSelect: (String) -> Unit, onBack: 
 
 /** Back up, restore and erase, on one page. */
 @Composable
-fun YourDataScreen(onBack: () -> Unit) {
+fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
     val viewModel = settingsViewModel()
     val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
@@ -360,6 +361,9 @@ fun YourDataScreen(onBack: () -> Unit) {
             Row(Icons.Outlined.Save, stringResource(R.string.backup), stringResource(R.string.backup_summary)) {
                 createBackup.launch("ridetracker-backup-${LocalDate.now()}.json")
             }
+        }
+        item {
+            Row(Icons.Outlined.TableView, stringResource(R.string.export_csv), stringResource(R.string.export_csv_summary), onClick = onExport)
         }
         item {
             Row(Icons.Outlined.Restore, stringResource(R.string.restore), stringResource(R.string.restore_summary)) {

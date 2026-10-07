@@ -29,12 +29,15 @@ data class BackupFile(
     @SerialName("incomeEntries") val entries: List<BackupIncomeEntry>,
     /** Added in format 2 (0.0.6); empty when restoring a format-1 backup. */
     val expenses: List<BackupExpense> = emptyList(),
+    /** Added in format 3 (0.0.7). */
+    val vehicles: List<BackupVehicle> = emptyList(),
+    val odometerReadings: List<BackupOdometerReading> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
 
-        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). */
-        const val FORMAT_VERSION = 2
+        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). */
+        const val FORMAT_VERSION = 3
     }
 }
 
@@ -76,6 +79,26 @@ data class BackupExpense(
     /** Category id, e.g. "fuel". */
     val category: String,
     val note: String? = null,
+    val createdAtEpochMillis: Long,
+)
+
+@Serializable
+data class BackupVehicle(
+    val id: Long,
+    val name: String,
+    val year: Int? = null,
+    val fuelType: String,
+    val consumptionCenti: Long? = null,
+    val fuelPriceMinor: Long? = null,
+)
+
+@Serializable
+data class BackupOdometerReading(
+    val id: Long,
+    val vehicleId: Long,
+    /** ISO date. */
+    val date: String,
+    val km: Long,
     val createdAtEpochMillis: Long,
 )
 
@@ -129,6 +152,12 @@ class BackupService(
                     createdAtEpochMillis = it.createdAt,
                 )
             },
+            vehicles = database.vehicleDao().getAll().map {
+                BackupVehicle(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor)
+            },
+            odometerReadings = database.vehicleDao().getAllReadings().map {
+                BackupOdometerReading(it.id, it.vehicleId, LocalDate.fromEpochDays(it.date).toString(), it.km, it.createdAt)
+            },
         )
         return json.encodeToString(BackupFile.serializer(), file)
     }
@@ -146,6 +175,8 @@ class BackupService(
         }
         val platformIds = file.platforms.map { it.id }.toSet()
         if (file.entries.any { it.platformId !in platformIds }) throw InvalidBackupException("Backup is damaged")
+        val vehicleIds = file.vehicles.map { it.id }.toSet()
+        if (file.odometerReadings.any { it.vehicleId !in vehicleIds }) throw InvalidBackupException("Backup is damaged")
         return file
     }
 
@@ -172,14 +203,22 @@ class BackupService(
                 createdAt = it.createdAtEpochMillis,
             )
         }
+        val vehicles = file.vehicles.map { VehicleEntity(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor) }
+        val readings = file.odometerReadings.map {
+            OdometerReadingEntity(it.id, it.vehicleId, LocalDate.parse(it.date).toEpochDays(), it.km, it.createdAtEpochMillis)
+        }
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.vehicleDao().deleteAllReadings()
+                database.vehicleDao().deleteAll()
                 database.expenseDao().deleteAll()
                 database.incomeEntryDao().deleteAll()
                 database.platformDao().deleteAll()
                 database.platformDao().insertAll(platforms)
                 database.incomeEntryDao().insertAll(entries)
                 database.expenseDao().insertAll(expenses)
+                database.vehicleDao().insertAll(vehicles)
+                database.vehicleDao().insertReadings(readings)
             }
         }
         val s = file.settings
@@ -199,6 +238,8 @@ class BackupService(
     suspend fun eraseAll() {
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.vehicleDao().deleteAllReadings()
+                database.vehicleDao().deleteAll()
                 database.expenseDao().deleteAll()
                 database.incomeEntryDao().deleteAll()
                 database.platformDao().deleteAll()

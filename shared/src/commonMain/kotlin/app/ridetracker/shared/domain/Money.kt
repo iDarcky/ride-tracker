@@ -28,6 +28,10 @@ object Money {
         return "${minor / scale}.$fraction"
     }
 
+    /** Like [toPlainString] but keeps the sign, e.g. -2500 with 2 digits -> "-25.00". */
+    fun toSignedString(minor: Long, fractionDigits: Int): String =
+        if (minor < 0) "-" + toPlainString(-minor, fractionDigits) else toPlainString(minor, fractionDigits)
+
     private fun pow10(n: Int): Long {
         var r = 1L
         repeat(n) { r *= 10 }

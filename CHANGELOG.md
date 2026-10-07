@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.7
+- **Export to CSV** (Menu → Your data): this month, last month, this year, all time or a custom range.
+  One file with income and expenses; international format (comma-separated, dot decimals, ISO dates),
+  column titles in the app language, opens correctly in Excel and Google Sheets.
+- **Vehicle** tab: your car (name, year, fuel, consumption, fuel price), odometer readings with history,
+  and per month: km driven, vehicle costs, cost per km, fuel spent and estimated fuel cost.
+- Odometer readings that go backwards or jump impossibly far (typos) are refused.
+- Swipe-to-delete reacts to quick swipes too; tap a reading to delete it.
+- Database version 3 (vehicle tables) and backup format 3; older backups still restore.
+
 ## 0.0.6
 - Expenses: add, edit and delete (swipe, with undo) in Money → Expenses. Three groups (Vehicle,
   Business, Other) with categories such as fuel, repairs, insurance, ITP, accountant, bank fees.

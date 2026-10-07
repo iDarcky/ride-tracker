@@ -18,11 +18,15 @@ import kotlinx.coroutines.IO
  * AutoMigration or a manual Migration so installs over the previous app keep all data.
  */
 @Database(
-    entities = [PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class],
-    version = 2,
+    entities = [
+        PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class,
+        VehicleEntity::class, OdometerReadingEntity::class,
+    ],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // 0.0.6: expense table
+        AutoMigration(from = 2, to = 3), // 0.0.7: vehicle and odometer tables
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -30,6 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun platformDao(): PlatformDao
     abstract fun incomeEntryDao(): IncomeEntryDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun vehicleDao(): VehicleDao
 
     companion object {
         const val FILE_NAME = "ridetracker.db"

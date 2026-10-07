@@ -56,6 +56,34 @@ data class ExpenseEntity(
     val createdAt: Long,
 )
 
+/** The driver's car (one for now; the model allows more later). */
+@Entity(tableName = "vehicle")
+data class VehicleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val year: Int? = null,
+    /** [app.ridetracker.shared.domain.FuelType] id. */
+    val fuelType: String,
+    /** Litres (or kWh) per 100 km × 100, e.g. 700 = 7.0 L/100 km. Null if unknown. */
+    val consumptionCenti: Long? = null,
+    /** Price per litre (or kWh) in minor units. Null if unknown. */
+    val fuelPriceMinor: Long? = null,
+)
+
+@Entity(
+    tableName = "odometer_reading",
+    foreignKeys = [ForeignKey(entity = VehicleEntity::class, parentColumns = ["id"], childColumns = ["vehicleId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("vehicleId"), Index("date")],
+)
+data class OdometerReadingEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val vehicleId: Long,
+    /** Day of the reading, as epoch days. */
+    val date: Long,
+    val km: Long,
+    val createdAt: Long,
+)
+
 /** An income entry joined with its platform, for lists. */
 data class EntryWithPlatform(
     val id: Long,

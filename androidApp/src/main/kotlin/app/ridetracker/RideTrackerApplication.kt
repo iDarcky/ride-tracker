@@ -9,6 +9,7 @@ import app.ridetracker.shared.data.createSettingsRepository
 import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.ThemeMode
+import app.ridetracker.shared.domain.VehicleRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -17,6 +18,7 @@ class AppContainer(context: Context) {
     private val database = createAppDatabase(context)
     val incomeRepository = IncomeRepository(database)
     val expenseRepository = ExpenseRepository(database)
+    val vehicleRepository = VehicleRepository(database)
     val settingsRepository = createSettingsRepository(context)
     val backupService = BackupService(database, settingsRepository)
 }
