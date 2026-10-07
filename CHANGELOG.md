@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.10
+- Romanian: the repeat switch is now called „Recurentă”.
+
 ## 0.0.9
 - **Recurring expenses**: turn on "Repeat" when adding an expense (weekly, monthly or yearly, optional end
   date). Nothing is added by itself: when one is due, Home shows it under **Needs attention** with

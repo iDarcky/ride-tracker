@@ -241,7 +241,7 @@
     <string name="change_down">Scădere</string>
 
     <!-- 0.0.9: recurring expenses -->
-    <string name="repeat">Se repetă</string>
+    <string name="repeat">Recurentă</string>
     <string name="repeat_weekly">Săptămânal</string>
     <string name="repeat_monthly">Lunar</string>
     <string name="repeat_yearly">Anual</string>
@@ -255,7 +255,7 @@
         <item quantity="few">%d active</item>
         <item quantity="other">%d de active</item>
     </plurals>
-    <string name="no_recurring">Nicio cheltuială recurentă încă. Activează „Se repetă” când adaugi o cheltuială.</string>
+    <string name="no_recurring">Nicio cheltuială recurentă încă. Activează „Recurentă” când adaugi o cheltuială.</string>
     <string name="next_due">Următoarea: %1$s</string>
     <string name="recurring_ended">Încheiată</string>
     <string name="edit_recurring">Editează cheltuiala recurentă</string>
