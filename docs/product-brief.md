@@ -114,6 +114,23 @@ Kotlin Multiplatform: shared Kotlin for data, money maths and future importers; 
 Compose (Material 3 Expressive); iPhone UI later in SwiftUI. Room (SQLite) and DataStore on device.
 See the README for build, versioning and signing rules.
 
+## Next up (decided 7 October 2026, in this order)
+
+1. **CSV export** and **vehicle** basics (finishing v0).
+2. **Comparison with the previous period** on Home, shown only when that period has data:
+   month-to-date vs the same days last month; week-to-date vs the same days last week;
+   day vs the **same weekday last week**; custom range vs the same number of days before it.
+   Compares money kept (or income while no expenses exist), as % and amount.
+3. **Recurring expenses**: weekly / monthly / yearly, due day, optional end date. On the due date a
+   local notification asks to add it ("Add" button); ignored ones wait on Home under "Needs attention".
+   Notification permission is requested when the first recurring expense is created. No server.
+4. From the inspiration boards, before imports: **app filter chips on Home**, **daily activity chart**,
+   **expenses by category** (Money → Expenses, with a month filter), **optional hours worked** on income
+   entries so Home can show money per hour.
+
+Later, with imports (v0.5): trips list and detail, import flow with data-quality warnings, import history,
+vehicle odometer and fuel estimates, gross / fees / expenses / kept bar, preset list of known apps.
+
 ## Open decisions
 
 - [ ] App name (candidates: Tura, Kept, Ridey).
