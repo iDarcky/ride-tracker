@@ -124,7 +124,14 @@ class VehicleViewModel(
         }
     }
 
-    fun deleteReading(id: Long) {
-        viewModelScope.launch { vehicleRepository.deleteReading(id) }
+    /** Deletes the reading and returns it so the screen can offer Undo. */
+    suspend fun deleteReading(id: Long): OdometerReadingEntity? {
+        val reading = state.value.readings.firstOrNull { it.id == id } ?: return null
+        vehicleRepository.deleteReading(id)
+        return reading
+    }
+
+    fun restoreReading(reading: OdometerReadingEntity) {
+        viewModelScope.launch { vehicleRepository.restoreReading(reading) }
     }
 }

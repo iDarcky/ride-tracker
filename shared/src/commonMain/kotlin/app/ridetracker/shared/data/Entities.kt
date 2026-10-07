@@ -68,6 +68,10 @@ data class VehicleEntity(
     val consumptionCenti: Long? = null,
     /** Price per litre (or kWh) in minor units. Null if unknown. */
     val fuelPriceMinor: Long? = null,
+    /** [app.ridetracker.shared.domain.BodyType] id for the silhouette; added in database version 4. */
+    val bodyType: String? = null,
+    /** Car colour (ARGB) for the silhouette; added in database version 4. */
+    val colorArgb: Long? = null,
 )
 
 @Entity(

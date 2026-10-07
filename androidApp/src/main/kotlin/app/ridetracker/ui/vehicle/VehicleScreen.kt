@@ -39,6 +39,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -68,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.shared.data.OdometerReadingEntity
+import app.ridetracker.shared.domain.BodyType
 import app.ridetracker.shared.domain.FuelType
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.ConfirmDialog
@@ -111,7 +114,16 @@ fun VehicleScreen(
     var updateOdometer by rememberSaveable { mutableStateOf(false) }
     var deleteReadingId by rememberSaveable { mutableStateOf<Long?>(null) }
     val deletedText = stringResource(R.string.reading_deleted)
+    val undoText = stringResource(R.string.undo)
     val bottomSpace = LocalBottomBarSpace.current
+
+    fun deleteWithUndo(id: Long) {
+        scope.launch {
+            val deleted = viewModel.deleteReading(id) ?: return@launch
+            val result = snackbar.showSnackbar(deletedText, undoText, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreReading(deleted)
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -142,9 +154,17 @@ fun VehicleScreen(
         ) {
             item {
                 // Car card
-                Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = MaterialTheme.shapes.large) {
+                OutlinedCard(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ) {
+                    CarSilhouette(
+                        BodyType.fromId(vehicle.bodyType),
+                        vehicle.colorArgb,
+                        Modifier.fillMaxWidth().height(110.dp).padding(top = 16.dp, start = 24.dp, end = 24.dp),
+                    )
                     ListItem(
-                        leadingContent = { ExpenseBadge(Icons.Outlined.DirectionsCar, size = 56.dp) },
                         headlineContent = { Text(vehicle.name, style = MaterialTheme.typography.titleLarge) },
                         supportingContent = {
                             val consumption = vehicle.consumptionCenti?.let {
@@ -209,7 +229,11 @@ fun VehicleScreen(
                 }
             }
             item {
-                Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = MaterialTheme.shapes.large) {
+                OutlinedCard(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ) {
                     Column(Modifier.padding(vertical = 8.dp)) {
                         Metric(stringResource(R.string.km_driven), state.kmDriven?.let { stringResource(R.string.km_value, numbers.format(it)) })
                         if (state.kmDriven == null) {
@@ -246,10 +270,7 @@ fun VehicleScreen(
                         note = dates.day(LocalDate.fromEpochDays(reading.date)),
                         amount = "",
                         onClick = { deleteReadingId = reading.id },
-                        onDelete = {
-                            viewModel.deleteReading(reading.id)
-                            scope.launch { snackbar.showSnackbar(deletedText, duration = SnackbarDuration.Short) }
-                        },
+                        onDelete = { deleteWithUndo(reading.id) },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -258,15 +279,19 @@ fun VehicleScreen(
     }
 
     deleteReadingId?.let { id ->
+        val reading = state.readings.firstOrNull { it.id == id }
         ConfirmDialog(
             title = stringResource(R.string.delete_reading_title),
-            body = stringResource(R.string.delete_entry_body),
+            // Show which reading; Undo is offered afterwards, so no "can't be undone" warning.
+            body = reading?.let {
+                stringResource(R.string.km_value, numbers.format(it.km)) + " · " + dates.day(LocalDate.fromEpochDays(it.date))
+            } ?: "",
             confirmLabel = stringResource(R.string.delete),
             destructive = true,
             onDismiss = { deleteReadingId = null },
             onConfirm = {
                 deleteReadingId = null
-                viewModel.deleteReading(id)
+                deleteWithUndo(id)
             },
         )
     }

@@ -117,7 +117,7 @@ See the README for build, versioning and signing rules.
 ## Next up (decided 7 October 2026, in this order)
 
 1. ~~CSV export and vehicle basics~~ (done in 0.0.7).
-2. **Comparison with the previous period** on Home, shown only when that period has data:
+2. ~~Comparison with the previous period~~ (done in 0.0.8) on Home, shown only when that period has data:
    month-to-date vs the same days last month; week-to-date vs the same days last week;
    day vs the **same weekday last week**; custom range vs the same number of days before it.
    Compares money kept (or income while no expenses exist), as % and amount.

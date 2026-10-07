@@ -4,7 +4,12 @@ package app.ridetracker.shared.domain
 enum class FuelType(val id: String) {
     DIESEL("diesel"),
     PETROL("petrol"),
+
+    /** Petrol hybrid (the id predates the other hybrid kinds). */
     HYBRID("hybrid"),
+    HYBRID_DIESEL("hybrid_diesel"),
+    PLUG_IN_HYBRID("plug_in_hybrid"),
+    PLUG_IN_HYBRID_DIESEL("plug_in_hybrid_diesel"),
     LPG("lpg"),
     ELECTRIC("electric"),
     ;
@@ -12,8 +17,35 @@ enum class FuelType(val id: String) {
     /** Electric cars use kWh per 100 km and a price per kWh; the rest use litres. */
     val isElectric: Boolean get() = this == ELECTRIC
 
+    val isHybrid: Boolean get() = this in setOf(HYBRID, HYBRID_DIESEL, PLUG_IN_HYBRID, PLUG_IN_HYBRID_DIESEL)
+    val isPlugIn: Boolean get() = this == PLUG_IN_HYBRID || this == PLUG_IN_HYBRID_DIESEL
+    val isDieselHybrid: Boolean get() = this == HYBRID_DIESEL || this == PLUG_IN_HYBRID_DIESEL
+
     companion object {
         fun fromId(id: String?): FuelType = entries.firstOrNull { it.id == id } ?: DIESEL
+
+        /** The hybrid for an engine and plug-in choice. */
+        fun hybrid(diesel: Boolean, plugIn: Boolean): FuelType = when {
+            diesel && plugIn -> PLUG_IN_HYBRID_DIESEL
+            diesel -> HYBRID_DIESEL
+            plugIn -> PLUG_IN_HYBRID
+            else -> HYBRID
+        }
+    }
+}
+
+/** Body shape, used for the car silhouette. [id] is stored: never rename. */
+enum class BodyType(val id: String) {
+    HATCHBACK("hatchback"),
+    SEDAN("sedan"),
+    ESTATE("estate"),
+    SUV("suv"),
+    MPV("mpv"),
+    VAN("van"),
+    ;
+
+    companion object {
+        fun fromId(id: String?): BodyType = entries.firstOrNull { it.id == id } ?: SEDAN
     }
 }
 

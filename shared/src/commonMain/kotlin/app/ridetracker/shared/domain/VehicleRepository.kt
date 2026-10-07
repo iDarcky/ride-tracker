@@ -34,4 +34,9 @@ class VehicleRepository(database: AppDatabase) {
     }
 
     suspend fun deleteReading(id: Long) = dao.deleteReading(id)
+
+    /** Puts a deleted reading back with its original id (Undo). */
+    suspend fun restoreReading(reading: OdometerReadingEntity) {
+        dao.insertReading(reading)
+    }
 }

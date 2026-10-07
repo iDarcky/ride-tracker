@@ -36,8 +36,8 @@ data class BackupFile(
     companion object {
         const val FORMAT = "ridetracker-backup"
 
-        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). */
-        const val FORMAT_VERSION = 3
+        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). */
+        const val FORMAT_VERSION = 4
     }
 }
 
@@ -90,6 +90,8 @@ data class BackupVehicle(
     val fuelType: String,
     val consumptionCenti: Long? = null,
     val fuelPriceMinor: Long? = null,
+    val bodyType: String? = null,
+    val colorArgb: Long? = null,
 )
 
 @Serializable
@@ -153,7 +155,7 @@ class BackupService(
                 )
             },
             vehicles = database.vehicleDao().getAll().map {
-                BackupVehicle(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor)
+                BackupVehicle(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor, it.bodyType, it.colorArgb)
             },
             odometerReadings = database.vehicleDao().getAllReadings().map {
                 BackupOdometerReading(it.id, it.vehicleId, LocalDate.fromEpochDays(it.date).toString(), it.km, it.createdAt)
@@ -203,7 +205,7 @@ class BackupService(
                 createdAt = it.createdAtEpochMillis,
             )
         }
-        val vehicles = file.vehicles.map { VehicleEntity(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor) }
+        val vehicles = file.vehicles.map { VehicleEntity(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor, it.bodyType, it.colorArgb) }
         val readings = file.odometerReadings.map {
             OdometerReadingEntity(it.id, it.vehicleId, LocalDate.parse(it.date).toEpochDays(), it.km, it.createdAtEpochMillis)
         }

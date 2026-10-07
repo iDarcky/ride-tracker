@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.domain.Comparison
+import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseGroup
@@ -14,12 +16,14 @@ import app.ridetracker.shared.domain.PeriodType
 import app.ridetracker.shared.domain.periodOf
 import app.ridetracker.shared.domain.type
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -42,10 +46,20 @@ data class OverviewUiState(
     val expenseGroups: List<GroupTotal> = emptyList(),
     /** Once any expense exists, Home shows "money kept" instead of "total income". */
     val tracksExpenses: Boolean = false,
+    /** What this period is compared with; null for future periods. */
+    val comparison: Comparison? = null,
+    /** Totals of the comparison range; null when that range has no data (then nothing is shown). */
+    val previous: PreviousTotals? = null,
     val loading: Boolean = true,
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
+
+    /** The headline number: money kept once expenses are tracked, otherwise income. */
+    val headlineMinor: Long get() = if (tracksExpenses) keptMinor else totalMinor
+    val previousHeadlineMinor: Long? get() = previous?.let { if (tracksExpenses) it.incomeMinor - it.expenseMinor else it.incomeMinor }
 }
+
+data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OverviewViewModel(
@@ -63,13 +77,30 @@ class OverviewViewModel(
         val aligned = if (period is Period.Week) Period.Week.containing(period.start, settings.firstDayOfWeek) else period
         aligned to settings.currencyCode
     }.flatMapLatest { (period, currencyCode) ->
+        val comparison = Comparisons.of(period, today())
+        val previousFlow: Flow<PreviousTotals?> = if (comparison == null) {
+            flowOf(null)
+        } else {
+            combine(
+                incomeRepository.observeTotals(comparison.range),
+                expenseRepository.observeInRange(comparison.range),
+            ) { totals, expenses ->
+                val income = totals.sumOf { it.totalMinor }
+                val expense = expenses.sumOf { it.amountMinor }
+                // Only compare when the earlier period actually has data.
+                if (totals.isEmpty() && expenses.isEmpty()) null else PreviousTotals(income, expense)
+            }
+        }
         combine(
             incomeRepository.observeEntries(period.range),
             incomeRepository.observeTotals(period.range),
             expenseRepository.observeInRange(period.range),
             expenseRepository.observeAny(),
-        ) { entries, totals, expenses, anyExpense ->
+            previousFlow,
+        ) { entries, totals, expenses, anyExpense, previous ->
             OverviewUiState(
+                comparison = comparison,
+                previous = previous,
                 period = period,
                 today = today(),
                 currencyCode = currencyCode,

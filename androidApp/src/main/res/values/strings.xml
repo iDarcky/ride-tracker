@@ -212,4 +212,42 @@
     <string name="fuel_estimate">Fuel cost (estimated)</string>
     <string name="needs_two_readings">Add an odometer reading at the start and end of the period to see km driven.</string>
     <string name="vehicle_costs_by_category">Vehicle costs by category</string>
+
+    <!-- 0.0.8: hybrids -->
+    <string name="hybrid_engine">Engine</string>
+    <string name="plug_in">Plug-in (charges from a socket)</string>
+    <string name="fuel_hybrid_petrol">Petrol hybrid</string>
+    <string name="fuel_hybrid_diesel">Diesel hybrid</string>
+    <string name="fuel_plug_in_petrol">Plug-in hybrid (petrol)</string>
+    <string name="fuel_plug_in_diesel">Plug-in hybrid (diesel)</string>
+
+    <!-- 0.0.8: comparison with the previous period -->
+    <string name="compare_same_days_last_month">vs the same days last month</string>
+    <string name="compare_same_days_last_week">vs the same days last week</string>
+    <string name="compare_previous_month">vs the previous month</string>
+    <string name="compare_previous_week">vs the previous week</string>
+    <plurals name="compare_previous_days">
+        <item quantity="one">vs the previous day</item>
+        <item quantity="other">vs the previous %d days</item>
+    </plurals>
+    <!-- Day view compares with the same weekday last week; index 1 = Monday … 7 = Sunday. -->
+    <string name="compare_last_weekday_1">vs last Monday</string>
+    <string name="compare_last_weekday_2">vs last Tuesday</string>
+    <string name="compare_last_weekday_3">vs last Wednesday</string>
+    <string name="compare_last_weekday_4">vs last Thursday</string>
+    <string name="compare_last_weekday_5">vs last Friday</string>
+    <string name="compare_last_weekday_6">vs last Saturday</string>
+    <string name="compare_last_weekday_7">vs last Sunday</string>
+    <string name="change_up">Up</string>
+    <string name="change_down">Down</string>
+
+    <!-- 0.0.8: car silhouette -->
+    <string name="body_type">Body type</string>
+    <string name="car_colour">Car colour</string>
+    <string name="body_hatchback">Hatchback</string>
+    <string name="body_sedan">Sedan</string>
+    <string name="body_estate">Estate</string>
+    <string name="body_suv">SUV</string>
+    <string name="body_mpv">MPV</string>
+    <string name="body_van">Van</string>
 </resources>

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.8
+- **Comparison with the previous period** on Home, under money kept: month and week so far vs the same
+  days of the previous one, finished months/weeks vs the whole previous one, a day vs the same weekday
+  last week, custom ranges vs the same number of days before. Shown only when that period has data.
+- **Car silhouette**: choose body type (hatchback, sedan, estate, SUV, MPV, van) and colour; drawn offline.
+- **Hybrids**: petrol or diesel engine, plug-in or not.
+- **Undo** after deleting an odometer reading.
+- Lighter look: no grey behind the menu panel; Vehicle cards use the normal background with an outline.
+- Database version 4 and backup format 4 (vehicle body type and colour).
+
 ## 0.0.7
 - **Export to CSV** (Menu → Your data): this month, last month, this year, all time or a custom range.
   One file with income and expenses; international format (comma-separated, dot decimals, ISO dates),

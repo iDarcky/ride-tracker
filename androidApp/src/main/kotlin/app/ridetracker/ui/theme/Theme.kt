@@ -51,6 +51,13 @@ private val DarkColors = darkColorScheme(
     surfaceContainerHighest = Color(0xFF303538),
 )
 
+/**
+ * The design system's one custom colour: green for "money up" (Material 3 has no success role).
+ * Readable on surfaces and on the primary container in both themes.
+ */
+@Composable
+fun positiveColor(): Color = if (isSystemInDarkTheme()) Color(0xFF7EE2A8) else Color(0xFF146C3E)
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RideTrackerTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {

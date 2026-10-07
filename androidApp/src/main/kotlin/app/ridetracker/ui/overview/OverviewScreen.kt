@@ -15,12 +15,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
@@ -70,13 +73,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.shared.data.EntryWithPlatform
+import app.ridetracker.shared.domain.Comparison
+import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
@@ -96,8 +104,11 @@ import app.ridetracker.ui.common.resolveCurrency
 import app.ridetracker.ui.common.tabular
 import app.ridetracker.ui.common.pickerMillisToLocalDate
 import app.ridetracker.ui.common.toPickerMillis
+import app.ridetracker.ui.theme.positiveColor
 import kotlinx.coroutines.launch
+import kotlinx.datetime.isoDayNumber
 import java.text.NumberFormat
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -318,6 +329,11 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
                 style = MaterialTheme.typography.displayMedium.tabular(),
                 fontWeight = FontWeight.SemiBold,
             )
+            val previous = state.previousHeadlineMinor
+            val comparison = state.comparison
+            if (previous != null && comparison != null) {
+                ComparisonLine(state.headlineMinor, previous, comparison, money)
+            }
             Spacer(Modifier.height(4.dp))
             if (state.tracksExpenses) {
                 // Income minus expenses, spelled out so "money kept" is never a mystery number.
@@ -333,6 +349,60 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
             }
         }
     }
+}
+
+/** "▲ 12.4% (+RON 50.00) vs the same days last month": change in colour, comparison in plain text. */
+@Composable
+private fun ComparisonLine(current: Long, previous: Long, comparison: Comparison, money: MoneyFormat) {
+    val locale = currentLocale()
+    val diff = current - previous
+    val up = diff >= 0
+    val color = if (up) positiveColor() else MaterialTheme.colorScheme.error
+    val percent = Comparisons.percentChange(current, previous)?.let {
+        NumberFormat.getPercentInstance(locale).apply { maximumFractionDigits = 1 }.format(abs(it))
+    }
+    val amount = (if (up) "+" else "−") + money.format(abs(diff))
+    val change = if (percent != null) "$percent ($amount)" else amount
+    val label = comparisonLabel(comparison)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+        Icon(
+            if (up) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+            contentDescription = stringResource(if (up) R.string.change_up else R.string.change_down),
+            tint = color,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = color, fontWeight = FontWeight.Medium)) { append(change) }
+                append(" ")
+                append(label)
+            },
+            style = MaterialTheme.typography.bodyMedium.tabular(),
+        )
+    }
+}
+
+@Composable
+private fun comparisonLabel(comparison: Comparison): String = when (comparison) {
+    is Comparison.SameDaysPrevious -> stringResource(
+        if (comparison.type == PeriodType.MONTH) R.string.compare_same_days_last_month else R.string.compare_same_days_last_week,
+    )
+    is Comparison.WholePrevious -> stringResource(
+        if (comparison.type == PeriodType.MONTH) R.string.compare_previous_month else R.string.compare_previous_week,
+    )
+    is Comparison.SameWeekdayLastWeek -> stringResource(
+        when (comparison.range.start.dayOfWeek.isoDayNumber) {
+            1 -> R.string.compare_last_weekday_1
+            2 -> R.string.compare_last_weekday_2
+            3 -> R.string.compare_last_weekday_3
+            4 -> R.string.compare_last_weekday_4
+            5 -> R.string.compare_last_weekday_5
+            6 -> R.string.compare_last_weekday_6
+            else -> R.string.compare_last_weekday_7
+        },
+    )
+    is Comparison.PreviousDays -> pluralStringResource(R.plurals.compare_previous_days, comparison.days, comparison.days)
 }
 
 @Composable

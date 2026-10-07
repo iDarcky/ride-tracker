@@ -22,11 +22,12 @@ import kotlinx.coroutines.IO
         PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class,
         VehicleEntity::class, OdometerReadingEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // 0.0.6: expense table
         AutoMigration(from = 2, to = 3), // 0.0.7: vehicle and odometer tables
+        AutoMigration(from = 3, to = 4), // 0.0.8: vehicle body type and colour
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)

@@ -48,7 +48,7 @@ fun MenuScreen(
     onYourData: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surfaceContainer) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close)) }
@@ -96,8 +96,8 @@ private fun Group(entries: List<MenuEntry>) {
             SegmentedListItem(
                 onClick = entry.onClick,
                 shapes = ListItemDefaults.segmentedShapes(index = index, count = entries.size),
-                // Cards stand out from the tinted panel, like Google Health's account panel.
-                colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                // Faint blue cards on the normal background (no grey panel).
+                colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)),
                 leadingContent = { Icon(entry.icon, contentDescription = null) },
                 supportingContent = entry.summary?.let { { Text(it) } },
                 content = { Text(entry.title, style = MaterialTheme.typography.titleMedium) },

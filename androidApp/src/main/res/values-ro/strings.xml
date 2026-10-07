@@ -211,4 +211,42 @@
     <string name="fuel_estimate">Cost combustibil (estimat)</string>
     <string name="needs_two_readings">Adaugă o citire a kilometrajului la începutul și la sfârșitul perioadei ca să vezi km parcurși.</string>
     <string name="vehicle_costs_by_category">Costuri mașină pe categorii</string>
+
+    <!-- 0.0.8: hybrids -->
+    <string name="hybrid_engine">Motor</string>
+    <string name="plug_in">Plug-in (se încarcă din priză)</string>
+    <string name="fuel_hybrid_petrol">Hibrid benzină</string>
+    <string name="fuel_hybrid_diesel">Hibrid motorină</string>
+    <string name="fuel_plug_in_petrol">Hibrid plug-in (benzină)</string>
+    <string name="fuel_plug_in_diesel">Hibrid plug-in (motorină)</string>
+
+    <!-- 0.0.8: comparison with the previous period -->
+    <string name="compare_same_days_last_month">față de aceleași zile de luna trecută</string>
+    <string name="compare_same_days_last_week">față de aceleași zile de săptămâna trecută</string>
+    <string name="compare_previous_month">față de luna anterioară</string>
+    <string name="compare_previous_week">față de săptămâna anterioară</string>
+    <plurals name="compare_previous_days">
+        <item quantity="one">față de ziua anterioară</item>
+        <item quantity="few">față de cele %d zile anterioare</item>
+        <item quantity="other">față de cele %d de zile anterioare</item>
+    </plurals>
+    <string name="compare_last_weekday_1">față de lunea trecută</string>
+    <string name="compare_last_weekday_2">față de marțea trecută</string>
+    <string name="compare_last_weekday_3">față de miercurea trecută</string>
+    <string name="compare_last_weekday_4">față de joia trecută</string>
+    <string name="compare_last_weekday_5">față de vinerea trecută</string>
+    <string name="compare_last_weekday_6">față de sâmbăta trecută</string>
+    <string name="compare_last_weekday_7">față de duminica trecută</string>
+    <string name="change_up">Creștere</string>
+    <string name="change_down">Scădere</string>
+
+    <!-- 0.0.8: car silhouette -->
+    <string name="body_type">Caroserie</string>
+    <string name="car_colour">Culoarea mașinii</string>
+    <string name="body_hatchback">Hatchback</string>
+    <string name="body_sedan">Sedan</string>
+    <string name="body_estate">Break</string>
+    <string name="body_suv">SUV</string>
+    <string name="body_mpv">Monovolum</string>
+    <string name="body_van">Dubă</string>
 </resources>
