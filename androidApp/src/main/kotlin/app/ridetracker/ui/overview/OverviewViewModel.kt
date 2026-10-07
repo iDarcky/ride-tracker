@@ -11,7 +11,9 @@ import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseGroup
 import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.IncomeRepository
+import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Period
+import app.ridetracker.shared.domain.RecurringRepository
 import app.ridetracker.shared.domain.PeriodType
 import app.ridetracker.shared.domain.periodOf
 import app.ridetracker.shared.domain.type
@@ -65,6 +67,7 @@ data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
 class OverviewViewModel(
     private val incomeRepository: IncomeRepository,
     private val expenseRepository: ExpenseRepository,
+    private val recurringRepository: RecurringRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -121,6 +124,20 @@ class OverviewViewModel(
         SharingStarted.WhileSubscribed(5_000),
         OverviewUiState(period = selected.value, today = today(), currencyCode = null),
     )
+
+    /** Recurring expenses that are due and waiting for Add or Skip. */
+    val pending: StateFlow<List<PendingExpense>> = recurringRepository.observePending(today())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun accept(item: PendingExpense) {
+        viewModelScope.launch {
+            recurringRepository.accept(item.rule.id, item.dueDate, Clock.System.now().toEpochMilliseconds())
+        }
+    }
+
+    fun skip(item: PendingExpense) {
+        viewModelScope.launch { recurringRepository.skip(item.rule.id, item.dueDate) }
+    }
 
     fun selectType(type: PeriodType) {
         val current = uiState.value.period

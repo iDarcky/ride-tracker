@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.9
+- **Recurring expenses**: turn on "Repeat" when adding an expense (weekly, monthly or yearly, optional end
+  date). Nothing is added by itself: when one is due, Home shows it under **Needs attention** with
+  **Add** / **Skip**, and a notification with an **Add** button arrives once (daily check around 9:00,
+  on the phone, no server). Manage them under Money → Expenses → Recurring expenses.
+- Monthly dates on the 29th–31st fall on the last day of shorter months, then go back.
+- Car silhouettes removed (the vehicle card shows the car icon again).
+- Database version 5 and backup format 5 (recurring expenses).
+
 ## 0.0.8
 - **Comparison with the previous period** on Home, under money kept: month and week so far vs the same
   days of the previous one, finished months/weeks vs the whole previous one, a day vs the same weekday

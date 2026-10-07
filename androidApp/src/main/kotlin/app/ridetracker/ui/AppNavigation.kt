@@ -48,6 +48,8 @@ import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.LocalOpenMenu
 import app.ridetracker.ui.entry.EntryScreen
 import app.ridetracker.ui.expense.ExpenseScreen
+import app.ridetracker.ui.expense.RecurringEditScreen
+import app.ridetracker.ui.expense.RecurringListScreen
 import app.ridetracker.ui.money.MoneyScreen
 import app.ridetracker.ui.overview.OverviewScreen
 import app.ridetracker.ui.placeholder.ComingSoonScreen
@@ -96,6 +98,7 @@ fun AppNavigation() {
                         onEditIncome = { id -> nav.navigate("entry?id=$id") },
                         onAddExpense = { nav.navigate("expense") },
                         onEditExpense = { id -> nav.navigate("expense?id=$id") },
+                        onOpenRecurring = { nav.navigate("recurring") },
                     )
                 }
                 composable(Tab.VEHICLE.route) {
@@ -131,6 +134,12 @@ fun AppNavigation() {
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     ExpenseScreen(onDone = { nav.popBackStack() })
+                }
+                composable("recurring") {
+                    RecurringListScreen(onBack = { nav.popBackStack() }, onEdit = { id -> nav.navigate("recurring/$id") })
+                }
+                composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                    RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
             }

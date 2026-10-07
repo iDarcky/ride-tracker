@@ -7,6 +7,8 @@ import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseGroup
 import app.ridetracker.shared.domain.ExpenseRepository
+import app.ridetracker.shared.domain.Frequency
+import app.ridetracker.shared.domain.RecurringRepository
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.resolveCurrency
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,11 +34,16 @@ data class ExpenseUiState(
     val currency: Currency = resolveCurrency(null),
     val amountInvalid: Boolean = false,
     val done: Boolean = false,
+    /** New expenses only: also start a recurring series from this one. */
+    val repeat: Boolean = false,
+    val frequency: Frequency = Frequency.MONTHLY,
+    val endDate: LocalDate? = null,
 )
 
 class ExpenseViewModel(
     savedStateHandle: SavedStateHandle,
     private val expenseRepository: ExpenseRepository,
+    private val recurringRepository: RecurringRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -81,6 +88,9 @@ class ExpenseViewModel(
     fun setCategory(category: ExpenseCategory) = _state.update { it.copy(category = category, group = category.group) }
     fun setDate(date: LocalDate) = _state.update { it.copy(date = date) }
     fun setNote(note: String) = _state.update { it.copy(note = note) }
+    fun setRepeat(repeat: Boolean) = _state.update { it.copy(repeat = repeat) }
+    fun setFrequency(frequency: Frequency) = _state.update { it.copy(frequency = frequency) }
+    fun setEndDate(date: LocalDate?) = _state.update { it.copy(endDate = date) }
 
     fun save() {
         val s = _state.value
@@ -90,7 +100,11 @@ class ExpenseViewModel(
             return
         }
         viewModelScope.launch {
-            expenseRepository.save(expenseId, minor, s.date, s.category, s.note, Clock.System.now().toEpochMilliseconds())
+            val now = Clock.System.now().toEpochMilliseconds()
+            expenseRepository.save(expenseId, minor, s.date, s.category, s.note, now)
+            if (expenseId == null && s.repeat) {
+                recurringRepository.startFrom(s.date, minor, s.category, s.note, s.frequency, s.endDate, now)
+            }
             _state.update { it.copy(done = true) }
         }
     }

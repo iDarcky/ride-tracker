@@ -121,7 +121,7 @@ See the README for build, versioning and signing rules.
    month-to-date vs the same days last month; week-to-date vs the same days last week;
    day vs the **same weekday last week**; custom range vs the same number of days before it.
    Compares money kept (or income while no expenses exist), as % and amount.
-3. **Recurring expenses**: weekly / monthly / yearly, due day, optional end date. On the due date a
+3. ~~Recurring expenses~~ (done in 0.0.9): weekly / monthly / yearly, due day, optional end date. On the due date a
    local notification asks to add it ("Add" button); ignored ones wait on Home under "Needs attention".
    Notification permission is requested when the first recurring expense is created. No server.
 4. From the inspiration boards, before imports: **app filter chips on Home**, **daily activity chart**,

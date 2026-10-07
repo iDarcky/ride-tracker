@@ -56,6 +56,30 @@ data class ExpenseEntity(
     val createdAt: Long,
 )
 
+/**
+ * A repeating expense (leasing, accountant, insurance…). Nothing is added automatically:
+ * when [nextDueDate] arrives the app asks, then moves [nextDueDate] to the following occurrence.
+ */
+@Entity(tableName = "recurring_expense")
+data class RecurringExpenseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val amountMinor: Long,
+    /** [app.ridetracker.shared.domain.ExpenseCategory] id. */
+    val category: String,
+    val note: String? = null,
+    /** [app.ridetracker.shared.domain.Frequency] id. */
+    val frequency: String,
+    /** First occurrence (epoch days); every later date is computed from it. */
+    val anchorDate: Long,
+    /** The next occurrence not yet added or skipped (epoch days). */
+    val nextDueDate: Long,
+    /** Last occurrence allowed (epoch days); null = no end. */
+    val endDate: Long? = null,
+    /** The due date we last sent a notification for, so each one is notified once. */
+    val notifiedDueDate: Long? = null,
+    val createdAt: Long,
+)
+
 /** The driver's car (one for now; the model allows more later). */
 @Entity(tableName = "vehicle")
 data class VehicleEntity(
@@ -68,9 +92,9 @@ data class VehicleEntity(
     val consumptionCenti: Long? = null,
     /** Price per litre (or kWh) in minor units. Null if unknown. */
     val fuelPriceMinor: Long? = null,
-    /** [app.ridetracker.shared.domain.BodyType] id for the silhouette; added in database version 4. */
+    /** Unused: car silhouettes were tried in 0.0.8 and removed. Kept so database version 4 stays valid. */
     val bodyType: String? = null,
-    /** Car colour (ARGB) for the silhouette; added in database version 4. */
+    /** Unused, see [bodyType]. */
     val colorArgb: Long? = null,
 )
 

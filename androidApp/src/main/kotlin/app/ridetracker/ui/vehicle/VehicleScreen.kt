@@ -70,7 +70,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.shared.data.OdometerReadingEntity
-import app.ridetracker.shared.domain.BodyType
 import app.ridetracker.shared.domain.FuelType
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.ConfirmDialog
@@ -159,12 +158,8 @@ fun VehicleScreen(
                     shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
                 ) {
-                    CarSilhouette(
-                        BodyType.fromId(vehicle.bodyType),
-                        vehicle.colorArgb,
-                        Modifier.fillMaxWidth().height(110.dp).padding(top = 16.dp, start = 24.dp, end = 24.dp),
-                    )
                     ListItem(
+                        leadingContent = { ExpenseBadge(Icons.Outlined.DirectionsCar, size = 56.dp) },
                         headlineContent = { Text(vehicle.name, style = MaterialTheme.typography.titleLarge) },
                         supportingContent = {
                             val consumption = vehicle.consumptionCenti?.let {

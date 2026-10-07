@@ -1,5 +1,15 @@
 package app.ridetracker.ui.expense
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -74,7 +84,7 @@ import app.ridetracker.ui.common.toPickerMillis
 fun ExpenseScreen(
     onDone: () -> Unit,
     viewModel: ExpenseViewModel = viewModel {
-        ExpenseViewModel(createSavedStateHandle(), container.expenseRepository, container.settingsRepository)
+        ExpenseViewModel(createSavedStateHandle(), container.expenseRepository, container.recurringRepository, container.settingsRepository)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -84,6 +94,17 @@ fun ExpenseScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.done) { if (state.done) onDone() }
+
+    // Reminders for due recurring expenses need notification permission on Android 13+.
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val context = LocalContext.current
+    fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -124,37 +145,7 @@ fun ExpenseScreen(
                 keyboardActions = KeyboardActions(onDone = { viewModel.save() }),
             )
 
-            Text(stringResource(R.string.category), style = MaterialTheme.typography.titleSmall)
-            // Group: connected button group (M3 Expressive), then that group's categories as chips.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
-                val groups = ExpenseGroup.entries
-                groups.forEachIndexed { index, group ->
-                    ToggleButton(
-                        checked = state.group == group,
-                        onCheckedChange = { viewModel.setGroup(group) },
-                        modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
-                        shapes = when (index) {
-                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                            groups.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                        },
-                    ) {
-                        Icon(group.icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(group.label), maxLines = 1)
-                    }
-                }
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ExpenseCategory.inGroup(state.group).forEach { category ->
-                    FilterChip(
-                        selected = category == state.category,
-                        onClick = { viewModel.setCategory(category) },
-                        label = { Text(stringResource(category.label)) },
-                        leadingIcon = { Icon(category.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    )
-                }
-            }
+            CategoryPicker(state.group, state.category, viewModel::setGroup, viewModel::setCategory)
 
             Text(stringResource(R.string.date), style = MaterialTheme.typography.titleSmall)
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
@@ -170,6 +161,26 @@ fun ExpenseScreen(
                 label = { Text(stringResource(R.string.note_optional)) },
                 minLines = 2,
             )
+
+            // Repeat is offered when adding; existing series are edited under Money → Recurring expenses.
+            if (!state.isEdit) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Repeat, contentDescription = null)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.repeat), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = state.repeat,
+                        onCheckedChange = {
+                            viewModel.setRepeat(it)
+                            if (it) askNotificationPermission()
+                        },
+                    )
+                }
+                if (state.repeat) {
+                    FrequencyPicker(state.frequency, viewModel::setFrequency)
+                    EndsPicker(state.endDate, viewModel::setEndDate, earliest = state.date)
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
             Button(onClick = viewModel::save, enabled = !state.loading, modifier = Modifier.fillMaxWidth().height(56.dp)) {

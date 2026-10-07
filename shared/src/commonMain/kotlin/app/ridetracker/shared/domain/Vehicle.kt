@@ -34,21 +34,6 @@ enum class FuelType(val id: String) {
     }
 }
 
-/** Body shape, used for the car silhouette. [id] is stored: never rename. */
-enum class BodyType(val id: String) {
-    HATCHBACK("hatchback"),
-    SEDAN("sedan"),
-    ESTATE("estate"),
-    SUV("suv"),
-    MPV("mpv"),
-    VAN("van"),
-    ;
-
-    companion object {
-        fun fromId(id: String?): BodyType = entries.firstOrNull { it.id == id } ?: SEDAN
-    }
-}
-
 /** An odometer reading: the car showed [km] on [epochDay]. */
 data class OdometerPoint(val epochDay: Long, val km: Long)
 

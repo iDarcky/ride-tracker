@@ -9,7 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material3.ListItem
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -57,8 +62,11 @@ fun MoneyScreen(
     onEditIncome: (Long) -> Unit,
     onAddExpense: () -> Unit,
     onEditExpense: (Long) -> Unit,
+    onOpenRecurring: () -> Unit,
     viewModel: IncomeListViewModel = viewModel { IncomeListViewModel(container.incomeRepository, container.settingsRepository) },
-    expenseViewModel: ExpenseListViewModel = viewModel { ExpenseListViewModel(container.expenseRepository, container.settingsRepository) },
+    expenseViewModel: ExpenseListViewModel = viewModel {
+        ExpenseListViewModel(container.expenseRepository, container.recurringRepository, container.settingsRepository)
+    },
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
@@ -87,7 +95,7 @@ fun MoneyScreen(
     ) { padding ->
         when (tab) {
             0 -> IncomeList(viewModel, snackbar, onEditIncome, Modifier.padding(top = padding.calculateTopPadding()))
-            else -> ExpenseList(expenseViewModel, snackbar, onEditExpense, Modifier.padding(top = padding.calculateTopPadding()))
+            else -> ExpenseList(expenseViewModel, snackbar, onEditExpense, onOpenRecurring, Modifier.padding(top = padding.calculateTopPadding()))
         }
     }
 }
@@ -149,9 +157,11 @@ private fun ExpenseList(
     viewModel: ExpenseListViewModel,
     snackbar: SnackbarHostState,
     onEditExpense: (Long) -> Unit,
+    onOpenRecurring: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val recurringCount by viewModel.recurringCount.collectAsStateWithLifecycle()
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
@@ -159,20 +169,30 @@ private fun ExpenseList(
     val deletedMessage = stringResource(R.string.expense_deleted)
     val undoLabel = stringResource(R.string.undo)
 
-    if (!state.loading && state.days.isEmpty()) {
-        Text(
-            stringResource(R.string.no_expenses_yet),
-            modifier = modifier.fillMaxWidth().padding(32.dp),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = LocalBottomBarSpace.current + 96.dp),
     ) {
+        item(key = "recurring") {
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenRecurring),
+                leadingContent = { Icon(Icons.Filled.Repeat, contentDescription = null) },
+                headlineContent = { Text(stringResource(R.string.recurring_expenses)) },
+                supportingContent = { Text(pluralStringResource(R.plurals.recurring_count, recurringCount, recurringCount)) },
+                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+            )
+        }
+        if (!state.loading && state.days.isEmpty()) {
+            item {
+                Text(
+                    stringResource(R.string.no_expenses_yet),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         state.days.forEach { day ->
             item(key = "day-${day.date}") {
                 SectionHeader(dates.day(day.date), trailing = money.format(-day.totalMinor))

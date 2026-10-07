@@ -32,12 +32,14 @@ data class BackupFile(
     /** Added in format 3 (0.0.7). */
     val vehicles: List<BackupVehicle> = emptyList(),
     val odometerReadings: List<BackupOdometerReading> = emptyList(),
+    /** Added in format 5 (0.0.9). */
+    val recurringExpenses: List<BackupRecurringExpense> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
 
-        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). */
-        const val FORMAT_VERSION = 4
+        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9). */
+        const val FORMAT_VERSION = 5
     }
 }
 
@@ -104,6 +106,20 @@ data class BackupOdometerReading(
     val createdAtEpochMillis: Long,
 )
 
+@Serializable
+data class BackupRecurringExpense(
+    val id: Long,
+    val amountMinor: Long,
+    val category: String,
+    val note: String? = null,
+    val frequency: String,
+    /** ISO dates. */
+    val anchorDate: String,
+    val nextDueDate: String,
+    val endDate: String? = null,
+    val createdAtEpochMillis: Long,
+)
+
 /** Thrown when a file is not a backup from this app, or from a newer, unsupported format. */
 class InvalidBackupException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
@@ -160,6 +176,19 @@ class BackupService(
             odometerReadings = database.vehicleDao().getAllReadings().map {
                 BackupOdometerReading(it.id, it.vehicleId, LocalDate.fromEpochDays(it.date).toString(), it.km, it.createdAt)
             },
+            recurringExpenses = database.recurringExpenseDao().getAll().map {
+                BackupRecurringExpense(
+                    id = it.id,
+                    amountMinor = it.amountMinor,
+                    category = it.category,
+                    note = it.note,
+                    frequency = it.frequency,
+                    anchorDate = LocalDate.fromEpochDays(it.anchorDate).toString(),
+                    nextDueDate = LocalDate.fromEpochDays(it.nextDueDate).toString(),
+                    endDate = it.endDate?.let { d -> LocalDate.fromEpochDays(d).toString() },
+                    createdAtEpochMillis = it.createdAt,
+                )
+            },
         )
         return json.encodeToString(BackupFile.serializer(), file)
     }
@@ -209,8 +238,22 @@ class BackupService(
         val readings = file.odometerReadings.map {
             OdometerReadingEntity(it.id, it.vehicleId, LocalDate.parse(it.date).toEpochDays(), it.km, it.createdAtEpochMillis)
         }
+        val recurring = file.recurringExpenses.map {
+            RecurringExpenseEntity(
+                id = it.id,
+                amountMinor = it.amountMinor,
+                category = it.category,
+                note = it.note,
+                frequency = it.frequency,
+                anchorDate = LocalDate.parse(it.anchorDate).toEpochDays(),
+                nextDueDate = LocalDate.parse(it.nextDueDate).toEpochDays(),
+                endDate = it.endDate?.let { d -> LocalDate.parse(d).toEpochDays() },
+                createdAt = it.createdAtEpochMillis,
+            )
+        }
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.recurringExpenseDao().deleteAll()
                 database.vehicleDao().deleteAllReadings()
                 database.vehicleDao().deleteAll()
                 database.expenseDao().deleteAll()
@@ -221,6 +264,7 @@ class BackupService(
                 database.expenseDao().insertAll(expenses)
                 database.vehicleDao().insertAll(vehicles)
                 database.vehicleDao().insertReadings(readings)
+                database.recurringExpenseDao().insertAll(recurring)
             }
         }
         val s = file.settings
@@ -240,6 +284,7 @@ class BackupService(
     suspend fun eraseAll() {
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.recurringExpenseDao().deleteAll()
                 database.vehicleDao().deleteAllReadings()
                 database.vehicleDao().deleteAll()
                 database.expenseDao().deleteAll()

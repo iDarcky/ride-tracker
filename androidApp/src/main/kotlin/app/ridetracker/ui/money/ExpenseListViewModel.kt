@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.ExpenseEntity
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.ExpenseRepository
+import app.ridetracker.shared.domain.RecurringRepository
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,8 +25,13 @@ data class ExpenseListState(
 /** All expenses, newest first, grouped by day. */
 class ExpenseListViewModel(
     private val expenseRepository: ExpenseRepository,
+    recurringRepository: RecurringRepository,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
+
+    val recurringCount: StateFlow<Int> = recurringRepository.observeAll().map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
 
     val state: StateFlow<ExpenseListState> = combine(expenseRepository.observeAll(), settingsRepository.settings) { expenses, settings ->
         ExpenseListState(

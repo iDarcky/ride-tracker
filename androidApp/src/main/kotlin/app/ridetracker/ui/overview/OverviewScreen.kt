@@ -39,7 +39,9 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -84,6 +86,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.domain.Comparison
+import app.ridetracker.shared.domain.ExpenseCategory
+import app.ridetracker.shared.domain.Frequency
+import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.Period
@@ -104,6 +109,7 @@ import app.ridetracker.ui.common.resolveCurrency
 import app.ridetracker.ui.common.tabular
 import app.ridetracker.ui.common.pickerMillisToLocalDate
 import app.ridetracker.ui.common.toPickerMillis
+import app.ridetracker.ui.expense.frequencyName
 import app.ridetracker.ui.theme.positiveColor
 import kotlinx.coroutines.launch
 import kotlinx.datetime.isoDayNumber
@@ -116,10 +122,14 @@ fun OverviewScreen(
     onAddEntry: () -> Unit,
     onAddExpense: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
-        OverviewViewModel(container.incomeRepository, container.expenseRepository, container.settingsRepository)
+        OverviewViewModel(container.incomeRepository, container.expenseRepository, container.recurringRepository, container.settingsRepository)
     },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val pending by viewModel.pending.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val addedText = stringResource(R.string.expense_added)
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
@@ -132,6 +142,7 @@ fun OverviewScreen(
         floatingActionButton = {
             AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, Modifier.padding(bottom = LocalBottomBarSpace.current))
         },
+        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -140,6 +151,23 @@ fun OverviewScreen(
                 bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 96.dp,
             ),
         ) {
+            if (pending.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.needs_attention)) }
+                items(pending, key = { "due-${it.rule.id}-${it.dueDate}" }) { item ->
+                    DueExpenseCard(
+                        item = item,
+                        money = money,
+                        dates = dates,
+                        onAdd = {
+                            viewModel.accept(item)
+                            scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
+                        },
+                        onSkip = { viewModel.skip(item) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
+                    )
+                }
+                item { Spacer(Modifier.height(12.dp)) }
+            }
             item {
                 PeriodTypeSelector(
                     selected = state.period.type,
@@ -403,6 +431,37 @@ private fun comparisonLabel(comparison: Comparison): String = when (comparison) 
         },
     )
     is Comparison.PreviousDays -> pluralStringResource(R.plurals.compare_previous_days, comparison.days, comparison.days)
+}
+
+/** A due recurring expense: what, when, how much, and Add / Skip. */
+@Composable
+private fun DueExpenseCard(
+    item: PendingExpense,
+    money: MoneyFormat,
+    dates: DateFormats,
+    onAdd: () -> Unit,
+    onSkip: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val category = ExpenseCategory.fromId(item.rule.category)
+    OutlinedCard(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+        ListItem(
+            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+            leadingContent = { ExpenseBadge(category.icon) },
+            headlineContent = { Text(item.rule.note ?: stringResource(category.label)) },
+            supportingContent = {
+                Text(stringResource(R.string.due_on, dates.day(item.dueDate)) + " · " + frequencyName(Frequency.fromId(item.rule.frequency)))
+            },
+            trailingContent = { Text(money.format(-item.rule.amountMinor), style = MaterialTheme.typography.titleMedium.tabular()) },
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+        ) {
+            TextButton(onClick = onSkip) { Text(stringResource(R.string.skip)) }
+            FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.add)) }
+        }
+    }
 }
 
 @Composable

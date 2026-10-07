@@ -20,14 +20,15 @@ import kotlinx.coroutines.IO
 @Database(
     entities = [
         PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class,
-        VehicleEntity::class, OdometerReadingEntity::class,
+        VehicleEntity::class, OdometerReadingEntity::class, RecurringExpenseEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // 0.0.6: expense table
         AutoMigration(from = 2, to = 3), // 0.0.7: vehicle and odometer tables
         AutoMigration(from = 3, to = 4), // 0.0.8: vehicle body type and colour
+        AutoMigration(from = 4, to = 5), // 0.0.9: recurring expenses
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -36,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun incomeEntryDao(): IncomeEntryDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun vehicleDao(): VehicleDao
+    abstract fun recurringExpenseDao(): RecurringExpenseDao
 
     companion object {
         const val FILE_NAME = "ridetracker.db"

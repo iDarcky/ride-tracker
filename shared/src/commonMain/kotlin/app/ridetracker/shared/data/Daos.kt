@@ -171,3 +171,30 @@ interface VehicleDao {
     @Query("DELETE FROM odometer_reading")
     suspend fun deleteAllReadings()
 }
+
+@Dao
+interface RecurringExpenseDao {
+    @Query("SELECT * FROM recurring_expense ORDER BY nextDueDate ASC, id ASC")
+    fun observeAll(): Flow<List<RecurringExpenseEntity>>
+
+    @Query("SELECT * FROM recurring_expense ORDER BY id")
+    suspend fun getAll(): List<RecurringExpenseEntity>
+
+    @Query("SELECT * FROM recurring_expense WHERE id = :id")
+    suspend fun getById(id: Long): RecurringExpenseEntity?
+
+    @Insert
+    suspend fun insert(rule: RecurringExpenseEntity): Long
+
+    @Update
+    suspend fun update(rule: RecurringExpenseEntity)
+
+    @Query("DELETE FROM recurring_expense WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Insert
+    suspend fun insertAll(rules: List<RecurringExpenseEntity>)
+
+    @Query("DELETE FROM recurring_expense")
+    suspend fun deleteAll()
+}

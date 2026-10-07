@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Reminders when a recurring expense is due (asked when the first one is created). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".RideTrackerApplication"
         android:allowBackup="true"
@@ -18,6 +21,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- "Add" button on a due-expense notification. -->
+        <receiver
+            android:name=".notifications.AddDueExpenseReceiver"
+            android:exported="false" />
 
         <!-- Stores the in-app language choice on Android 12 and older (Android 13+ stores it itself). -->
         <service

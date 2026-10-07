@@ -241,13 +241,35 @@
     <string name="change_up">Up</string>
     <string name="change_down">Down</string>
 
-    <!-- 0.0.8: car silhouette -->
-    <string name="body_type">Body type</string>
-    <string name="car_colour">Car colour</string>
-    <string name="body_hatchback">Hatchback</string>
-    <string name="body_sedan">Sedan</string>
-    <string name="body_estate">Estate</string>
-    <string name="body_suv">SUV</string>
-    <string name="body_mpv">MPV</string>
-    <string name="body_van">Van</string>
+    <!-- 0.0.9: recurring expenses -->
+    <string name="repeat">Repeat</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="repeat_yearly">Yearly</string>
+    <string name="repeat_ends">Ends</string>
+    <string name="repeat_never">Never</string>
+    <string name="repeat_on_date">On a date…</string>
+    <string name="repeat_until">Until %1$s</string>
+    <string name="recurring_expenses">Recurring expenses</string>
+    <plurals name="recurring_count">
+        <item quantity="one">%d active</item>
+        <item quantity="other">%d active</item>
+    </plurals>
+    <string name="no_recurring">No recurring expenses yet. Turn on “Repeat” when you add an expense.</string>
+    <string name="next_due">Next: %1$s</string>
+    <string name="recurring_ended">Ended</string>
+    <string name="edit_recurring">Edit recurring expense</string>
+    <string name="delete_recurring">Stop recurring expense</string>
+    <string name="delete_recurring_title">Stop this recurring expense?</string>
+    <string name="delete_recurring_body">Expenses already added stay. You won’t be asked about future ones.</string>
+    <string name="next_due_date">Next due date</string>
+    <string name="needs_attention">Needs attention</string>
+    <string name="due_on">Due %1$s</string>
+    <string name="add">Add</string>
+    <string name="skip">Skip</string>
+    <string name="expense_added">Expense added</string>
+    <string name="notification_channel">Recurring expenses</string>
+    <string name="notification_channel_description">A reminder when a recurring expense is due</string>
+    <string name="notification_due_title">%1$s is due</string>
+    <string name="notification_due_body">%1$s · tap Add to log it</string>
 </resources>
