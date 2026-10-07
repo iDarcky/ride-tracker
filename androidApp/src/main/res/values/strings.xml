@@ -82,14 +82,12 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="first_day_of_week">First day of the week</string>
-    <string name="version">Version</string>
     <string name="local_first">Your data stays on this device.</string>
 
     <!-- Coming soon -->
     <string name="coming_soon">Coming soon</string>
     <string name="trips_coming_soon">Import your Uber and Bolt reports to see every trip here.</string>
     <string name="vehicle_coming_soon">Track your car, odometer and fuel cost per km.</string>
-    <string name="expenses_coming_soon">Log fuel, maintenance and other costs to see how much you keep.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Home</string>
@@ -99,7 +97,6 @@
     <string name="no_income_yet">No income yet.\nTap “Add income” to log your earnings.</string>
     <string name="section_app_settings">App settings</string>
     <string name="section_data">Your data</string>
-    <string name="section_about">About</string>
     <string name="not_set">Not set</string>
     <string name="driving_type">How you drive</string>
     <string name="welcome_driving_question">How do you drive?</string>
@@ -130,4 +127,34 @@
     <string name="your_data_summary">Back up, restore or erase</string>
     <string name="version_footer">Version %1$s</string>
     <string name="search_currency">Search currencies</string>
+
+    <!-- 0.0.6: expenses -->
+    <string name="add_expense">Add expense</string>
+    <string name="edit_expense">Edit expense</string>
+    <string name="delete_expense">Delete expense</string>
+    <string name="delete_expense_title">Delete this expense?</string>
+    <string name="expense_deleted">Expense deleted</string>
+    <string name="no_expenses_yet">No expenses yet.\nTap “Add expense” to log fuel, repairs and other costs.</string>
+    <string name="category">Category</string>
+    <string name="money_kept">Money kept</string>
+    <string name="expenses_by_group">Expenses by group</string>
+    <string name="group_vehicle">Vehicle</string>
+    <string name="group_business">Business</string>
+    <string name="group_other">Other</string>
+    <string name="cat_fuel">Fuel</string>
+    <string name="cat_charging">Charging</string>
+    <string name="cat_maintenance">Maintenance</string>
+    <string name="cat_repairs">Repairs</string>
+    <string name="cat_insurance">Insurance (RCA/CASCO)</string>
+    <string name="cat_inspection">Inspection (ITP)</string>
+    <string name="cat_road_tax">Road tax and tolls</string>
+    <string name="cat_parking">Parking</string>
+    <string name="cat_car_wash">Car wash</string>
+    <string name="cat_rent">Rent or lease</string>
+    <string name="cat_accountant">Accountant</string>
+    <string name="cat_bank_fees">Bank fees</string>
+    <string name="cat_phone">Phone and data</string>
+    <string name="cat_fleet_fees">Fleet partner fees</string>
+    <string name="cat_other_business">Other business costs</string>
+    <string name="cat_other">Other</string>
 </resources>

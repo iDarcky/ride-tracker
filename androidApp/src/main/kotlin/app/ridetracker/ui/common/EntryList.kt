@@ -72,6 +72,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.shared.data.EntryWithPlatform
+import app.ridetracker.shared.data.ExpenseEntity
+import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
@@ -105,6 +107,48 @@ fun EntryRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    SwipeToDeleteRow(
+        leading = { PlatformBadge(entry.platformName, entry.platformColorArgb) },
+        title = entry.platformName,
+        note = entry.note,
+        amount = money.format(entry.amountMinor),
+        onClick = onClick,
+        onDelete = onDelete,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ExpenseRow(
+    expense: ExpenseEntity,
+    money: MoneyFormat,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val category = ExpenseCategory.fromId(expense.category)
+    SwipeToDeleteRow(
+        leading = { ExpenseBadge(category.icon) },
+        title = stringResource(category.label),
+        note = expense.note,
+        amount = money.format(-expense.amountMinor),
+        onClick = onClick,
+        onDelete = onDelete,
+        modifier = modifier,
+    )
+}
+
+/** List row that deletes on swipe left (the screen shows an Undo snackbar). */
+@Composable
+fun SwipeToDeleteRow(
+    leading: @Composable () -> Unit,
+    title: String,
+    note: String?,
+    amount: String,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val dismissState = rememberSwipeToDismissBoxState()
     SwipeToDismissBox(
         state = dismissState,
@@ -123,10 +167,10 @@ fun EntryRow(
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-            leadingContent = { PlatformBadge(entry.platformName, entry.platformColorArgb) },
-            headlineContent = { Text(entry.platformName) },
-            supportingContent = entry.note?.let { note -> { Text(note, maxLines = 2) } },
-            trailingContent = { Text(money.format(entry.amountMinor), style = MaterialTheme.typography.titleMedium.tabular()) },
+            leadingContent = leading,
+            headlineContent = { Text(title) },
+            supportingContent = note?.let { { Text(it, maxLines = 2) } },
+            trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular()) },
         )
     }
 }

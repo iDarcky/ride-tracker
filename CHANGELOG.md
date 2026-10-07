@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.6
+- Expenses: add, edit and delete (swipe, with undo) in Money → Expenses. Three groups (Vehicle,
+  Business, Other) with categories such as fuel, repairs, insurance, ITP, accountant, bank fees.
+- Home shows **Money kept** (income − expenses) once you log an expense, plus expenses by group.
+- Home's add button is now a menu: Add income or Add expense.
+- Backups include expenses (backup format 2). Backups from 0.0.4–0.0.5 still restore.
+- First database migration (version 1 → 2), tested by upgrading 0.0.5 with data to 0.0.6.
+
 ## 0.0.5
 - Tabs reordered to Home, Money, Trips, Vehicle.
 - Top-right menu button opens a full-screen panel (Google Photos / Google Health style) with Apps,

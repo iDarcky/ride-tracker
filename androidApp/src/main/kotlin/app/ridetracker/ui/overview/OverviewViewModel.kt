@@ -2,10 +2,12 @@ package app.ridetracker.ui.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.DateRange
+import app.ridetracker.shared.domain.ExpenseCategory
+import app.ridetracker.shared.domain.ExpenseGroup
+import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
@@ -25,23 +27,30 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
-data class DayGroup(val date: LocalDate, val totalMinor: Long, val entries: List<EntryWithPlatform>)
+data class GroupTotal(val group: ExpenseGroup, val totalMinor: Long)
 
 data class OverviewUiState(
     val period: Period,
     val today: LocalDate,
     /** App currency code, or null for the device default. */
     val currencyCode: String?,
+    /** Income in the period. */
     val totalMinor: Long = 0,
     val totals: List<PlatformTotal> = emptyList(),
-    val days: List<DayGroup> = emptyList(),
     val entryCount: Int = 0,
+    val expenseMinor: Long = 0,
+    val expenseGroups: List<GroupTotal> = emptyList(),
+    /** Once any expense exists, Home shows "money kept" instead of "total income". */
+    val tracksExpenses: Boolean = false,
     val loading: Boolean = true,
-)
+) {
+    val keptMinor: Long get() = totalMinor - expenseMinor
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OverviewViewModel(
     private val incomeRepository: IncomeRepository,
+    private val expenseRepository: ExpenseRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -57,17 +66,22 @@ class OverviewViewModel(
         combine(
             incomeRepository.observeEntries(period.range),
             incomeRepository.observeTotals(period.range),
-        ) { entries, totals ->
+            expenseRepository.observeInRange(period.range),
+            expenseRepository.observeAny(),
+        ) { entries, totals, expenses, anyExpense ->
             OverviewUiState(
                 period = period,
                 today = today(),
                 currencyCode = currencyCode,
                 totalMinor = totals.sumOf { it.totalMinor },
                 totals = totals,
-                days = entries.groupBy { it.date }.map { (day, list) ->
-                    DayGroup(LocalDate.fromEpochDays(day), list.sumOf { it.amountMinor }, list)
-                },
                 entryCount = entries.size,
+                expenseMinor = expenses.sumOf { it.amountMinor },
+                expenseGroups = expenses
+                    .groupBy { ExpenseCategory.fromId(it.category).group }
+                    .map { (group, list) -> GroupTotal(group, list.sumOf { it.amountMinor }) }
+                    .sortedByDescending { it.totalMinor },
+                tracksExpenses = anyExpense,
                 loading = false,
             )
         }

@@ -1,5 +1,6 @@
 package app.ridetracker.ui.overview
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonGroupDefaults
@@ -30,7 +33,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
+import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -83,6 +88,9 @@ import app.ridetracker.ui.common.SectionHeader
 import app.ridetracker.ui.common.PlatformBadge
 import app.ridetracker.ui.common.container
 import app.ridetracker.ui.common.DateFormats
+import app.ridetracker.ui.common.ExpenseBadge
+import app.ridetracker.ui.common.icon
+import app.ridetracker.ui.common.label
 import app.ridetracker.ui.common.currentLocale
 import app.ridetracker.ui.common.resolveCurrency
 import app.ridetracker.ui.common.tabular
@@ -95,8 +103,9 @@ import java.text.NumberFormat
 @Composable
 fun OverviewScreen(
     onAddEntry: () -> Unit,
+    onAddExpense: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
-        OverviewViewModel(container.incomeRepository, container.settingsRepository)
+        OverviewViewModel(container.incomeRepository, container.expenseRepository, container.settingsRepository)
     },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,12 +119,7 @@ fun OverviewScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }, actions = { MenuButton() }) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddEntry,
-                modifier = Modifier.padding(bottom = LocalBottomBarSpace.current),
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.add_income)) },
-            )
+            AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, Modifier.padding(bottom = LocalBottomBarSpace.current))
         },
     ) { padding ->
         LazyColumn(
@@ -172,7 +176,30 @@ fun OverviewScreen(
                     )
                 }
             }
-            if (!state.loading && state.entryCount == 0) {
+            if (state.expenseGroups.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.expenses_by_group)) }
+                items(state.expenseGroups, key = { "group-${it.group}" }) { group ->
+                    val share = if (state.expenseMinor > 0) group.totalMinor.toFloat() / state.expenseMinor else 0f
+                    ListItem(
+                        leadingContent = { ExpenseBadge(group.group.icon) },
+                        headlineContent = { Text(stringResource(group.group.label)) },
+                        supportingContent = {
+                            LinearProgressIndicator(
+                                progress = { share },
+                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        },
+                        trailingContent = {
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(money.format(group.totalMinor), style = MaterialTheme.typography.titleMedium.tabular())
+                                Text(percent.format(share), style = MaterialTheme.typography.bodySmall)
+                            }
+                        },
+                    )
+                }
+            }
+            if (!state.loading && state.entryCount == 0 && state.expenseMinor == 0L) {
                 item {
                     Text(
                         stringResource(R.string.empty_period),
@@ -281,19 +308,38 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
     ) {
         // Hide the figures until real data arrives, so a placeholder "0" never flashes.
         Column(Modifier.padding(24.dp).alpha(if (state.loading) 0f else 1f)) {
-            Text(stringResource(R.string.total_income), style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(if (state.tracksExpenses) R.string.money_kept else R.string.total_income),
+                style = MaterialTheme.typography.labelLarge,
+            )
             Spacer(Modifier.height(4.dp))
             Text(
-                money.format(state.totalMinor),
+                money.format(if (state.tracksExpenses) state.keptMinor else state.totalMinor),
                 style = MaterialTheme.typography.displayMedium.tabular(),
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(4.dp))
-            Text(
-                pluralStringResource(R.plurals.entry_count, state.entryCount, state.entryCount),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            if (state.tracksExpenses) {
+                // Income minus expenses, spelled out so "money kept" is never a mystery number.
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Figure(stringResource(R.string.income), money.format(state.totalMinor))
+                    Figure(stringResource(R.string.nav_expenses), money.format(-state.expenseMinor))
+                }
+            } else {
+                Text(
+                    pluralStringResource(R.plurals.entry_count, state.entryCount, state.entryCount),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun Figure(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.bodySmall)
+        Text(value, style = MaterialTheme.typography.titleMedium.tabular())
     }
 }
 
@@ -319,5 +365,42 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     ) {
         DateRangePicker(state = pickerState, modifier = Modifier.weight(1f))
+    }
+}
+
+/** M3 Expressive FAB menu: one button, two actions (add income, add expense). */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, modifier: Modifier = Modifier) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = expanded) { expanded = false }
+    FloatingActionButtonMenu(
+        expanded = expanded,
+        modifier = modifier,
+        button = {
+            ToggleFloatingActionButton(checked = expanded, onCheckedChange = { expanded = it }) {
+                Icon(
+                    if (expanded) Icons.Filled.Close else Icons.Filled.Add,
+                    contentDescription = stringResource(if (expanded) R.string.close else R.string.add_income),
+                )
+            }
+        },
+    ) {
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onAddExpense()
+            },
+            icon = { Icon(Icons.Filled.Remove, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_expense)) },
+        )
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onAddIncome()
+            },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_income)) },
+        )
     }
 }

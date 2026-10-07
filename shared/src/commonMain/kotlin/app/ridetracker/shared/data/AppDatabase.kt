@@ -1,5 +1,6 @@
 package app.ridetracker.shared.data
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -17,14 +18,18 @@ import kotlinx.coroutines.IO
  * AutoMigration or a manual Migration so installs over the previous app keep all data.
  */
 @Database(
-    entities = [PlatformEntity::class, IncomeEntryEntity::class],
-    version = 1,
+    entities = [PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class],
+    version = 2,
     exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), // 0.0.6: expense table
+    ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun platformDao(): PlatformDao
     abstract fun incomeEntryDao(): IncomeEntryDao
+    abstract fun expenseDao(): ExpenseDao
 
     companion object {
         const val FILE_NAME = "ridetracker.db"

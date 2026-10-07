@@ -26,5 +26,20 @@ class BackupFormatTest {
         assertEquals("RO", file.settings.country)
         assertEquals(12050, file.entries.single().amountMinor)
         assertEquals("2026-10-07", file.entries.single().date)
+        assertEquals(emptyList(), file.expenses) // format 1 has no expenses
+    }
+
+    @Test
+    fun readsVersion2BackupWithExpenses() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 2, "appVersion": "0.0.6",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "expenses": [ { "id": 3, "amountMinor": 25000, "date": "2026-10-08", "category": "fuel", "createdAtEpochMillis": 2 } ]
+            }
+        """.trimIndent()
+        val expense = json.decodeFromString(BackupFile.serializer(), text).expenses.single()
+        assertEquals("fuel", expense.category)
+        assertEquals(25000, expense.amountMinor)
     }
 }

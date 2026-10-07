@@ -27,10 +27,14 @@ data class BackupFile(
     val settings: BackupSettings,
     val platforms: List<BackupPlatform>,
     @SerialName("incomeEntries") val entries: List<BackupIncomeEntry>,
+    /** Added in format 2 (0.0.6); empty when restoring a format-1 backup. */
+    val expenses: List<BackupExpense> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
-        const val FORMAT_VERSION = 1
+
+        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). */
+        const val FORMAT_VERSION = 2
     }
 }
 
@@ -63,10 +67,22 @@ data class BackupIncomeEntry(
     val createdAtEpochMillis: Long,
 )
 
+@Serializable
+data class BackupExpense(
+    val id: Long,
+    val amountMinor: Long,
+    /** ISO date, e.g. 2026-10-07. */
+    val date: String,
+    /** Category id, e.g. "fuel". */
+    val category: String,
+    val note: String? = null,
+    val createdAtEpochMillis: Long,
+)
+
 /** Thrown when a file is not a backup from this app, or from a newer, unsupported format. */
 class InvalidBackupException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
-data class BackupSummary(val platforms: Int, val entries: Int)
+data class BackupSummary(val platforms: Int, val entries: Int, val expenses: Int)
 
 class BackupService(
     private val database: AppDatabase,
@@ -99,6 +115,16 @@ class BackupService(
                     platformId = it.platformId,
                     amountMinor = it.amountMinor,
                     date = LocalDate.fromEpochDays(it.date).toString(),
+                    note = it.note,
+                    createdAtEpochMillis = it.createdAt,
+                )
+            },
+            expenses = database.expenseDao().getAll().map {
+                BackupExpense(
+                    id = it.id,
+                    amountMinor = it.amountMinor,
+                    date = LocalDate.fromEpochDays(it.date).toString(),
+                    category = it.category,
                     note = it.note,
                     createdAtEpochMillis = it.createdAt,
                 )
@@ -136,12 +162,24 @@ class BackupService(
             )
         }
         val platforms = file.platforms.map { PlatformEntity(it.id, it.name, it.colorArgb, it.sortOrder, it.archived) }
+        val expenses = file.expenses.map {
+            ExpenseEntity(
+                id = it.id,
+                amountMinor = it.amountMinor,
+                date = LocalDate.parse(it.date).toEpochDays(),
+                category = it.category,
+                note = it.note,
+                createdAt = it.createdAtEpochMillis,
+            )
+        }
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.expenseDao().deleteAll()
                 database.incomeEntryDao().deleteAll()
                 database.platformDao().deleteAll()
                 database.platformDao().insertAll(platforms)
                 database.incomeEntryDao().insertAll(entries)
+                database.expenseDao().insertAll(expenses)
             }
         }
         val s = file.settings
@@ -154,13 +192,14 @@ class BackupService(
                 drivingType = DrivingType.fromId(s.drivingType),
             ),
         )
-        return BackupSummary(platforms.size, entries.size)
+        return BackupSummary(platforms.size, entries.size, expenses.size)
     }
 
     /** Deletes all entries, apps and settings; the default apps come back and onboarding restarts. */
     suspend fun eraseAll() {
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
+                database.expenseDao().deleteAll()
                 database.incomeEntryDao().deleteAll()
                 database.platformDao().deleteAll()
                 database.platformDao().insertAll(defaultPlatforms)

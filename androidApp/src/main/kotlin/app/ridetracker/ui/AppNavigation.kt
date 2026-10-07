@@ -47,6 +47,7 @@ import app.ridetracker.R
 import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.LocalOpenMenu
 import app.ridetracker.ui.entry.EntryScreen
+import app.ridetracker.ui.expense.ExpenseScreen
 import app.ridetracker.ui.money.MoneyScreen
 import app.ridetracker.ui.overview.OverviewScreen
 import app.ridetracker.ui.placeholder.ComingSoonScreen
@@ -82,7 +83,7 @@ fun AppNavigation() {
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
             NavHost(navController = nav, startDestination = Tab.HOME.route) {
-                composable(Tab.HOME.route) { OverviewScreen(onAddEntry = { nav.navigate("entry") }) }
+                composable(Tab.HOME.route) { OverviewScreen(onAddEntry = { nav.navigate("entry") }, onAddExpense = { nav.navigate("expense") }) }
                 composable(Tab.TRIPS.route) {
                     ComingSoonScreen(R.string.nav_trips, Icons.Outlined.Route, R.string.trips_coming_soon)
                 }
@@ -90,6 +91,8 @@ fun AppNavigation() {
                     MoneyScreen(
                         onAddIncome = { nav.navigate("entry") },
                         onEditIncome = { id -> nav.navigate("entry?id=$id") },
+                        onAddExpense = { nav.navigate("expense") },
+                        onEditExpense = { id -> nav.navigate("expense?id=$id") },
                     )
                 }
                 composable(Tab.VEHICLE.route) {
@@ -117,6 +120,12 @@ fun AppNavigation() {
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     EntryScreen(onDone = { nav.popBackStack() }, onManagePlatforms = { nav.navigate("platforms") })
+                }
+                composable(
+                    "expense?id={id}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
+                ) {
+                    ExpenseScreen(onDone = { nav.popBackStack() })
                 }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
             }

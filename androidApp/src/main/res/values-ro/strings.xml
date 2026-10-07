@@ -81,14 +81,12 @@
     <string name="theme_light">Luminoasă</string>
     <string name="theme_dark">Întunecată</string>
     <string name="first_day_of_week">Prima zi a săptămânii</string>
-    <string name="version">Versiune</string>
     <string name="local_first">Datele tale rămân pe acest dispozitiv.</string>
 
     <!-- Coming soon -->
     <string name="coming_soon">În curând</string>
     <string name="trips_coming_soon">Importă rapoartele Uber și Bolt ca să vezi aici fiecare cursă.</string>
     <string name="vehicle_coming_soon">Urmărește mașina, kilometrajul și costul combustibilului pe km.</string>
-    <string name="expenses_coming_soon">Notează combustibilul, întreținerea și alte costuri ca să vezi cât îți rămâne.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Acasă</string>
@@ -98,7 +96,6 @@
     <string name="no_income_yet">Niciun venit încă.\nApasă „Adaugă venit” ca să-l înregistrezi.</string>
     <string name="section_app_settings">Setările aplicației</string>
     <string name="section_data">Datele tale</string>
-    <string name="section_about">Despre</string>
     <string name="not_set">Nesetat</string>
     <string name="driving_type">Cum lucrezi</string>
     <string name="welcome_driving_question">Cum lucrezi?</string>
@@ -129,4 +126,34 @@
     <string name="your_data_summary">Copie de rezervă, restaurare sau ștergere</string>
     <string name="version_footer">Versiunea %1$s</string>
     <string name="search_currency">Caută o monedă</string>
+
+    <!-- 0.0.6: expenses -->
+    <string name="add_expense">Adaugă cheltuială</string>
+    <string name="edit_expense">Editează cheltuiala</string>
+    <string name="delete_expense">Șterge cheltuiala</string>
+    <string name="delete_expense_title">Ștergi această cheltuială?</string>
+    <string name="expense_deleted">Cheltuială ștearsă</string>
+    <string name="no_expenses_yet">Nicio cheltuială încă.\nApasă „Adaugă cheltuială” ca să notezi combustibil, reparații și alte costuri.</string>
+    <string name="category">Categorie</string>
+    <string name="money_kept">Bani rămași</string>
+    <string name="expenses_by_group">Cheltuieli pe grupe</string>
+    <string name="group_vehicle">Mașină</string>
+    <string name="group_business">Afacere</string>
+    <string name="group_other">Altele</string>
+    <string name="cat_fuel">Combustibil</string>
+    <string name="cat_charging">Încărcare electrică</string>
+    <string name="cat_maintenance">Întreținere</string>
+    <string name="cat_repairs">Reparații</string>
+    <string name="cat_insurance">Asigurare (RCA/CASCO)</string>
+    <string name="cat_inspection">ITP</string>
+    <string name="cat_road_tax">Rovinietă și taxe de drum</string>
+    <string name="cat_parking">Parcare</string>
+    <string name="cat_car_wash">Spălătorie</string>
+    <string name="cat_rent">Chirie sau leasing</string>
+    <string name="cat_accountant">Contabil</string>
+    <string name="cat_bank_fees">Comisioane bancare</string>
+    <string name="cat_phone">Telefon și internet</string>
+    <string name="cat_fleet_fees">Comision partener de flotă</string>
+    <string name="cat_other_business">Alte costuri de afaceri</string>
+    <string name="cat_other">Altele</string>
 </resources>

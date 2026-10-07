@@ -47,7 +47,7 @@ technically "ride-hailing". Inside the app the word is rarely needed: "apps", "U
 
 | Phase | Contents |
 | --- | --- |
-| **v0** (now) | Income entry per app per day, expenses, money kept summary, day/week/month/custom periods, backup and restore, CSV export, erase all data, Romanian and English, light and dark, country and PFA/fleet onboarding |
+| **v0** (now; income, expenses, money kept, backup done) | Income entry per app per day, expenses, money kept summary, day/week/month/custom periods, backup and restore, CSV export, erase all data, Romanian and English, light and dark, country and PFA/fleet onboarding |
 | **v0.5** | Cash collected per app, PFA/Fleet onboarding, vehicle (consumption, fuel price, estimated fuel cost), optional import of the Uber payments file and the Bolt monthly summary |
 | **v1** (PFA, Romania) | Tax estimate (income tax, CAS, CASS) with editable thresholds; Z-report capture with month-end cash match; fuel receipt capture with CUI check |
 | **Later** | Uber/Bolt API connections where possible, trips viewer, insights, other country packs, iPhone app |

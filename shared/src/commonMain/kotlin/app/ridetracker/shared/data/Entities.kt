@@ -42,6 +42,20 @@ data class IncomeEntryEntity(
     @ColumnInfo(defaultValue = "0") val createdAt: Long,
 )
 
+/** Money spent: fuel, repairs, accountant… [category] is an [app.ridetracker.shared.domain.ExpenseCategory] id. */
+@Entity(tableName = "expense", indices = [Index("date")])
+data class ExpenseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Amount in minor units of the app currency. Never a float. */
+    val amountMinor: Long,
+    /** Day of the expense, as epoch days. */
+    val date: Long,
+    val category: String,
+    val note: String? = null,
+    /** Creation instant in epoch milliseconds. */
+    val createdAt: Long,
+)
+
 /** An income entry joined with its platform, for lists. */
 data class EntryWithPlatform(
     val id: Long,

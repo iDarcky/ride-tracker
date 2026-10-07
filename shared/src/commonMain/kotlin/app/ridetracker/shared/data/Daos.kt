@@ -85,3 +85,36 @@ interface IncomeEntryDao {
     @Query("DELETE FROM income_entry")
     suspend fun deleteAll()
 }
+
+@Dao
+interface ExpenseDao {
+    @Query("SELECT * FROM expense WHERE date BETWEEN :startEpochDay AND :endEpochDay ORDER BY date DESC, createdAt DESC")
+    fun observeInRange(startEpochDay: Long, endEpochDay: Long): Flow<List<ExpenseEntity>>
+
+    @Query("SELECT * FROM expense ORDER BY date DESC, createdAt DESC")
+    fun observeAll(): Flow<List<ExpenseEntity>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM expense)")
+    fun observeAny(): Flow<Boolean>
+
+    @Query("SELECT * FROM expense WHERE id = :id")
+    suspend fun getById(id: Long): ExpenseEntity?
+
+    @Insert
+    suspend fun insert(expense: ExpenseEntity): Long
+
+    @Update
+    suspend fun update(expense: ExpenseEntity)
+
+    @Query("DELETE FROM expense WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM expense ORDER BY id")
+    suspend fun getAll(): List<ExpenseEntity>
+
+    @Insert
+    suspend fun insertAll(expenses: List<ExpenseEntity>)
+
+    @Query("DELETE FROM expense")
+    suspend fun deleteAll()
+}
