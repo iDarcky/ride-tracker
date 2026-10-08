@@ -245,6 +245,15 @@ interface ImportDao {
     )
     suspend fun getTripFaresByDay(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<DayTotal>
 
+    /** Removes older online-time totals for the same period, so a newer screenshot replaces them. */
+    @Query(
+        """
+        DELETE FROM period_summary WHERE platformId = :platformId AND periodStart = :startEpochDay AND periodEnd = :endEpochDay
+        AND onlineMinutes IS NOT NULL AND earningsMinor IS NULL AND grossFareMinor IS NULL
+        """,
+    )
+    suspend fun deleteOnlineTime(platformId: Long, startEpochDay: Long, endEpochDay: Long)
+
     @Query("SELECT * FROM period_summary WHERE platformId = :platformId AND periodStart = :startEpochDay AND periodEnd = :endEpochDay")
     suspend fun getSummaries(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<PeriodSummaryEntity>
 

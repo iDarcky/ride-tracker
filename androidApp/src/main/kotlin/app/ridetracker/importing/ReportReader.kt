@@ -8,7 +8,10 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.graphics.createBitmap
+import app.ridetracker.shared.domain.importing.BoltActivityParser
 import app.ridetracker.shared.domain.importing.BoltDailyParser
+import app.ridetracker.shared.domain.importing.OnlineTime
+import app.ridetracker.shared.domain.importing.TextBox
 import app.ridetracker.shared.domain.importing.BoltMonthlySummaryParser
 import app.ridetracker.shared.domain.importing.BoltRiderInvoicesParser
 import app.ridetracker.shared.domain.importing.DailyParseResult
@@ -40,6 +43,9 @@ sealed interface ReadReport {
     data class BoltDay(override val fileHash: String, val day: ParsedDay) : ReadReport
     data class BoltTrips(override val fileHash: String, val trips: List<ParsedTrip>) : ReadReport
     data class BoltMonth(override val fileHash: String, val summary: ParsedSummary) : ReadReport
+
+    /** Bolt's Activity screen: online time for a month, or a week and a day. */
+    data class BoltActivity(override val fileHash: String, val times: List<OnlineTime>) : ReadReport
 
     /** A Bolt breakdown on the Weekly or Monthly tab: Bolt's totals for that period. */
     data class BoltPeriod(override val fileHash: String, val summary: ParsedSummary, val monthly: Boolean, val addsUp: Boolean) : ReadReport
@@ -80,11 +86,21 @@ class ReportReader(private val context: Context) {
             (size > 12 && startsWith("RIFF") && this[8] == 'W'.code.toByte())
 
     private suspend fun readScreenshot(uri: Uri, hash: String): ReadReport {
-        val rows = rows(recognize(InputImage.fromFilePath(context, uri)))
-        return when (val result = BoltDailyParser.parse(rows, takenOn(uri))) {
+        val image = InputImage.fromFilePath(context, uri)
+        val text = recognize(image)
+        val reference = takenOn(uri)
+        return when (val result = BoltDailyParser.parse(rows(text), reference)) {
             is DailyParseResult.Day -> ReadReport.BoltDay(hash, result.day)
             is DailyParseResult.Period -> ReadReport.BoltPeriod(hash, result.summary, result.monthly, result.addsUp)
-            DailyParseResult.NotRecognised -> ReadReport.Unknown(hash)
+            DailyParseResult.NotRecognised -> {
+                // Not an earnings breakdown: maybe the Activity screen, read from word positions.
+                val words = text.textBlocks.flatMap { it.lines }.flatMap { it.elements }.mapNotNull { e ->
+                    e.boundingBox?.let { TextBox(e.text, it.left, it.top, it.right, it.bottom) }
+                }
+                BoltActivityParser.parse(words, image.width, reference)?.takeIf { it.isNotEmpty() }
+                    ?.let { ReadReport.BoltActivity(hash, it) }
+                    ?: ReadReport.Unknown(hash)
+            }
         }
     }
 

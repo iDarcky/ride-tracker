@@ -136,6 +136,31 @@ class HomeStatsTest {
     }
 
     @Test
+    fun onlineHoursFromThePlatformsActivityTotals() {
+        val september = DateRange(LocalDate(2026, 9, 1), LocalDate(2026, 9, 30))
+        fun hours(start: LocalDate, end: LocalDate, minutes: Int, id: Long = 0) = app.ridetracker.shared.data.PeriodSummaryEntity(
+            id = id, platformId = 2, importBatchId = 1, periodStart = start.toEpochDays(), periodEnd = end.toEpochDays(), onlineMinutes = minutes,
+        )
+        val entries = listOf(
+            IncomeEntryEntity(id = 1, platformId = 2, amountMinor = 60000, date = LocalDate(2026, 9, 10).toEpochDays(), createdAt = 0),
+            IncomeEntryEntity(id = 2, platformId = 2, amountMinor = 30000, date = LocalDate(2026, 9, 11).toEpochDays(), createdAt = 0),
+        )
+        // Whole month: the month's total; an older import of the same month is replaced by the newer one.
+        val month = HomeStatsCalculator.compute(
+            september, entries, emptyList(), emptyList(),
+            listOf(hours(september.start, september.endInclusive, 500, id = 1), hours(september.start, september.endInclusive, 600, id = 2)),
+        )
+        assertEquals(600, month.onlineMinutes)
+        assertEquals(9000, month.perHourMinor) // 900.00 over 10 h
+        assertEquals(setOf(2L), month.hourPlatformIds)
+        // A week: only the day it has, with that day's income.
+        val week = DateRange(LocalDate(2026, 9, 7), LocalDate(2026, 9, 13))
+        val days = HomeStatsCalculator.compute(week, entries, emptyList(), emptyList(), listOf(hours(LocalDate(2026, 9, 10), LocalDate(2026, 9, 10), 240)))
+        assertEquals(240, days.onlineMinutes)
+        assertEquals(15000, days.perHourMinor) // 600.00 over 4 h; the 11th has no hours
+    }
+
+    @Test
     fun longRangesSkipTheDailyChart() {
         val year = DateRange(LocalDate(2026, 1, 1), LocalDate(2026, 12, 31))
         assertEquals(0, HomeStatsCalculator.compute(year, emptyList(), emptyList(), emptyList()).days.size)

@@ -217,7 +217,7 @@ private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, o
             val report = item.report
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val isBolt = report is ReadReport.BoltDay || report is ReadReport.BoltTrips || report is ReadReport.BoltMonth ||
-                    report is ReadReport.BoltPeriod
+                    report is ReadReport.BoltPeriod || report is ReadReport.BoltActivity
                 if (isBolt) {
                     PlatformBadge("Bolt", BOLT_COLOR, size = 32.dp)
                 } else {
@@ -240,7 +240,7 @@ private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, o
                 item.failed -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_failed), warning = true)
                 report == null -> LinearProgressIndicator(Modifier.fillMaxWidth())
                 item.alreadyImported -> Note(Icons.Outlined.Info, stringResource(R.string.import_already))
-                else -> Details(report, item.replaces, money)
+                else -> Details(report, item.replaces, money, dates)
             }
         }
     }
@@ -251,6 +251,7 @@ private fun title(report: ReadReport?, failed: Boolean): String = when {
     failed -> stringResource(R.string.import_unknown_file)
     report == null -> stringResource(R.string.import_reading)
     report is ReadReport.BoltPeriod -> stringResource(if (report.monthly) R.string.import_bolt_month_screen else R.string.import_bolt_week)
+    report is ReadReport.BoltActivity -> stringResource(R.string.import_bolt_activity)
     report is ReadReport.BoltDay -> stringResource(R.string.import_bolt_day)
     report is ReadReport.BoltTrips -> stringResource(R.string.import_bolt_invoices)
     report is ReadReport.BoltMonth -> stringResource(R.string.import_bolt_month)
@@ -262,11 +263,12 @@ private fun subtitle(report: ReadReport?, dates: DateFormats): String? = when (r
     is ReadReport.BoltTrips -> dates.range(DateRange(report.trips.minOf { it.date }, report.trips.maxOf { it.date }))
     is ReadReport.BoltMonth -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
     is ReadReport.BoltPeriod -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
+    is ReadReport.BoltActivity -> null
     else -> null
 }
 
 @Composable
-private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat) {
+private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat, dates: DateFormats) {
     when (report) {
         is ReadReport.BoltDay -> {
             val day = report.day
@@ -300,6 +302,13 @@ private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat) {
             s.platformFeeMinor?.let { Figure(stringResource(R.string.line_commission), money.format(it)) }
             s.distanceMeters?.let { Figure(stringResource(R.string.import_distance), stringResource(R.string.km_value, "%.1f".format(currentLocale(), it / 1000.0))) }
             Note(Icons.Outlined.Info, stringResource(R.string.import_summary_not_income))
+        }
+        is ReadReport.BoltActivity -> {
+            report.times.forEach { t ->
+                val label = if (t.range.start == t.range.endInclusive) dates.day(t.range.start) else dates.range(t.range)
+                Figure(label, stringResource(R.string.hours_minutes, t.minutes / 60, t.minutes % 60))
+            }
+            Note(Icons.Outlined.Info, stringResource(R.string.import_activity_note))
         }
         is ReadReport.BoltPeriod -> {
             val s = report.summary

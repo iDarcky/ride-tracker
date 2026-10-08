@@ -10,6 +10,7 @@ import app.ridetracker.shared.data.PeriodSummaryEntity
 import app.ridetracker.shared.data.TripEntity
 import app.ridetracker.shared.data.TripWithPlatform
 import app.ridetracker.shared.domain.importing.BoltDailyParser
+import app.ridetracker.shared.domain.importing.OnlineTime
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
@@ -119,6 +120,33 @@ class ImportRepository(private val database: AppDatabase) {
             },
         )
         ImportOutcome.Saved(batchId, saved = fresh.size, skipped = trips.size - fresh.size)
+    }
+
+    /** Saves online time from the platform's Activity screen; a newer screenshot of the same period replaces the older. */
+    suspend fun saveOnlineTimes(
+        platformId: Long,
+        kind: ImportKind,
+        fileHash: String,
+        times: List<OnlineTime>,
+        nowEpochMillis: Long,
+    ): ImportOutcome = transaction {
+        if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
+        val batchId = imports.insertBatch(
+            ImportBatchEntity(
+                platformId = platformId, kind = kind.id, fileHash = fileHash,
+                periodStart = times.minOf { it.range.start }.toEpochDays(), periodEnd = times.maxOf { it.range.endInclusive }.toEpochDays(),
+                itemCount = times.size, importedAt = nowEpochMillis,
+            ),
+        )
+        times.forEach { t ->
+            val start = t.range.start.toEpochDays()
+            val end = t.range.endInclusive.toEpochDays()
+            imports.deleteOnlineTime(platformId, start, end)
+            imports.insertSummaries(
+                listOf(PeriodSummaryEntity(platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = t.minutes)),
+            )
+        }
+        ImportOutcome.Saved(batchId, saved = times.size, skipped = 0)
     }
 
     /** Saves a platform's own totals for a period (used to check the daily entries, not counted as income). */

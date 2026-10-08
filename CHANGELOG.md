@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1
+- **Bolt online hours** from the Activity screen (Online hours tab): "Last 3 months" with a month tapped gives
+  that month's hours; a week tab gives the week's hours and the tapped day's. Home shows hours online and how
+  much you make per hour for those periods. A newer screenshot of the same period replaces the older one.
+
 ## 0.5.0
 - **Income from Bolt's monthly totals and trips, without counting twice.** Days with a daily screenshot (or typed
   in) stay exact. The rest of the month is filled in, best source first: Bolt's monthly breakdown screenshot

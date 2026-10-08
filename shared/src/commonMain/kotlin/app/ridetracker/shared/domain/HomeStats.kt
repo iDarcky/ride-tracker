@@ -118,7 +118,33 @@ object HomeStatsCalculator {
         fares += entries.filter { it.platformId !in covered && linesByEntry[it.id].isNullOrEmpty() }.sumOf { it.amountMinor }
 
         val timed = entries.filter { (it.onlineMinutes ?: 0) > 0 }
-        val minutes = timed.sumOf { it.onlineMinutes ?: 0 }
+        var minutes = timed.sumOf { it.onlineMinutes ?: 0 }
+        var timedIncome = timed.sumOf { it.amountMinor }
+        val hourPlatforms = timed.map { it.platformId }.toMutableSet()
+        // Platforms whose entries have no online time: their own totals (Bolt's Activity screen), for exactly this
+        // period, or else added up from single days inside it. Money per hour uses the same span's income.
+        val onlineTotals = summaries.filter { (it.onlineMinutes ?: 0) > 0 && it.earningsMinor == null && it.grossFareMinor == null }
+        for ((platformId, own) in onlineTotals.groupBy { it.platformId }) {
+            if (platformId in hourPlatforms) continue
+            val start = range.start.toEpochDays()
+            val end = range.endInclusive.toEpochDays()
+            val exact = own.filter { it.periodStart == start && it.periodEnd == end }.maxByOrNull { it.id }
+            val days = own.filter { it.periodStart == it.periodEnd && it.periodStart in start..end }
+                .groupBy { it.periodStart }.mapValues { (_, list) -> list.maxBy { it.id } }
+            val platformEntries = entries.filter { it.platformId == platformId }
+            when {
+                exact != null -> {
+                    minutes += exact.onlineMinutes ?: 0
+                    timedIncome += platformEntries.sumOf { it.amountMinor }
+                }
+                days.isNotEmpty() -> {
+                    minutes += days.values.sumOf { it.onlineMinutes ?: 0 }
+                    timedIncome += platformEntries.filter { it.date in days.keys }.sumOf { it.amountMinor }
+                }
+                else -> continue
+            }
+            hourPlatforms += platformId
+        }
 
         // Paid km per platform: its trips' distances, else its own total for exactly this period (Bolt's monthly PDF).
         val metersByPlatform = mutableMapOf<Long, Long>()
@@ -177,12 +203,12 @@ object HomeStatsCalculator {
             tripCount = trips.size + reportedTrips.sumOf { it.tripCount ?: 0 },
             averageFareMinor = if (trips.isEmpty()) null else trips.sumOf { it.fareMinor } / trips.size,
             onlineMinutes = minutes.takeIf { it > 0 },
-            perHourMinor = if (minutes > 0) (timed.sumOf { it.amountMinor } * 60 + minutes / 2) / minutes else null,
+            perHourMinor = if (minutes > 0 && timedIncome > 0) (timedIncome * 60 + minutes / 2) / minutes else null,
             distanceMeters = meters.takeIf { it > 0 },
             perKmMinor = if (meters > 0 && kmIncome > 0) (kmIncome * 1000 + meters / 2) / meters else null,
             incomePlatformIds = entries.filter { it.amountMinor != 0L }.map { it.platformId }.toSet(),
             tripPlatformIds = (trips.map { it.platformId } + reportedTrips.map { it.platformId }).toSet(),
-            hourPlatformIds = timed.map { it.platformId }.toSet(),
+            hourPlatformIds = hourPlatforms,
             kmPlatformIds = metersByPlatform.keys,
             days = days,
             heat = heat,

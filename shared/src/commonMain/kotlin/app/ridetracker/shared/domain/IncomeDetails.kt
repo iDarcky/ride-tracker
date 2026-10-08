@@ -61,6 +61,7 @@ enum class ImportKind(val id: String) {
     BOLT_DAILY_SCREENSHOT("bolt_daily_screenshot"),
     BOLT_WEEKLY_SCREENSHOT("bolt_weekly_screenshot"),
     BOLT_MONTHLY_SCREENSHOT("bolt_monthly_screenshot"),
+    BOLT_ACTIVITY_SCREENSHOT("bolt_activity_screenshot"),
     BOLT_MONTHLY_PDF("bolt_monthly_pdf"),
     BOLT_RIDER_INVOICES_CSV("bolt_rider_invoices_csv"),
     UBER_DAILY_SCREENSHOT("uber_daily_screenshot"),
