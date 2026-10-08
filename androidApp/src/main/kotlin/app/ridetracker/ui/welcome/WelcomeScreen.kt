@@ -48,6 +48,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import app.ridetracker.R
+import app.ridetracker.ui.vehicle.buildVehicle
+import app.ridetracker.ui.vehicle.VehicleFields
+import app.ridetracker.shared.domain.FuelType
+import app.ridetracker.shared.data.VehicleEntity
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
@@ -61,12 +65,16 @@ import app.ridetracker.ui.settings.languageName
 import app.ridetracker.ui.settings.setAppLanguage
 import kotlinx.coroutines.launch
 
-private enum class Step { COUNTRY, DRIVING }
+private enum class Step { COUNTRY, DRIVING, VEHICLE }
 
-/** First-launch flow: country (decides currency), then for Romania how the driver works. */
+/**
+ * First-launch flow: country (decides currency), then for Romania how the driver works, then the car
+ * (optional: fuel cost and money per km need it).
+ */
 @Composable
 fun WelcomeScreen() {
-    val settingsRepository = (LocalContext.current.applicationContext as RideTrackerApplication).container.settingsRepository
+    val container = (LocalContext.current.applicationContext as RideTrackerApplication).container
+    val settingsRepository = container.settingsRepository
     val scope = rememberCoroutineScope()
     val locale = currentLocale()
     var step by rememberSaveable { mutableStateOf(Step.COUNTRY) }
@@ -76,10 +84,19 @@ fun WelcomeScreen() {
     var pickCurrency by rememberSaveable { mutableStateOf(false) }
     var pickLanguage by rememberSaveable { mutableStateOf(false) }
     val languageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
+    var carName by rememberSaveable { mutableStateOf("") }
+    var carYear by rememberSaveable { mutableStateOf("") }
+    var carFuel by rememberSaveable { mutableStateOf(FuelType.DIESEL) }
+    var carConsumption by rememberSaveable { mutableStateOf("") }
+    var carPrice by rememberSaveable { mutableStateOf("") }
+    var carInvalid by rememberSaveable { mutableStateOf(false) }
+    val currency = resolveCurrency(country?.currencyCode ?: otherCurrency)
 
-    fun finish() {
+    /** Saves the car (when given) first: setting the country ends onboarding. */
+    fun finish(vehicle: VehicleEntity? = null) {
         val chosen = country ?: return
         scope.launch {
+            vehicle?.let { container.vehicleRepository.save(it) }
             settingsRepository.setCountry(
                 chosen,
                 otherCurrencyCode = otherCurrency.takeIf { chosen == Country.OTHER },
@@ -88,7 +105,12 @@ fun WelcomeScreen() {
         }
     }
 
-    BackHandler(enabled = step == Step.DRIVING) { step = Step.COUNTRY }
+    val previousStep = when (step) {
+        Step.COUNTRY -> null
+        Step.DRIVING -> Step.COUNTRY
+        Step.VEHICLE -> if (country == Country.ROMANIA) Step.DRIVING else Step.COUNTRY
+    }
+    BackHandler(enabled = previousStep != null) { previousStep?.let { step = it } }
 
     Surface(Modifier.fillMaxSize()) {
         Column(Modifier.safeDrawingPadding()) {
@@ -149,7 +171,7 @@ fun WelcomeScreen() {
                             }
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = { if (country == Country.ROMANIA) step = Step.DRIVING else finish() },
+                                onClick = { step = if (country == Country.ROMANIA) Step.DRIVING else Step.VEHICLE },
                                 enabled = country != null,
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                             ) { Text(stringResource(R.string.welcome_continue)) }
@@ -173,12 +195,39 @@ fun WelcomeScreen() {
                             }
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = ::finish,
+                                onClick = { step = Step.VEHICLE },
                                 enabled = drivingType != null,
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                             ) { Text(stringResource(R.string.welcome_continue)) }
                             OutlinedButton(onClick = { step = Step.COUNTRY }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                                 Text(stringResource(R.string.back))
+                            }
+                        }
+                        Step.VEHICLE -> {
+                            Text(stringResource(R.string.welcome_vehicle_title), style = MaterialTheme.typography.headlineMedium)
+                            Text(
+                                stringResource(R.string.welcome_vehicle_body),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            VehicleFields(
+                                name = carName, onName = { carName = it; carInvalid = false },
+                                year = carYear, onYear = { carYear = it; carInvalid = false },
+                                fuel = carFuel, onFuel = { carFuel = it },
+                                consumption = carConsumption, onConsumption = { carConsumption = it; carInvalid = false },
+                                price = carPrice, onPrice = { carPrice = it; carInvalid = false },
+                                currencySymbol = currency.getSymbol(locale),
+                                invalid = carInvalid,
+                            )
+                            Button(
+                                onClick = {
+                                    val car = buildVehicle(0, carName, carYear, carFuel, carConsumption, carPrice, currency.defaultFractionDigits.coerceAtLeast(0))
+                                    if (car == null) carInvalid = true else finish(car)
+                                },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                            ) { Text(stringResource(R.string.welcome_vehicle_save)) }
+                            OutlinedButton(onClick = { finish() }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                                Text(stringResource(R.string.welcome_vehicle_skip))
                             }
                         }
                     }

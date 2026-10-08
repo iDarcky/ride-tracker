@@ -449,4 +449,8 @@
         <item quantity="one">%d month driven</item>
         <item quantity="other">%d months driven</item>
     </plurals>
+    <string name="welcome_vehicle_title">Your car</string>
+    <string name="welcome_vehicle_body">Used for fuel costs and what you make per km. You can add or change it later under Vehicle.</string>
+    <string name="welcome_vehicle_save">Save and start</string>
+    <string name="welcome_vehicle_skip">Skip for now</string>
 </resources>

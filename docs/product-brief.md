@@ -1,6 +1,6 @@
 # Ride Tracker – product brief v0.2
 
-Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.5.2).
+Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.5.3).
 
 This is the public, trimmed version of the brief: no personal earnings data and no business plan.
 
@@ -42,6 +42,7 @@ technically "ride-hailing". Inside the app the word is rarely needed: "apps", "U
    - PFA: tax estimate, cash-register (Z report) and fiscal receipt (CUI) features are offered.
    - Fleet: those are hidden (the fleet handles them); fleet commission becomes an income field.
    - Other countries: none of the Romanian tax features.
+3. **Your car** (optional, "Skip for now"): name, fuel, consumption, fuel price. *(Built in 0.5.3.)*
 
 ## Scope
 
@@ -137,7 +138,8 @@ See the README for build, versioning and signing rules.
    0.5.0: estimated income from Bolt monthly totals / PDF / trips for days without a screenshot (no double count).
    0.5.1: Bolt Activity screenshot (online hours per month / week / day → RON per hour).
    0.5.2: "All" period, monthly activity bars for long periods.
-   **Next (owner, 9 Oct), in order:** vehicle step in onboarding, then Uber screenshots and CSV.
+   0.5.3: vehicle step in onboarding (optional).
+   **Next:** Uber screenshots and CSV (owner sends the files).
    Still open: identity (name, icon, a darker "cockpit" look). The owner said the app lacked identity and had
    gone wide before deep; imports and the cockpit Home address the second.
 

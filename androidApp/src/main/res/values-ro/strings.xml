@@ -458,4 +458,8 @@
         <item quantity="few">%d luni lucrate</item>
         <item quantity="other">%d de luni lucrate</item>
     </plurals>
+    <string name="welcome_vehicle_title">Mașina ta</string>
+    <string name="welcome_vehicle_body">Folosită pentru costul combustibilului și cât câștigi pe km. O poți adăuga sau schimba oricând la Mașină.</string>
+    <string name="welcome_vehicle_save">Salvează și începe</string>
+    <string name="welcome_vehicle_skip">Mai târziu</string>
 </resources>

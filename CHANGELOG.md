@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.3
+- **Your car in onboarding**: after country (and, in Romania, how you drive), a "Your car" step asks for the
+  car's name, fuel, consumption and fuel price. Optional: "Skip for now" and add it later under Vehicle.
+
 ## 0.5.2
 - **"All" period** on Home (Month · Week · Day · All · Custom): everything from the first month with data to
   today. Long periods (All, or custom ranges over two months) show activity per month; tap a month to open it.

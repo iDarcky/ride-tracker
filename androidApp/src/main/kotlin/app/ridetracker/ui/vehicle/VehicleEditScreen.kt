@@ -89,25 +89,13 @@ fun VehicleEditScreen(onDone: () -> Unit) {
     }
 
     fun save() {
-        val digits = resolveCurrency(currencyCode).defaultFractionDigits.coerceAtLeast(0)
-        val yearValue = year.trim().takeIf { it.isNotEmpty() }?.toIntOrNull()
-        val consumptionValue = consumption.takeIf { it.isNotBlank() }?.let { Money.parseToMinor(it, 2) }
-        val priceValue = price.takeIf { it.isNotBlank() }?.let { Money.parseToMinor(it, digits) }
-        val bad = name.isBlank() ||
-            (year.isNotBlank() && (yearValue == null || yearValue !in 1950..2100)) ||
-            (consumption.isNotBlank() && consumptionValue == null) ||
-            (price.isNotBlank() && priceValue == null)
-        if (bad) {
+        val vehicle = buildVehicle(id, name, year, fuel, consumption, price, resolveCurrency(currencyCode).defaultFractionDigits.coerceAtLeast(0))
+        if (vehicle == null) {
             invalid = true
             return
         }
         scope.launch {
-            container.vehicleRepository.save(
-                VehicleEntity(
-                    id = id, name = name.trim(), year = yearValue, fuelType = fuel.id,
-                    consumptionCenti = consumptionValue, fuelPriceMinor = priceValue,
-                ),
-            )
+            container.vehicleRepository.save(vehicle)
             onDone()
         }
     }
@@ -126,72 +114,15 @@ fun VehicleEditScreen(onDone: () -> Unit) {
             Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it; invalid = false },
-                label = { Text(stringResource(R.string.vehicle_name)) },
-                singleLine = true,
-                isError = invalid && name.isBlank(),
-                modifier = Modifier.fillMaxWidth(),
+            VehicleFields(
+                name = name, onName = { name = it; invalid = false },
+                year = year, onYear = { year = it; invalid = false },
+                fuel = fuel, onFuel = { fuel = it },
+                consumption = consumption, onConsumption = { consumption = it; invalid = false },
+                price = price, onPrice = { price = it; invalid = false },
+                currencySymbol = resolveCurrency(currencyCode).getSymbol(locale),
+                invalid = invalid,
             )
-            OutlinedTextField(
-                value = year,
-                onValueChange = { year = it.filter(Char::isDigit).take(4); invalid = false },
-                label = { Text(stringResource(R.string.vehicle_year)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Text(stringResource(R.string.fuel_type), style = MaterialTheme.typography.titleSmall)
-            // Main kinds as chips; a hybrid then asks for its engine and whether it plugs in.
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(FuelType.DIESEL, FuelType.PETROL, FuelType.HYBRID, FuelType.LPG, FuelType.ELECTRIC).forEach { type ->
-                    val selected = if (type == FuelType.HYBRID) fuel.isHybrid else fuel == type
-                    FilterChip(
-                        selected = selected,
-                        onClick = { if (!(type == FuelType.HYBRID && fuel.isHybrid)) fuel = type },
-                        label = { Text(if (type == FuelType.HYBRID) stringResource(R.string.fuel_hybrid) else fuelName(type)) },
-                    )
-                }
-            }
-            if (fuel.isHybrid) {
-                Text(stringResource(R.string.hybrid_engine), style = MaterialTheme.typography.titleSmall)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
-                    listOf(false to R.string.fuel_petrol, true to R.string.fuel_diesel).forEachIndexed { index, (diesel, label) ->
-                        ToggleButton(
-                            checked = fuel.isDieselHybrid == diesel,
-                            onCheckedChange = { fuel = FuelType.hybrid(diesel = diesel, plugIn = fuel.isPlugIn) },
-                            modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
-                            shapes = if (index == 0) ButtonGroupDefaults.connectedLeadingButtonShapes() else ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                        ) { Text(stringResource(label)) }
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.plug_in), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = fuel.isPlugIn,
-                        onCheckedChange = { fuel = FuelType.hybrid(diesel = fuel.isDieselHybrid, plugIn = it) },
-                    )
-                }
-            }
-            OutlinedTextField(
-                value = consumption,
-                onValueChange = { consumption = it; invalid = false },
-                label = { Text(stringResource(if (fuel.isElectric) R.string.consumption_kwh else R.string.consumption_litres)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = price,
-                onValueChange = { price = it; invalid = false },
-                label = { Text(stringResource(if (fuel.isElectric) R.string.fuel_price_kwh else R.string.fuel_price_litre)) },
-                suffix = { Text(resolveCurrency(currencyCode).getSymbol(locale)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (invalid) Text(stringResource(R.string.invalid_number), color = MaterialTheme.colorScheme.error)
             Spacer(Modifier.height(8.dp))
             Button(onClick = ::save, enabled = loaded, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                 Text(stringResource(R.string.save))
