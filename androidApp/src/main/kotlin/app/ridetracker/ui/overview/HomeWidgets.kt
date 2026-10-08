@@ -38,6 +38,7 @@ import app.ridetracker.ui.common.PlatformBadge
 import app.ridetracker.ui.common.icon
 import app.ridetracker.ui.common.label
 import app.ridetracker.ui.common.tabular
+import app.ridetracker.ui.money.PaymentSplitContent
 import java.text.NumberFormat
 import kotlinx.datetime.LocalDate
 
@@ -54,6 +55,7 @@ val HomeWidget.title: Int
         HomeWidget.WHEN_YOU_EARN -> R.string.best_time
         HomeWidget.EXPENSE_GROUPS -> R.string.expenses_by_group
         HomeWidget.NEEDS_ATTENTION -> R.string.needs_attention
+        HomeWidget.CASH_CARD -> R.string.card_and_cash
     }
 
 /** Whether the card has something to show for this period (empty cards are left out, except while customising). */
@@ -68,6 +70,7 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.WHEN_YOU_EARN -> stats.tripCount >= MIN_TRIPS_FOR_HEAT
         HomeWidget.EXPENSE_GROUPS -> state.expenseGroups.isNotEmpty()
         HomeWidget.NEEDS_ATTENTION -> !attention.isEmpty()
+        HomeWidget.CASH_CARD -> state.breakdown?.payment != null
     }
 }
 
@@ -93,6 +96,19 @@ fun WidgetBody(
         HomeWidget.ACTIVITY -> DailyActivity(stats.days, state.platforms, money, dates, onOpenDay, monthly = stats.monthly)
         HomeWidget.WHEN_YOU_EARN -> BestTimeToDrive(stats.heat, money)
         HomeWidget.EXPENSE_GROUPS -> ExpenseGroups(state, money, percent)
+        HomeWidget.CASH_CARD -> state.breakdown?.payment?.let { payment ->
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(vertical = 12.dp)) {
+                    Text(
+                        stringResource(R.string.card_and_cash),
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    PaymentSplitContent(payment, money, percent)
+                }
+            }
+        }
         HomeWidget.NEEDS_ATTENTION -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.needs_attention), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             attention.missingMonthly.forEach { missing ->

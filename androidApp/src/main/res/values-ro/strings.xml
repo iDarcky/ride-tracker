@@ -417,11 +417,31 @@
     </plurals>
     <!-- Money tab -->
     <string name="by_platform">Pe platforme</string>
-    <string name="by_type">Pe tipuri</string>
     <string name="by_category">Pe categorii</string>
-    <string name="gross_bonuses_title">Bonusuri și bacșișuri</string>
-    <string name="other_income">Taxe de drum, anulări și altele</string>
     <string name="paid_out">Primit de tine</string>
+    <string name="made_of">Din ce e format</string>
+    <string name="line_other">Alte venituri</string>
+    <string name="line_other_fee">Alte taxe</string>
+    <string name="without_breakdown">Fără defalcare</string>
+    <string name="without_breakdown_note">Introduse manual sau estimate: zile fără captură cu defalcarea.</string>
+    <string name="card_and_cash">Card și numerar</string>
+    <string name="paid_in_app">În aplicație</string>
+    <string name="paid_cash">Numerar</string>
+    <string name="cash_in_hand">Numerar în mână</string>
+    <string name="to_bank">Virat în cont</string>
+    <string name="payment_note">Sumele în aplicație și în numerar sunt înainte de comision. Virat în cont = câștigat minus numerarul din mână.</string>
+    <string name="payment_note_partial">Doar zilele cu captură de defalcare zilnică. Sumele în aplicație și în numerar sunt înainte de comision.</string>
+    <string name="platform_income_title">Venituri %1$s</string>
+    <plurals name="trips_paid_in_app">
+        <item quantity="one">%d cursă plătită în aplicație</item>
+        <item quantity="few">%d curse plătite în aplicație</item>
+        <item quantity="other">%d de curse plătite în aplicație</item>
+    </plurals>
+    <plurals name="trips_paid_cash">
+        <item quantity="one">%d cursă plătită cu numerar</item>
+        <item quantity="few">%d curse plătite cu numerar</item>
+        <item quantity="other">%d de curse plătite cu numerar</item>
+    </plurals>
     <string name="total_expenses">Total cheltuieli</string>
     <string name="change_vs">%1$s față de %2$s</string>
     <string name="recent">Recente</string>

@@ -256,6 +256,8 @@ data class LineInRange(
     val date: Long,
     val kind: String,
     val amountMinor: Long,
+    /** Paid in cash (Bolt's "Cash income" group). */
+    val inCash: Boolean = false,
 )
 
 /** A platform and a day (epoch day). */

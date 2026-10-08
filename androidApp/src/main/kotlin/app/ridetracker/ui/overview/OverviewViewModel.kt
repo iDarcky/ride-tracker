@@ -15,6 +15,8 @@ import app.ridetracker.shared.domain.HomeStats
 import app.ridetracker.shared.domain.HomeStatsCalculator
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ImportRepository
+import app.ridetracker.shared.domain.IncomeBreakdown
+import app.ridetracker.shared.domain.IncomeBreakdownCalculator
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.MissingMonthlyTotal
 import app.ridetracker.shared.domain.PendingExpense
@@ -61,6 +63,8 @@ data class OverviewUiState(
     val loading: Boolean = true,
     /** Gross, fees, metrics, daily activity and heat map for the period. */
     val stats: HomeStats? = null,
+    /** What the period's income is made of and how it was paid (Card and cash). */
+    val breakdown: IncomeBreakdown? = null,
     /** All apps (names and colours for charts), including archived ones that still have history. */
     val platforms: List<PlatformEntity> = emptyList(),
     /** Cards shown below money kept, in the driver's order. */
@@ -115,12 +119,15 @@ class OverviewViewModel(
                 if (totals.isEmpty() && expenses.isEmpty()) null else PreviousTotals(income, expense)
             }
         }
-        val statsFlow: Flow<HomeStats> = combine(
+        val statsFlow: Flow<Pair<HomeStats, IncomeBreakdown>> = combine(
             incomeRepository.observeEntryDetails(period.range),
             incomeRepository.observeLines(period.range),
             importRepository.observeTrips(period.range),
             importRepository.observeSummaries(period.range),
-        ) { details, lines, trips, summaries -> HomeStatsCalculator.compute(period.range, details, lines, trips, summaries) }
+        ) { details, lines, trips, summaries ->
+            HomeStatsCalculator.compute(period.range, details, lines, trips, summaries) to
+                IncomeBreakdownCalculator.compute(period.range, details, lines, trips, summaries)
+        }
         val extras = combine(statsFlow, incomeRepository.observePlatforms()) { stats, platforms -> stats to platforms }
         combine(
             incomeRepository.observeEntries(period.range),
@@ -128,10 +135,12 @@ class OverviewViewModel(
             expenseRepository.observeInRange(period.range),
             combine(expenseRepository.observeAny(), previousFlow) { any, previous -> any to previous },
             extras,
-        ) { entries, totals, expenses, (anyExpense, previous), (stats, platforms) ->
+        ) { entries, totals, expenses, (anyExpense, previous), (statsAndBreakdown, platforms) ->
+            val (stats, breakdown) = statsAndBreakdown
             OverviewUiState(
                 widgets = widgets,
                 stats = stats,
+                breakdown = breakdown,
                 platforms = platforms,
                 comparison = comparison,
                 previous = previous,

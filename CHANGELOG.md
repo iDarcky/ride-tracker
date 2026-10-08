@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+- **Income by platform**: in Money → Income, tap a platform to see its month: rides, bonuses and campaigns, tips,
+  rider credits, cancellation and road fees, minus commission, adding up to what it paid you. A month with
+  Bolt's Monthly screenshot takes the parts from it; income without a breakdown is shown as such.
+- **Card and cash**: how much came in through the app and how much in cash (before commission), the cash you kept
+  and what was paid to your account (earned minus cash in hand). From imported trips: how many were paid each
+  way. In Money (all platforms and per platform) and as a new **Card and cash** widget on Home (add it with
+  Customise if you've changed your Home layout).
+- Money → Income's "By type" card is now "What it's made of", with every kind of income listed.
+
 ## 0.5.4
 - **Bolt Activity screenshots in English** ("61h 12m", "Past 3 months", "HOURS") are read, as well as past week
   tabs written "Sep 28 - Oct 4".

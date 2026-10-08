@@ -12,11 +12,14 @@ enum class HomeWidget(val id: String) {
     WHEN_YOU_EARN("when_you_earn"),
     EXPENSE_GROUPS("expense_groups"),
     NEEDS_ATTENTION("needs_attention"),
+
+    /** In the app vs cash, cash in hand and what reached the bank. */
+    CASH_CARD("cash_card"),
     ;
 
     companion object {
         /** What a new install shows, in order. "When you earn" is off until the driver adds it. */
-        val DEFAULT: List<HomeWidget> = listOf(BREAKDOWN, METRICS, SPLIT, ACTIVITY, EXPENSE_GROUPS, NEEDS_ATTENTION)
+        val DEFAULT: List<HomeWidget> = listOf(BREAKDOWN, METRICS, SPLIT, CASH_CARD, ACTIVITY, EXPENSE_GROUPS, NEEDS_ATTENTION)
 
         fun fromId(id: String): HomeWidget? = entries.firstOrNull { it.id == id }
 

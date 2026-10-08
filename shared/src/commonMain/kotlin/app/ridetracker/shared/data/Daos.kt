@@ -73,7 +73,7 @@ interface IncomeEntryDao {
 
     @Query(
         """
-        SELECT l.entryId, e.platformId, e.date, l.kind, l.amountMinor
+        SELECT l.entryId, e.platformId, e.date, l.kind, l.amountMinor, l.inCash
         FROM income_line l JOIN income_entry e ON e.id = l.entryId
         WHERE e.date BETWEEN :startEpochDay AND :endEpochDay
         """,

@@ -31,7 +31,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -101,6 +100,7 @@ fun MoneyScreen(
     onAddExpense: () -> Unit,
     onEditExpense: (Long) -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenPlatform: (Long, Period.Month) -> Unit,
     viewModel: IncomeListViewModel = viewModel {
         IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository)
     },
@@ -127,7 +127,7 @@ fun MoneyScreen(
     ) { padding ->
         val modifier = Modifier.padding(top = padding.calculateTopPadding())
         when (tab) {
-            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, modifier)
+            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
             else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
         }
     }
@@ -139,6 +139,7 @@ private fun IncomeTab(
     snackbar: SnackbarHostState,
     onAdd: () -> Unit,
     onEdit: (Long) -> Unit,
+    onOpenPlatform: (Long, Period.Month) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -178,31 +179,19 @@ private fun IncomeTab(
                             amount = money.format(p.totalMinor),
                             share = if (state.totalMinor > 0) p.totalMinor.toFloat() / state.totalMinor else 0f,
                             percent = percent,
+                            onClick = state.month?.let { m -> { onOpenPlatform(p.platformId, m) } },
                         )
                     }
                 }
             }
         }
-        val stats = state.stats
-        if (stats != null && stats.feesMinor != 0L) {
+        val breakdown = state.breakdown
+        if (breakdown != null && breakdown.parts.isNotEmpty()) {
             // Only meaningful once some income has an imported breakdown.
-            item {
-                BreakdownCard(stringResource(R.string.by_type)) {
-                    TypeRow(stringResource(R.string.line_fare), money.format(stats.faresMinor))
-                    if (stats.bonusesAndTipsMinor != 0L) TypeRow(stringResource(R.string.gross_bonuses_title), money.format(stats.bonusesAndTipsMinor))
-                    if (stats.otherIncomeMinor != 0L) TypeRow(stringResource(R.string.other_income), money.format(stats.otherIncomeMinor))
-                    TypeRow(stringResource(R.string.line_commission), money.format(stats.feesMinor))
-                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                    TypeRow(stringResource(R.string.paid_out), money.format(stats.netIncomeMinor), strong = true)
-                    if (!stats.feesKnownForAll) {
-                        Text(
-                            stringResource(R.string.fees_partial),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            item { MadeOfCard(breakdown, money) }
+        }
+        breakdown?.payment?.let { payment ->
+            item { BreakdownCard(stringResource(R.string.card_and_cash)) { PaymentSplitContent(payment, money, percent) } }
         }
         val entries = state.days.flatMap { it.entries }
         if (!state.loading && entries.isEmpty()) {
@@ -440,7 +429,7 @@ private fun TotalCard(
 }
 
 @Composable
-private fun BreakdownCard(title: String, content: @Composable () -> Unit) {
+internal fun BreakdownCard(title: String, content: @Composable () -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp)) {
         Column(Modifier.padding(vertical = 12.dp)) {
             Text(
@@ -456,7 +445,7 @@ private fun BreakdownCard(title: String, content: @Composable () -> Unit) {
 
 /** Icon, name and a share bar; amount and % on the right. Tappable when [onClick] is set. */
 @Composable
-private fun ShareRow(
+internal fun ShareRow(
     leading: @Composable () -> Unit,
     title: String,
     amount: String,
@@ -492,7 +481,7 @@ private fun ShareRow(
 }
 
 @Composable
-private fun TypeRow(label: String, amount: String, strong: Boolean = false) {
+internal fun TypeRow(label: String, amount: String, strong: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
         Text(
             label,

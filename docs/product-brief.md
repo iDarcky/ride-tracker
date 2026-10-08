@@ -141,9 +141,9 @@ See the README for build, versioning and signing rules.
    0.5.3: vehicle step in onboarding (optional).
    0.5.4: English Activity screen, "0ct" OCR fix, "Needs attention" for months without Bolt's monthly total,
    TVA intracomunitar (Romania, PFA), shared-axis screen motion with predictive back, lower FAB.
-   **Next (agreed 9 Oct 2026):** 0.6.0 income detail per platform (rides, tips, bonuses, cancellations, minus
-   commission; card vs cash; paid to bank = earned − cash) and a "Cash & card" Home widget; then **Uber**
-   screenshots and CSV (owner sends the files); then the list below.
+   0.6.0: income detail per platform (what it's made of; card vs cash; paid to your account = earned − cash in
+   hand) and a "Card and cash" Home widget.
+   **Next:** **Uber** screenshots and CSV (owner sends the files); then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:

@@ -410,11 +410,29 @@
     </plurals>
     <!-- Money tab -->
     <string name="by_platform">By platform</string>
-    <string name="by_type">By type</string>
     <string name="by_category">By category</string>
-    <string name="gross_bonuses_title">Bonuses and tips</string>
-    <string name="other_income">Tolls, cancellations and other</string>
     <string name="paid_out">Paid to you</string>
+    <string name="made_of">What it’s made of</string>
+    <string name="line_other">Other income</string>
+    <string name="line_other_fee">Other fees</string>
+    <string name="without_breakdown">Without a breakdown</string>
+    <string name="without_breakdown_note">Typed in or estimated: days without a breakdown screenshot.</string>
+    <string name="card_and_cash">Card and cash</string>
+    <string name="paid_in_app">In the app</string>
+    <string name="paid_cash">Cash</string>
+    <string name="cash_in_hand">Cash in hand</string>
+    <string name="to_bank">Paid to your account</string>
+    <string name="payment_note">In the app and cash are before commission. Paid to your account = earned minus cash in hand.</string>
+    <string name="payment_note_partial">Only days with a daily breakdown screenshot. In the app and cash are before commission.</string>
+    <string name="platform_income_title">%1$s income</string>
+    <plurals name="trips_paid_in_app">
+        <item quantity="one">%d trip paid in the app</item>
+        <item quantity="other">%d trips paid in the app</item>
+    </plurals>
+    <plurals name="trips_paid_cash">
+        <item quantity="one">%d trip paid in cash</item>
+        <item quantity="other">%d trips paid in cash</item>
+    </plurals>
     <string name="total_expenses">Total expenses</string>
     <string name="change_vs">%1$s vs %2$s</string>
     <string name="recent">Recent</string>

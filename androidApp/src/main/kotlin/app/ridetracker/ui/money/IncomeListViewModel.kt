@@ -6,8 +6,8 @@ import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.DeletedEntry
-import app.ridetracker.shared.domain.HomeStats
-import app.ridetracker.shared.domain.HomeStatsCalculator
+import app.ridetracker.shared.domain.IncomeBreakdown
+import app.ridetracker.shared.domain.IncomeBreakdownCalculator
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.Period
@@ -33,8 +33,8 @@ data class IncomeListState(
     /** The whole previous month's income; null when it has none. */
     val previousMinor: Long? = null,
     val platforms: List<PlatformTotal> = emptyList(),
-    /** Gross, fees and what gross is made of (from imported breakdowns). */
-    val stats: HomeStats? = null,
+    /** What the month's income is made of, and how it was paid. */
+    val breakdown: IncomeBreakdown? = null,
     val days: List<IncomeDay> = emptyList(),
     val currencyCode: String? = null,
     val loading: Boolean = true,
@@ -68,14 +68,15 @@ class IncomeListViewModel(
                 incomeRepository.observeEntryDetails(month.range),
                 incomeRepository.observeLines(month.range),
                 importRepository.observeSummaries(month.range),
-            ) { totals, details, lines, summaries ->
+                importRepository.observeTrips(month.range),
+            ) { totals, details, lines, summaries, trips ->
                 IncomeListState(
                     months = months,
                     month = month,
                     totalMinor = monthly.sumOf { it.amountMinor },
                     previousMinor = previous.takeIf { it.isNotEmpty() }?.sumOf { it.amountMinor },
                     platforms = totals,
-                    stats = HomeStatsCalculator.compute(month.range, details, lines, emptyList(), summaries),
+                    breakdown = IncomeBreakdownCalculator.compute(month.range, details, lines, trips, summaries),
                     days = monthly.groupBy { it.date }.map { (day, list) ->
                         IncomeDay(LocalDate.fromEpochDays(day), list.sumOf { it.amountMinor }, list)
                     },

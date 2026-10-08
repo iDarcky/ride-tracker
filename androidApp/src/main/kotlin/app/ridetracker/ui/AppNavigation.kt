@@ -60,6 +60,8 @@ import app.ridetracker.R
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.ui.importing.ImportScreen
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.money.PlatformIncomeScreen
+import kotlinx.datetime.LocalDate
 import app.ridetracker.ui.common.LocalOpenMenu
 import app.ridetracker.ui.entry.EntryScreen
 import app.ridetracker.ui.expense.ExpenseScreen
@@ -134,6 +136,7 @@ fun AppNavigation() {
                         onAddExpense = { nav.navigate("expense") },
                         onEditExpense = { id -> nav.navigate("expense?id=$id") },
                         onOpenRecurring = { nav.navigate("recurring") },
+                        onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
                     )
                 }
                 composable(Tab.VEHICLE.route) {
@@ -182,6 +185,16 @@ fun AppNavigation() {
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
                 }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
+                composable(
+                    "platform-income/{id}/{month}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType }, navArgument("month") { type = NavType.LongType }),
+                ) { entry ->
+                    PlatformIncomeScreen(
+                        platformId = entry.arguments?.getLong("id") ?: -1L,
+                        monthStart = LocalDate.fromEpochDays(entry.arguments?.getLong("month") ?: 0L),
+                        onBack = { nav.popBackStack() },
+                    )
+                }
             }
         }
         if (currentTab != null) {
