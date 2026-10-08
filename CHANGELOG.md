@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+- **Kept / fees / expenses**: each label now sits right under its part of the bar, with its share; gross and
+  what it's made of below.
+- **"Platform" instead of "app"** everywhere for Uber, Bolt and the others (Menu → Platforms, Split by platform).
+- **Daily activity** reworked: days driven, best day and average per day driven; labelled days, an average
+  line, and the selected day's amount above the chart. Switch between money and trips when both exist.
+- **Trips, paid km, hours online, per hour, per km** always shown; a dash says what's missing, and a figure
+  that covers only some platforms says so ("Bolt only"). Paid km also comes from Bolt's monthly summary PDF
+  when the period is that month.
+- "Best time to drive" is now "When you earn" (it shows when you drove, not pay per hour).
+
 ## 0.2.0
 - **New Home** (like the cockpit design):
   - Money kept (or income) with a cumulative line for the period, and the comparison with the previous one.

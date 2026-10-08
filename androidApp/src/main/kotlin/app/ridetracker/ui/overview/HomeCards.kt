@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,9 +43,18 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ToggleButton
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.pluralStringResource
+import kotlinx.datetime.isoDayNumber
 import app.ridetracker.R
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
@@ -97,37 +108,58 @@ fun platformChartColor(argb: Long): Color {
     return if (abs(color.luminance() - surface.luminance()) < 0.2f) MaterialTheme.colorScheme.onSurface else color
 }
 
-/** Gross split into what you kept, what the apps took and what you spent: one bar, then the figures. */
+/** Smallest share a segment gets on screen, so its label below always fits (the % shown stays exact). */
+private const val MIN_SEGMENT_SHARE = 0.34f
+
+/**
+ * Gross split into kept, platform fees and expenses: one bar, and each segment's label sits directly under
+ * it (tick in the segment's colour), so there is no separate legend to match up.
+ */
 @Composable
 fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean, money: MoneyFormat, modifier: Modifier = Modifier) {
     val fees = -stats.feesMinor
     val kept = stats.grossMinor - fees - expenseMinor
+    val percent = NumberFormat.getPercentInstance(currentLocale())
+    data class Part(val label: String, val amount: Long, val shown: Long, val color: Color)
+    val parts = buildList {
+        add(Part(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), kept, kept, keptColor()))
+        if (fees > 0) add(Part(stringResource(R.string.fees), fees, -fees, feesColor()))
+        if (expenseMinor > 0) add(Part(stringResource(R.string.nav_expenses), expenseMinor, -expenseMinor, expensesColor()))
+    }
     Column(modifier) {
         if (stats.grossMinor > 0 && kept >= 0) {
-            val kc = keptColor()
-            val fc = feesColor()
-            val ec = expensesColor()
-            Row(Modifier.fillMaxWidth().height(8.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                listOf(kept to kc, fees to fc, expenseMinor to ec).filter { it.first > 0 }.forEach { (value, color) ->
-                    Box(Modifier.weight(value.toFloat()).height(8.dp).clip(RoundedCornerShape(4.dp)).background(color))
+            val raw = parts.map { it.amount.toFloat() / stats.grossMinor }
+            val weights = raw.map { if (it > 0f) maxOf(it, MIN_SEGMENT_SHARE) else 0f }
+            val drawn = parts.indices.filter { weights[it] > 0f }
+            Row(Modifier.fillMaxWidth().height(10.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                drawn.forEach { i ->
+                    Box(Modifier.weight(weights[i]).height(10.dp).clip(RoundedCornerShape(5.dp)).background(parts[i].color))
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                drawn.forEach { i ->
+                    SegmentLabel(
+                        label = parts[i].label + " · " + percent.format(raw[i]),
+                        value = money.format(parts[i].shown),
+                        color = parts[i].color,
+                        modifier = Modifier.weight(weights[i]),
+                    )
+                }
+            }
+        } else {
+            // Spent more than earned: no bar, just the figures.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                parts.forEach { SegmentLabel(it.label, money.format(it.shown), it.color, Modifier.weight(1f)) }
+            }
         }
-        Row(Modifier.fillMaxWidth()) {
-            Figure(stringResource(R.string.gross), money.format(stats.grossMinor), null, Modifier.weight(1f))
-            Figure(stringResource(R.string.fees), money.format(-fees), feesColor(), Modifier.weight(1f))
-            if (tracksExpenses) Figure(stringResource(R.string.nav_expenses), money.format(-expenseMinor), expensesColor(), Modifier.weight(1f))
-            Figure(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), money.format(kept), keptColor(), Modifier.weight(1f))
-        }
-        val parts = buildList {
+        val gross = buildList {
             add(stringResource(R.string.gross_fares, money.format(stats.faresMinor)))
             if (stats.bonusesAndTipsMinor != 0L) add(stringResource(R.string.gross_bonuses, money.format(stats.bonusesAndTipsMinor)))
             if (stats.otherIncomeMinor != 0L) add(stringResource(R.string.gross_other, money.format(stats.otherIncomeMinor)))
         }
         Text(
-            stringResource(R.string.gross_is, parts.joinToString(" + ")),
-            modifier = Modifier.padding(top = 8.dp),
+            stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")),
+            modifier = Modifier.padding(top = 10.dp),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -141,60 +173,86 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
     }
 }
 
-/** Label with a colour dot (identity), value in text colour. */
+/** A coloured tick on the left ties the label to the segment above it. */
 @Composable
-private fun Figure(label: String, value: String, dot: Color?, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (dot != null) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
-                Spacer(Modifier.width(4.dp))
-            }
+private fun SegmentLabel(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Row(modifier.height(IntrinsicSize.Min)) {
+        Box(Modifier.width(2.dp).fillMaxHeight().background(color))
+        Column(Modifier.padding(start = 6.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(value, style = MaterialTheme.typography.titleSmall.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(value, style = MaterialTheme.typography.titleSmall.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
-/** Trips, average fare, hours, per hour, km, per km: only the ones some report provides. */
+/** One metric tile: value (or a dash), label, and either what it covers ("Bolt only") or what would fill it. */
+private data class Tile(val value: String?, val label: String, val note: String?)
+
+/**
+ * Trips, paid km, hours online, money per hour and per paid km. Always all five, so drivers learn what each
+ * report adds: a missing figure shows a dash and a hint, a partial one names the platforms it covers.
+ */
 @Composable
-fun Metrics(stats: HomeStats, money: MoneyFormat, modifier: Modifier = Modifier) {
+fun Metrics(stats: HomeStats, platforms: List<PlatformEntity>, money: MoneyFormat, modifier: Modifier = Modifier) {
+    if (stats.incomePlatformIds.isEmpty() && stats.tripCount == 0) return
     val locale = currentLocale()
-    val tiles = buildList {
-        if (stats.tripCount > 0) {
-            add(Triple(stats.tripCount.toString(), stringResource(R.string.metric_trips), null))
-            stats.averageFareMinor?.let { add(Triple(money.format(it), stringResource(R.string.metric_average_fare), null)) }
-        }
-        stats.onlineMinutes?.let { minutes ->
-            add(Triple(stringResource(R.string.hours_minutes, minutes / 60, minutes % 60), stringResource(R.string.metric_online), null))
-        }
-        stats.perHourMinor?.let { add(Triple(money.format(it), stringResource(R.string.metric_per_hour), null)) }
-        stats.distanceMeters?.let { add(Triple(stringResource(R.string.km_value, "%.0f".format(locale, it / 1000.0)), stringResource(R.string.metric_km), null)) }
-        stats.perKmMinor?.let { add(Triple(money.format(it), stringResource(R.string.metric_per_km), null)) }
+    val names = platforms.associate { it.id to it.name }
+    val active = stats.incomePlatformIds + stats.tripPlatformIds
+    @Composable
+    fun coverage(covered: Set<Long>, missingHint: Int): String? = when {
+        covered.isEmpty() -> stringResource(missingHint)
+        (active - covered).isNotEmpty() -> stringResource(R.string.only_platforms, covered.mapNotNull { names[it] }.sorted().joinToString(", "))
+        else -> null
     }
-    if (tiles.isEmpty()) return
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Three per row, or two when that avoids a lonely tile and gives amounts room.
-        val perRow = if (tiles.size % 3 == 0) 3 else 2
-        tiles.chunked(perRow).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (value, label, _) ->
-                    OutlinedCard(Modifier.weight(1f)) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(value, style = MaterialTheme.typography.titleLarge.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-        if (stats.tripCount > 0 && stats.distanceMeters == null) {
+    val hours = stats.onlineMinutes?.let { stringResource(R.string.hours_minutes, it / 60, it % 60) }
+    val km = stats.distanceMeters?.let { stringResource(R.string.km_value, "%.0f".format(locale, it / 1000.0)) }
+    val tiles = listOf(
+        Tile(stats.tripCount.takeIf { it > 0 }?.toString(), stringResource(R.string.metric_trips), coverage(stats.tripPlatformIds, R.string.hint_trips)),
+        Tile(km, stringResource(R.string.metric_km), coverage(stats.kmPlatformIds, R.string.hint_km)),
+        Tile(hours, stringResource(R.string.metric_online), coverage(stats.hourPlatformIds, R.string.hint_hours)),
+        Tile(stats.perHourMinor?.let { money.format(it) }, stringResource(R.string.metric_per_hour, money.symbol), coverage(stats.hourPlatformIds, R.string.hint_hours)),
+        Tile(stats.perKmMinor?.let { money.format(it) }, stringResource(R.string.metric_per_km, money.symbol), coverage(stats.kmPlatformIds, R.string.hint_km)),
+    )
+    if (tiles.all { it.value == null }) {
+        // Nothing to show yet: one line instead of five empty tiles.
+        OutlinedCard(modifier.fillMaxWidth()) {
             Text(
-                stringResource(R.string.metrics_source_note),
-                style = MaterialTheme.typography.bodySmall,
+                stringResource(R.string.metrics_empty),
+                Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        return
+    }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(tiles.take(3), tiles.drop(3)).forEach { row ->
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { tile -> MetricTile(tile, Modifier.weight(1f).fillMaxHeight()) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricTile(tile: Tile, modifier: Modifier = Modifier) {
+    OutlinedCard(modifier) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                tile.value ?: "—",
+                style = MaterialTheme.typography.titleLarge.tabular(),
+                color = if (tile.value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(tile.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            tile.note?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (tile.value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.tertiary,
+                )
+            }
         }
     }
 }
@@ -245,10 +303,13 @@ fun PlatformSplit(totals: List<PlatformTotal>, money: MoneyFormat, modifier: Mod
     }
 }
 
+private enum class ActivityMetric { MONEY, TRIPS }
+
 /**
- * Income per day, stacked per app (Uber Driver style): tap a bar to see that day's figures and open it.
- * The tallest day is marked with a dashed line and its amount.
+ * Money (stacked per platform) or trips per day, Uber Driver style: a summary line, labelled days, a dashed
+ * average line, and one selected day whose figures show above the chart (tap a bar to move it).
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DailyActivity(
     days: List<DayIncome>,
@@ -258,63 +319,129 @@ fun DailyActivity(
     onOpenDay: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val max = days.maxOfOrNull { it.totalMinor }?.takeIf { it > 0 } ?: return
+    val hasMoney = days.any { it.totalMinor > 0 }
+    val hasTrips = days.any { it.tripCount > 0 }
+    if (!hasMoney && !hasTrips) return
+    var metric by remember(hasMoney) { mutableStateOf(if (hasMoney) ActivityMetric.MONEY else ActivityMetric.TRIPS) }
+    fun value(d: DayIncome): Long = if (metric == ActivityMetric.MONEY) d.totalMinor else d.tripCount.toLong()
+    val resources = LocalContext.current.resources
+    // Money, or "21 trips" with the language's plural form (also used while drawing, so not composable).
+    fun format(v: Long): String =
+        if (metric == ActivityMetric.MONEY) money.format(v) else resources.getQuantityString(R.plurals.trip_count, v.toInt(), v.toInt())
+
+    val driven = days.indices.filter { value(days[it]) > 0 }
+    var selected by remember(days, metric) { mutableStateOf(driven.lastOrNull()) }
+    val max = days.maxOf { value(it) }.coerceAtLeast(1)
+    val average = if (driven.isEmpty()) 0L else driven.sumOf { value(days[it]) } / driven.size
+    val best = driven.maxByOrNull { value(days[it]) }
+
+    val locale = currentLocale()
     val order = platforms.map { it.id }
     val colorOf = platforms.associate { it.id to platformChartColor(it.colorArgb) }
     val names = platforms.associate { it.id to it.name }
+    val tripsColor = MaterialTheme.colorScheme.primary
     val gridColor = MaterialTheme.colorScheme.outlineVariant
-    val dim = MaterialTheme.colorScheme.surface
-    var selected by remember(days) { mutableStateOf<Int?>(null) }
+    val averageColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val surface = MaterialTheme.colorScheme.surface
+    val labelStyle = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val selectedLabelStyle = labelStyle.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+    val measurer = rememberTextMeasurer()
+    val weekdayNames = remember(locale) {
+        java.time.DayOfWeek.entries.associateWith { it.getDisplayName(TextStyle.SHORT, locale).trimEnd('.').take(3) }
+    }
+    // Which days get a label under the axis: all of them in a week, otherwise every seventh.
+    val labelled: Map<Int, String> = days.indices.mapNotNull { i ->
+        val d = days[i].date
+        when {
+            days.size <= 7 -> i to (weekdayNames[java.time.DayOfWeek.of(d.dayOfWeek.isoDayNumber)] ?: "")
+            d.day in setOf(1, 8, 15, 22, 29) && days.first().date.day == 1 -> i to d.day.toString()
+            days.first().date.day != 1 && i % 7 == 0 -> i to dates.shortDay(d)
+            else -> null
+        }
+    }.toMap()
     val shown = platforms.filter { p -> days.any { (it.byPlatform[p.id] ?: 0) > 0 } }
 
     ChartCard(stringResource(R.string.daily_activity), modifier) {
+        if (hasMoney && hasTrips) {
+            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
+                listOf(ActivityMetric.MONEY to R.string.activity_money, ActivityMetric.TRIPS to R.string.activity_trips).forEachIndexed { index, (m, label) ->
+                    ToggleButton(
+                        checked = metric == m,
+                        onCheckedChange = { metric = m },
+                        modifier = Modifier.weight(1f),
+                        shapes = if (index == 0) ButtonGroupDefaults.connectedLeadingButtonShapes() else ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    ) { Text(stringResource(label)) }
+                }
+            }
+        }
+        // Summary: how many days, the best one, the average per day driven.
         Text(
-            money.format(max),
-            style = MaterialTheme.typography.labelSmall.tabular(),
+            buildString {
+                append(pluralStringResource(R.plurals.days_driven, driven.size, driven.size))
+                if (best != null) append(" · ").append(stringResource(R.string.best_day, dates.shortDay(days[best].date), format(value(days[best]))))
+                if (driven.size > 1) append(" · ").append(stringResource(R.string.average_per_day, format(average)))
+            },
+            style = MaterialTheme.typography.bodySmall.tabular(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // The selected day, above the chart.
+        val pick = selected?.let { days[it] }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.Bottom) {
+            Text(pick?.let { dates.day(it.date) } ?: stringResource(R.string.tap_a_bar), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            if (pick != null) Text(format(value(pick)), style = MaterialTheme.typography.titleLarge.tabular())
+        }
         Canvas(
             Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .pointerInput(days) {
+                .height(150.dp)
+                .pointerInput(days, metric) {
                     detectTapGestures { offset ->
                         val index = (offset.x / (size.width.toFloat() / days.size)).toInt().coerceIn(0, days.lastIndex)
-                        selected = if (selected == index || days[index].totalMinor == 0L) null else index
+                        if (value(days[index]) > 0) selected = index
                     }
                 },
         ) {
+            val axisSpace = 18.dp.toPx()
+            val chartHeight = size.height - axisSpace
             val slot = size.width / days.size
-            val gap = (slot * 0.2f).coerceIn(2.dp.toPx(), 6.dp.toPx())
+            val gap = (slot * 0.25f).coerceIn(2.dp.toPx(), 8.dp.toPx())
             val barWidth = slot - gap
-            drawLine(gridColor, Offset(0f, 0f), Offset(size.width, 0f), 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
-            drawLine(gridColor, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
+            drawLine(gridColor, Offset(0f, chartHeight), Offset(size.width, chartHeight), 1.dp.toPx())
             days.forEachIndexed { i, day ->
-                var top = size.height
                 val x = i * slot + gap / 2
-                val segments = order.mapNotNull { id -> day.byPlatform[id]?.takeIf { it > 0 }?.let { id to it } }
-                segments.forEachIndexed { s, (id, value) ->
-                    val h = size.height * value / max
-                    val color = colorOf[id] ?: gridColor
-                    val faded = selected != null && selected != i
+                val faded = selected != null && selected != i
+                val segments: List<Pair<Color, Long>> = if (metric == ActivityMetric.MONEY) {
+                    order.mapNotNull { id -> day.byPlatform[id]?.takeIf { it > 0 }?.let { (colorOf[id] ?: gridColor) to it } }
+                } else {
+                    listOfNotNull(day.tripCount.toLong().takeIf { it > 0 }?.let { tripsColor to it })
+                }
+                var top = chartHeight
+                segments.forEachIndexed { s, (color, v) ->
+                    val h = chartHeight * v / max
                     val isTop = s == segments.lastIndex
                     drawRoundRect(
-                        color = if (faded) lerp(color, dim, 0.6f) else color,
+                        color = if (faded) lerp(color, surface, 0.55f) else color,
                         topLeft = Offset(x, top - h),
                         size = Size(barWidth, h),
                         cornerRadius = if (isTop) CornerRadius(4.dp.toPx().coerceAtMost(barWidth / 2)) else CornerRadius.Zero,
                     )
                     top -= h
-                    // 2dp surface gap between stacked segments.
-                    if (!isTop) drawLine(dim, Offset(x, top), Offset(x + barWidth, top), 2.dp.toPx())
+                    if (!isTop) drawLine(surface, Offset(x, top), Offset(x + barWidth, top), 2.dp.toPx())
+                }
+                labelled[i]?.let { text ->
+                    val layout = measurer.measure(text, if (selected == i) selectedLabelStyle else labelStyle)
+                    val lx = (x + barWidth / 2 - layout.size.width / 2).coerceIn(0f, size.width - layout.size.width)
+                    drawText(layout, topLeft = Offset(lx, chartHeight + 4.dp.toPx()))
                 }
             }
+            if (driven.size > 1) {
+                val y = chartHeight - chartHeight * average / max
+                drawLine(averageColor, Offset(0f, y), Offset(size.width, y), 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)))
+                val layout = measurer.measure(format(average), labelStyle)
+                drawText(layout, topLeft = Offset(size.width - layout.size.width, (y - layout.size.height - 2.dp.toPx()).coerceAtLeast(0f)))
+            }
         }
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            Text(dates.shortDay(days.first().date), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(dates.shortDay(days.last().date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (shown.size > 1) {
+        if (metric == ActivityMetric.MONEY && shown.size > 1) {
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 shown.forEach { p ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -325,26 +452,15 @@ fun DailyActivity(
                 }
             }
         }
-        val pick = selected?.let { days[it] }
-        if (pick == null) {
-            Text(
-                stringResource(R.string.tap_a_bar),
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(dates.day(pick.date), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                Text(money.format(pick.totalMinor), style = MaterialTheme.typography.titleMedium.tabular())
-            }
-            pick.byPlatform.entries.sortedBy { order.indexOf(it.key) }.forEach { (id, value) ->
-                Text(
-                    (names[id] ?: "") + " · " + money.format(value),
-                    style = MaterialTheme.typography.bodySmall.tabular(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        if (pick != null) {
+            if (metric == ActivityMetric.MONEY && pick.byPlatform.size > 1) {
+                pick.byPlatform.entries.sortedBy { order.indexOf(it.key) }.forEach { (id, v) ->
+                    Text(
+                        (names[id] ?: "") + " · " + money.format(v),
+                        style = MaterialTheme.typography.bodySmall.tabular(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             // On the left, so the floating + button never covers it.
             TextButton(onClick = { onOpenDay(pick.date) }, modifier = Modifier.padding(top = 4.dp)) {

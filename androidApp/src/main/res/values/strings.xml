@@ -19,7 +19,7 @@
 
     <!-- Welcome -->
     <string name="welcome_title">Welcome to Ride Tracker</string>
-    <string name="welcome_body">Track what you earn across Uber, Bolt and other apps. Your data stays on this device.</string>
+    <string name="welcome_body">Track what you earn across Uber, Bolt and other platforms. Your data stays on this device.</string>
     <string name="welcome_country_question">Where do you drive?</string>
     <string name="welcome_continue">Continue</string>
 
@@ -52,8 +52,8 @@
     <!-- Add / edit income -->
     <string name="edit_income">Edit income</string>
     <string name="amount">Amount</string>
-    <string name="app">App</string>
-    <string name="manage_apps">Manage apps</string>
+    <string name="app">Platform</string>
+    <string name="manage_apps">Manage platforms</string>
     <string name="date">Date</string>
     <string name="note_optional">Note (optional)</string>
     <string name="invalid_amount">Enter a valid amount</string>
@@ -62,10 +62,10 @@
     <string name="delete_entry_body">This can\'t be undone.</string>
 
     <!-- Apps (platforms) -->
-    <string name="apps">Apps</string>
-    <string name="apps_summary">Add, rename or archive ride-sharing apps</string>
-    <string name="add_app">Add app</string>
-    <string name="edit_app">Edit app</string>
+    <string name="apps">Platforms</string>
+    <string name="apps_summary">Add, rename or archive ride-sharing platforms</string>
+    <string name="add_app">Add platform</string>
+    <string name="edit_app">Edit platform</string>
     <string name="name">Name</string>
     <string name="colour">Colour</string>
     <string name="colour_selected">Selected colour</string>
@@ -97,7 +97,7 @@
     <string name="driving_type">How you drive</string>
     <string name="welcome_driving_question">How do you drive?</string>
     <string name="driving_pfa">PFA (own business)</string>
-    <string name="driving_pfa_detail">You work directly with the apps</string>
+    <string name="driving_pfa_detail">You work directly with the platforms</string>
     <string name="driving_fleet">Through a fleet partner</string>
     <string name="driving_fleet_detail">A partner company pays you for your rides</string>
     <string name="backup">Back up data</string>
@@ -113,9 +113,9 @@
     <string name="restore_invalid">This file isn’t a Ride Tracker backup</string>
     <string name="restore_newer">This backup is from a newer version. Update the app first.</string>
     <string name="erase">Erase all data</string>
-    <string name="erase_summary">Delete all entries, apps and settings</string>
+    <string name="erase_summary">Delete all entries, platforms and settings</string>
     <string name="erase_confirm_title">Erase all data?</string>
-    <string name="erase_confirm_body">All income entries, apps and settings will be deleted and the app starts over. This can’t be undone, so make a backup first if you might need the data.</string>
+    <string name="erase_confirm_body">All income entries, platforms and settings will be deleted and the app starts over. This can’t be undone, so make a backup first if you might need the data.</string>
     <string name="erase_action">Erase</string>
 
     <!-- 0.0.5: menu panel and settings pages -->
@@ -166,7 +166,7 @@
     <string name="export_failed">Couldn’t export the file</string>
     <string name="csv_date">Date</string>
     <string name="csv_type">Type</string>
-    <string name="csv_item">App or category</string>
+    <string name="csv_item">Platform or category</string>
     <string name="csv_group">Group</string>
     <string name="csv_amount">Amount</string>
     <string name="csv_currency">Currency</string>
@@ -372,28 +372,38 @@
     <!-- Home (cockpit) -->
     <string name="after_fees">after platform fees</string>
     <string name="after_fees_and_expenses">after platform fees and expenses</string>
-    <string name="gross">Gross</string>
     <string name="fees">Fees</string>
     <string name="kept">Kept</string>
     <string name="earned">Earned</string>
-    <string name="gross_is">Gross = %1$s</string>
+    <string name="of_gross">Of %1$s gross: %2$s</string>
     <string name="gross_fares">fares %1$s</string>
     <string name="gross_bonuses">bonuses and tips %1$s</string>
     <string name="gross_other">other %1$s</string>
     <string name="fees_partial">Fees are known only for days imported from a report.</string>
     <string name="metric_trips">Trips</string>
-    <string name="metric_average_fare">Average fare</string>
-    <string name="metric_online">Online</string>
-    <string name="metric_per_hour">Per hour</string>
-    <string name="metric_km">On trips</string>
-    <string name="metric_per_km">Fares per km</string>
+    <string name="metric_online">Hours online</string>
+    <string name="metric_per_hour">%1$s per hour</string>
+    <string name="metric_km">Paid km</string>
+    <string name="metric_per_km">%1$s per km</string>
     <string name="hours_minutes">%1$d h %2$d min</string>
-    <string name="metrics_source_note">Trips come from Bolt’s rider invoices, which have no distance or online time.</string>
-    <string name="split_by_app">Split by app</string>
+    <string name="only_platforms">%1$s only</string>
+    <string name="hint_trips">No trips yet</string>
+    <string name="hint_km">No km yet</string>
+    <string name="hint_hours">No hours yet</string>
+    <string name="metrics_empty">Trips, paid km, hours online and what you make per hour and per km appear here once a report includes them: Bolt invoices and monthly summary, or Uber reports.</string>
+    <string name="split_by_app">Split by platform</string>
     <string name="daily_activity">Daily activity</string>
-    <string name="tap_a_bar">Tap a bar to see that day.</string>
+    <string name="tap_a_bar">Tap a bar to see a day</string>
     <string name="open_day">Open day</string>
-    <string name="best_time">Best time to drive</string>
-    <string name="best_time_caption">Trip fares by weekday and time of day. The busiest slot is outlined; tap a cell for its total.</string>
+    <string name="best_time">When you earn</string>
+    <string name="best_time_caption">Trip fares by weekday and time of day: when you drove and earned, not pay per hour. The top slot is outlined; tap a cell for its total.</string>
     <string name="heat_cell">%1$s, %2$s: %3$s in fares</string>
+    <string name="activity_money">Money</string>
+    <string name="activity_trips">Trips</string>
+    <string name="best_day">best %1$s %2$s</string>
+    <string name="average_per_day">average %1$s per day driven</string>
+    <plurals name="days_driven">
+        <item quantity="one">%d day driven</item>
+        <item quantity="other">%d days driven</item>
+    </plurals>
 </resources>

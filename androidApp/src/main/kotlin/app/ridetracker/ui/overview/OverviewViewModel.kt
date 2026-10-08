@@ -107,7 +107,8 @@ class OverviewViewModel(
             incomeRepository.observeEntryDetails(period.range),
             incomeRepository.observeLines(period.range),
             importRepository.observeTrips(period.range),
-        ) { details, lines, trips -> HomeStatsCalculator.compute(period.range, details, lines, trips) }
+            importRepository.observeSummaries(period.range),
+        ) { details, lines, trips, summaries -> HomeStatsCalculator.compute(period.range, details, lines, trips, summaries) }
         val extras = combine(statsFlow, incomeRepository.observePlatforms()) { stats, platforms -> stats to platforms }
         combine(
             incomeRepository.observeEntries(period.range),

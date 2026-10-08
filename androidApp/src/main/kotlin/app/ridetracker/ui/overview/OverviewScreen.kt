@@ -200,6 +200,7 @@ fun OverviewScreen(
                 item {
                     Metrics(
                         stats,
+                        state.platforms,
                         money,
                         Modifier.padding(horizontal = 16.dp).padding(top = if (stats.grossMinor > 0) 0.dp else 16.dp, bottom = 12.dp),
                     )

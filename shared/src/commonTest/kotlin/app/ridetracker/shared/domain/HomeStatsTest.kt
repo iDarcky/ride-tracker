@@ -61,7 +61,7 @@ class HomeStatsTest {
         val trips = listOf(trip(0, 600, 2000, meters = 4000), trip(0, 700, 1000))
         val s = HomeStatsCalculator.compute(week, entries, emptyList(), trips)
         assertEquals(3000, s.perHourMinor) // 60.00 over 2 h; the entry without hours is left out
-        assertEquals(500, s.perKmMinor) // 20.00 over 4 km; the trip without distance is left out
+        assertEquals(2500, s.perKmMinor) // platform 2's income (99.99) over its 4 km
         assertEquals(2, s.tripCount)
         assertEquals(1500, s.averageFareMinor)
     }
@@ -81,6 +81,35 @@ class HomeStatsTest {
         val s = HomeStatsCalculator.compute(week, emptyList(), emptyList(), trips)
         assertEquals(1500, s.heat[0][4]) // Monday 16–20
         assertEquals(300, s.heat[6][5]) // Sunday 20–24
+    }
+
+    @Test
+    fun daysCountTripsFromImportsOrEntries() {
+        val entries = listOf(entry(1, 1, 0, 100).copy(tripCount = 4), entry(2, 2, 0, 100).copy(tripCount = 9))
+        val trips = listOf(trip(0, 600, 500), trip(0, 700, 500))
+        val s = HomeStatsCalculator.compute(week, entries, emptyList(), trips)
+        assertEquals(6, s.days[0].tripCount) // 4 reported by platform 1 + 2 imported for platform 2 (its 9 is not added)
+    }
+
+    @Test
+    fun monthlyKmFromThePlatformsOwnTotal() {
+        val september = DateRange(LocalDate(2026, 9, 1), LocalDate(2026, 9, 30))
+        val summary = app.ridetracker.shared.data.PeriodSummaryEntity(
+            platformId = 2, importBatchId = 1, periodStart = september.start.toEpochDays(),
+            periodEnd = september.endInclusive.toEpochDays(), distanceMeters = 100_000,
+        )
+        val entries = listOf(
+            IncomeEntryEntity(id = 1, platformId = 2, amountMinor = 30000, date = september.start.toEpochDays(), createdAt = 0),
+            IncomeEntryEntity(id = 2, platformId = 1, amountMinor = 10000, date = september.start.toEpochDays(), createdAt = 0),
+        )
+        val s = HomeStatsCalculator.compute(september, entries, emptyList(), emptyList(), listOf(summary))
+        assertEquals(100_000, s.distanceMeters)
+        assertEquals(300, s.perKmMinor) // platform 2's 300.00 over 100 km; platform 1 has no km
+        assertEquals(setOf(2L), s.kmPlatformIds)
+        assertEquals(setOf(1L, 2L), s.incomePlatformIds)
+        // A week inside September does not use the monthly total.
+        val week = DateRange(LocalDate(2026, 9, 7), LocalDate(2026, 9, 13))
+        assertNull(HomeStatsCalculator.compute(week, emptyList(), emptyList(), emptyList(), listOf(summary)).distanceMeters)
     }
 
     @Test

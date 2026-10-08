@@ -40,6 +40,10 @@ class ImportRepository(private val database: AppDatabase) {
 
     fun observeTripDays(): Flow<List<LocalDate>> = imports.observeTripDays().map { days -> days.map(LocalDate::fromEpochDays) }
 
+    /** Platforms' own totals that overlap [range]. */
+    fun observeSummaries(range: DateRange): Flow<List<PeriodSummaryEntity>> =
+        imports.observeSummaries(range.start.toEpochDays(), range.endInclusive.toEpochDays())
+
     suspend fun getTrip(id: Long): TripWithPlatform? = imports.getTrip(id)
 
     suspend fun getLines(entryId: Long): List<IncomeLineEntity> = imports.getLines(entryId)

@@ -17,7 +17,7 @@
 
     <!-- Welcome -->
     <string name="welcome_title">Bun venit în Ride Tracker</string>
-    <string name="welcome_body">Urmărește cât câștigi din Uber, Bolt și alte aplicații. Datele tale rămân pe acest dispozitiv.</string>
+    <string name="welcome_body">Urmărește cât câștigi din Uber, Bolt și alte platforme. Datele tale rămân pe acest dispozitiv.</string>
     <string name="welcome_country_question">Unde conduci?</string>
     <string name="welcome_continue">Continuă</string>
 
@@ -51,8 +51,8 @@
     <!-- Add / edit income -->
     <string name="edit_income">Editează venitul</string>
     <string name="amount">Sumă</string>
-    <string name="app">Aplicație</string>
-    <string name="manage_apps">Gestionează aplicațiile</string>
+    <string name="app">Platformă</string>
+    <string name="manage_apps">Gestionează platformele</string>
     <string name="date">Data</string>
     <string name="note_optional">Notă (opțional)</string>
     <string name="invalid_amount">Introdu o sumă validă</string>
@@ -61,10 +61,10 @@
     <string name="delete_entry_body">Acțiunea nu poate fi anulată.</string>
 
     <!-- Apps (platforms) -->
-    <string name="apps">Aplicații</string>
-    <string name="apps_summary">Adaugă, redenumește sau arhivează aplicații</string>
-    <string name="add_app">Adaugă aplicație</string>
-    <string name="edit_app">Editează aplicația</string>
+    <string name="apps">Platforme</string>
+    <string name="apps_summary">Adaugă, redenumește sau arhivează platforme</string>
+    <string name="add_app">Adaugă platformă</string>
+    <string name="edit_app">Editează platforma</string>
     <string name="name">Nume</string>
     <string name="colour">Culoare</string>
     <string name="colour_selected">Culoare selectată</string>
@@ -96,7 +96,7 @@
     <string name="driving_type">Cum lucrezi</string>
     <string name="welcome_driving_question">Cum lucrezi?</string>
     <string name="driving_pfa">PFA (firmă proprie)</string>
-    <string name="driving_pfa_detail">Lucrezi direct cu aplicațiile</string>
+    <string name="driving_pfa_detail">Lucrezi direct cu platformele</string>
     <string name="driving_fleet">Printr-un partener de flotă</string>
     <string name="driving_fleet_detail">O firmă parteneră te plătește pentru curse</string>
     <string name="backup">Fă o copie de rezervă</string>
@@ -112,9 +112,9 @@
     <string name="restore_invalid">Acest fișier nu este o copie Ride Tracker</string>
     <string name="restore_newer">Copia este dintr-o versiune mai nouă. Actualizează mai întâi aplicația.</string>
     <string name="erase">Șterge toate datele</string>
-    <string name="erase_summary">Șterge toate înregistrările, aplicațiile și setările</string>
+    <string name="erase_summary">Șterge toate înregistrările, platformele și setările</string>
     <string name="erase_confirm_title">Ștergi toate datele?</string>
-    <string name="erase_confirm_body">Toate veniturile, aplicațiile și setările vor fi șterse, iar aplicația o ia de la capăt. Acțiunea nu poate fi anulată, așa că fă o copie de rezervă dacă s-ar putea să ai nevoie de date.</string>
+    <string name="erase_confirm_body">Toate veniturile, platformele și setările vor fi șterse, iar aplicația o ia de la capăt. Acțiunea nu poate fi anulată, așa că fă o copie de rezervă dacă s-ar putea să ai nevoie de date.</string>
     <string name="erase_action">Șterge</string>
 
     <!-- 0.0.5: menu panel and settings pages -->
@@ -165,7 +165,7 @@
     <string name="export_failed">Fișierul nu a putut fi exportat</string>
     <string name="csv_date">Data</string>
     <string name="csv_type">Tip</string>
-    <string name="csv_item">Aplicație sau categorie</string>
+    <string name="csv_item">Platformă sau categorie</string>
     <string name="csv_group">Grupă</string>
     <string name="csv_amount">Sumă</string>
     <string name="csv_currency">Monedă</string>
@@ -376,30 +376,41 @@
     </plurals>
 
     <!-- Home (cockpit) -->
-    <string name="after_fees">după comisioanele aplicațiilor</string>
+    <string name="after_fees">după comisioanele platformelor</string>
     <string name="after_fees_and_expenses">după comisioane și cheltuieli</string>
-    <string name="gross">Brut</string>
     <string name="fees">Comisioane</string>
     <string name="kept">Rămași</string>
     <string name="earned">Câștigat</string>
-    <string name="gross_is">Brut = %1$s</string>
+    <string name="of_gross">Din %1$s brut: %2$s</string>
     <string name="gross_fares">curse %1$s</string>
     <string name="gross_bonuses">bonusuri și bacșișuri %1$s</string>
     <string name="gross_other">altele %1$s</string>
     <string name="fees_partial">Comisioanele se știu doar pentru zilele importate dintr-un raport.</string>
     <string name="metric_trips">Curse</string>
-    <string name="metric_average_fare">Tarif mediu</string>
-    <string name="metric_online">Online</string>
-    <string name="metric_per_hour">Pe oră</string>
-    <string name="metric_km">În curse</string>
-    <string name="metric_per_km">Tarif pe km</string>
+    <string name="metric_online">Ore online</string>
+    <string name="metric_per_hour">%1$s pe oră</string>
+    <string name="metric_km">Km plătiți</string>
+    <string name="metric_per_km">%1$s pe km</string>
     <string name="hours_minutes">%1$d h %2$d min</string>
-    <string name="metrics_source_note">Cursele vin din facturile Bolt către pasageri, care nu au distanța sau timpul online.</string>
-    <string name="split_by_app">Pe aplicații</string>
+    <string name="only_platforms">doar %1$s</string>
+    <string name="hint_trips">Încă fără curse</string>
+    <string name="hint_km">Încă fără km</string>
+    <string name="hint_hours">Încă fără ore</string>
+    <string name="metrics_empty">Cursele, km plătiți, orele online și cât câștigi pe oră și pe km apar aici când un raport le conține: facturile și rezumatul lunar Bolt sau rapoartele Uber.</string>
+    <string name="split_by_app">Pe platforme</string>
     <string name="daily_activity">Activitate pe zile</string>
-    <string name="tap_a_bar">Atinge o bară ca să vezi ziua.</string>
+    <string name="tap_a_bar">Atinge o bară ca să vezi ziua</string>
     <string name="open_day">Deschide ziua</string>
-    <string name="best_time">Cele mai bune ore</string>
-    <string name="best_time_caption">Tarifele curselor pe zile și intervale orare. Intervalul cel mai bun e conturat; atinge o căsuță pentru total.</string>
+    <string name="best_time">Când câștigi</string>
+    <string name="best_time_caption">Tarifele curselor pe zile și ore: când ai condus și ai câștigat, nu cât plătește pe oră. Intervalul de top e conturat; atinge o căsuță pentru total.</string>
     <string name="heat_cell">%1$s, %2$s: %3$s din curse</string>
+    <string name="activity_money">Bani</string>
+    <string name="activity_trips">Curse</string>
+    <string name="best_day">cea mai bună %1$s %2$s</string>
+    <string name="average_per_day">în medie %1$s pe zi lucrată</string>
+    <plurals name="days_driven">
+        <item quantity="one">%d zi lucrată</item>
+        <item quantity="few">%d zile lucrate</item>
+        <item quantity="other">%d de zile lucrate</item>
+    </plurals>
 </resources>

@@ -2,14 +2,15 @@ package app.ridetracker.shared.domain
 
 import app.ridetracker.shared.data.IncomeEntryEntity
 import app.ridetracker.shared.data.LineInRange
+import app.ridetracker.shared.data.PeriodSummaryEntity
 import app.ridetracker.shared.data.TripWithPlatform
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
 
-/** Income of one day, per app (platform id -> amount). */
-data class DayIncome(val date: LocalDate, val byPlatform: Map<Long, Long>) {
+/** Income of one day, per platform (platform id -> amount), and its trips (imported, or as reported). */
+data class DayIncome(val date: LocalDate, val byPlatform: Map<Long, Long>, val tripCount: Int = 0) {
     val totalMinor: Long get() = byPlatform.values.sum()
 }
 
@@ -30,15 +31,22 @@ data class HomeStats(
     val bonusesAndTipsMinor: Long,
     /** Gross that is neither fares nor bonuses/tips: tolls, cancellation fees, other. */
     val otherIncomeMinor: Long,
+    /** Imported trips, plus trip counts reported on entries of platforms without imported trips. */
     val tripCount: Int,
     /** Average fare per imported trip; null without trips. */
     val averageFareMinor: Long?,
     val onlineMinutes: Int?,
-    /** Income per hour, from the entries that have online time; null without any. */
+    /** Income per hour online, from the entries that have online time; null without any. */
     val perHourMinor: Long?,
+    /** Paid km: trip distances, or a platform's own monthly total when the period is exactly that month. */
     val distanceMeters: Long?,
-    /** Fares per km, from the trips that have a distance; null without any. */
+    /** Income per paid km of the platforms that have km; null without any. */
     val perKmMinor: Long?,
+    /** Platforms with income in the period, and those that each figure covers (for "Uber only" labels). */
+    val incomePlatformIds: Set<Long>,
+    val tripPlatformIds: Set<Long>,
+    val hourPlatformIds: Set<Long>,
+    val kmPlatformIds: Set<Long>,
     /** One item per day of the range (empty days included), for the activity chart and sparkline. */
     val days: List<DayIncome>,
     /** Trip fares by ISO weekday (index 0 = Monday) and 4-hour slot (index 0 = 00–04). */
@@ -58,6 +66,7 @@ object HomeStatsCalculator {
         entries: List<IncomeEntryEntity>,
         lines: List<LineInRange>,
         trips: List<TripWithPlatform>,
+        summaries: List<PeriodSummaryEntity> = emptyList(),
     ): HomeStats {
         val linesByEntry = lines.groupBy { it.entryId }
         var gross = 0L
@@ -88,16 +97,34 @@ object HomeStatsCalculator {
 
         val timed = entries.filter { (it.onlineMinutes ?: 0) > 0 }
         val minutes = timed.sumOf { it.onlineMinutes ?: 0 }
-        val measured = trips.filter { (it.distanceMeters ?: 0) > 0 }
-        val meters = measured.sumOf { it.distanceMeters ?: 0 }
+
+        // Paid km per platform: its trips' distances, else its own total for exactly this period (Bolt's monthly PDF).
+        val metersByPlatform = mutableMapOf<Long, Long>()
+        trips.filter { (it.distanceMeters ?: 0) > 0 }.forEach {
+            metersByPlatform[it.platformId] = (metersByPlatform[it.platformId] ?: 0) + (it.distanceMeters ?: 0)
+        }
+        summaries
+            .filter { it.periodStart == range.start.toEpochDays() && it.periodEnd == range.endInclusive.toEpochDays() }
+            .filter { (it.distanceMeters ?: 0) > 0 && it.platformId !in metersByPlatform }
+            .distinctBy { it.platformId }
+            .forEach { metersByPlatform[it.platformId] = it.distanceMeters ?: 0 }
+        val meters = metersByPlatform.values.sum()
+        val kmIncome = entries.filter { it.platformId in metersByPlatform }.sumOf { it.amountMinor }
+
+        val importedTripPlatformDays = trips.map { it.platformId to it.date }.toSet()
+        val reportedTrips = entries.filter { (it.platformId to it.date) !in importedTripPlatformDays && (it.tripCount ?: 0) > 0 }
 
         val days = if (range.dayCount() <= MAX_CHART_DAYS) {
             val byDay = entries.groupBy { it.date }
+            val tripsByDay = trips.groupBy { it.date }
             generateSequence(range.start) { it.plus(DatePeriod(days = 1)) }
                 .takeWhile { it <= range.endInclusive }
                 .map { day ->
                     val list = byDay[day.toEpochDays()].orEmpty()
-                    DayIncome(day, list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } })
+                    val imported = tripsByDay[day.toEpochDays()].orEmpty()
+                    // Imported trips per platform; an entry's own trip count where a platform has none imported.
+                    val reported = list.filter { e -> imported.none { it.platformId == e.platformId } }.sumOf { it.tripCount ?: 0 }
+                    DayIncome(day, list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } }, imported.size + reported)
                 }
                 .toList()
         } else {
@@ -119,12 +146,16 @@ object HomeStatsCalculator {
             faresMinor = fares,
             bonusesAndTipsMinor = bonuses,
             otherIncomeMinor = gross - fares - bonuses,
-            tripCount = trips.size,
+            tripCount = trips.size + reportedTrips.sumOf { it.tripCount ?: 0 },
             averageFareMinor = if (trips.isEmpty()) null else trips.sumOf { it.fareMinor } / trips.size,
             onlineMinutes = minutes.takeIf { it > 0 },
-            perHourMinor = if (minutes > 0) timed.sumOf { it.amountMinor } * 60 / minutes else null,
+            perHourMinor = if (minutes > 0) (timed.sumOf { it.amountMinor } * 60 + minutes / 2) / minutes else null,
             distanceMeters = meters.takeIf { it > 0 },
-            perKmMinor = if (meters > 0) measured.sumOf { it.fareMinor } * 1000 / meters else null,
+            perKmMinor = if (meters > 0 && kmIncome > 0) (kmIncome * 1000 + meters / 2) / meters else null,
+            incomePlatformIds = entries.filter { it.amountMinor != 0L }.map { it.platformId }.toSet(),
+            tripPlatformIds = (trips.map { it.platformId } + reportedTrips.map { it.platformId }).toSet(),
+            hourPlatformIds = timed.map { it.platformId }.toSet(),
+            kmPlatformIds = metersByPlatform.keys,
             days = days,
             heat = heat,
         )
