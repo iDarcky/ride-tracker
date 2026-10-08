@@ -26,6 +26,9 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
    Copy the APK to `~/Desktop/Ride Tracker APKs/RideTracker-<version>.apk` for the owner's phone.
 3. Schema bump ⇒ upgrade test: install the previous release with data, then the new one.
 4. Commit (noreply author) and push to `main`; CI must pass.
+5. Publish the APK for the owner's phone (approved 8 Oct 2026): `gh release create v<version>
+   "RideTracker-<version>.apk" --target main --title v<version> --notes "<this version's CHANGELOG section>"`.
+   CI has no signing secrets yet, so the APK comes from the local signed build (same key, installs over).
 
 ## Stack and layout
 - Kotlin Multiplatform. `shared/` = Room KMP database, DataStore settings, money/period logic, backup.
