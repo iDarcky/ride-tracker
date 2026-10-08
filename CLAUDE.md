@@ -10,9 +10,12 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
 ## Where we are (8 October 2026)
-- App **0.0.10**, database version **5**, backup format **5**. What each version added: [CHANGELOG.md](CHANGELOG.md).
-- Next work and the open "vibe" question: "Next up" in [docs/product-brief.md](docs/product-brief.md).
-  Start there; propose, don't build, until the owner picks a direction.
+- App **0.1.0**, database version **6**, backup format **6**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- Direction (owner, 8 Oct): data should come in automatically from screenshots/CSV/PDF. Bolt import is built
+  (`shared/.../domain/importing/`, on-device ML Kit OCR in `androidApp/.../importing/ReportReader.kt`).
+  Next steps: "Next up" in [docs/product-brief.md](docs/product-brief.md). Propose before building.
+- Import parsers: test with made-up fixtures only; the owner's real screenshots/exports never go in the repo.
+  ML Kit model is bundled (works without Google Play); APK is ARM-only to keep it ~25 MB.
 - Owner's taste so far: hated the drawn car silhouettes (removed); no grey surfaces behind panels/cards
   (plain background, outlines instead); each setting on its own page; Romanian copy must sound natural
   (e.g. „Recurentă”, not „Se repetă”).

@@ -34,12 +34,18 @@ data class BackupFile(
     val odometerReadings: List<BackupOdometerReading> = emptyList(),
     /** Added in format 5 (0.0.9). */
     val recurringExpenses: List<BackupRecurringExpense> = emptyList(),
+    /** Added in format 6 (0.1.0). */
+    val incomeLines: List<BackupIncomeLine> = emptyList(),
+    val importBatches: List<BackupImportBatch> = emptyList(),
+    val trips: List<BackupTrip> = emptyList(),
+    val periodSummaries: List<BackupPeriodSummary> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
 
-        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9). */
-        const val FORMAT_VERSION = 5
+        /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9).
+         *  6: + income details, income lines, imports, trips and period summaries (0.1.0). */
+        const val FORMAT_VERSION = 6
     }
 }
 
@@ -70,6 +76,69 @@ data class BackupIncomeEntry(
     val date: String,
     val note: String? = null,
     val createdAtEpochMillis: Long,
+    /** Added in format 6. */
+    val source: String = "manual",
+    val importBatchId: Long? = null,
+    val cashCollectedMinor: Long? = null,
+    val onlineMinutes: Int? = null,
+    val tripCount: Int? = null,
+)
+
+@Serializable
+data class BackupIncomeLine(
+    val id: Long,
+    val entryId: Long,
+    val kind: String,
+    val amountMinor: Long,
+    val inCash: Boolean = false,
+    val label: String? = null,
+)
+
+@Serializable
+data class BackupImportBatch(
+    val id: Long,
+    val platformId: Long,
+    val kind: String,
+    val fileHash: String,
+    /** ISO dates. */
+    val periodStart: String,
+    val periodEnd: String,
+    val itemCount: Int,
+    val importedAtEpochMillis: Long,
+)
+
+@Serializable
+data class BackupTrip(
+    val id: Long,
+    val platformId: Long,
+    val importBatchId: Long,
+    val externalId: String,
+    /** ISO date. */
+    val date: String,
+    val startMinute: Int,
+    val fareMinor: Long,
+    val paymentMethod: String,
+    val distanceMeters: Long? = null,
+    val durationSeconds: Long? = null,
+)
+
+@Serializable
+data class BackupPeriodSummary(
+    val id: Long,
+    val platformId: Long,
+    val importBatchId: Long,
+    /** ISO dates. */
+    val periodStart: String,
+    val periodEnd: String,
+    val grossFareMinor: Long? = null,
+    val cancellationMinor: Long? = null,
+    val tipsMinor: Long? = null,
+    val bonusMinor: Long? = null,
+    val platformFeeMinor: Long? = null,
+    val earningsMinor: Long? = null,
+    val distanceMeters: Long? = null,
+    val tripCount: Int? = null,
+    val onlineMinutes: Int? = null,
 )
 
 @Serializable
@@ -158,6 +227,11 @@ class BackupService(
                     date = LocalDate.fromEpochDays(it.date).toString(),
                     note = it.note,
                     createdAtEpochMillis = it.createdAt,
+                    source = it.source,
+                    importBatchId = it.importBatchId,
+                    cashCollectedMinor = it.cashCollectedMinor,
+                    onlineMinutes = it.onlineMinutes,
+                    tripCount = it.tripCount,
                 )
             },
             expenses = database.expenseDao().getAll().map {
@@ -189,6 +263,25 @@ class BackupService(
                     createdAtEpochMillis = it.createdAt,
                 )
             },
+            incomeLines = database.importDao().getAllLines().map {
+                BackupIncomeLine(it.id, it.entryId, it.kind, it.amountMinor, it.inCash, it.label)
+            },
+            importBatches = database.importDao().getAllBatches().map {
+                BackupImportBatch(it.id, it.platformId, it.kind, it.fileHash, day(it.periodStart), day(it.periodEnd), it.itemCount, it.importedAt)
+            },
+            trips = database.importDao().getAllTrips().map {
+                BackupTrip(
+                    it.id, it.platformId, it.importBatchId, it.externalId, day(it.date), it.startMinute,
+                    it.fareMinor, it.paymentMethod, it.distanceMeters, it.durationSeconds,
+                )
+            },
+            periodSummaries = database.importDao().getAllSummaries().map {
+                BackupPeriodSummary(
+                    it.id, it.platformId, it.importBatchId, day(it.periodStart), day(it.periodEnd), it.grossFareMinor,
+                    it.cancellationMinor, it.tipsMinor, it.bonusMinor, it.platformFeeMinor, it.earningsMinor,
+                    it.distanceMeters, it.tripCount, it.onlineMinutes,
+                )
+            },
         )
         return json.encodeToString(BackupFile.serializer(), file)
     }
@@ -208,6 +301,15 @@ class BackupService(
         if (file.entries.any { it.platformId !in platformIds }) throw InvalidBackupException("Backup is damaged")
         val vehicleIds = file.vehicles.map { it.id }.toSet()
         if (file.odometerReadings.any { it.vehicleId !in vehicleIds }) throw InvalidBackupException("Backup is damaged")
+        val entryIds = file.entries.map { it.id }.toSet()
+        val batchIds = file.importBatches.map { it.id }.toSet()
+        if (file.incomeLines.any { it.entryId !in entryIds } ||
+            file.importBatches.any { it.platformId !in platformIds } ||
+            file.trips.any { it.platformId !in platformIds || it.importBatchId !in batchIds } ||
+            file.periodSummaries.any { it.platformId !in platformIds || it.importBatchId !in batchIds }
+        ) {
+            throw InvalidBackupException("Backup is damaged")
+        }
         return file
     }
 
@@ -221,6 +323,28 @@ class BackupService(
                 date = LocalDate.parse(it.date).toEpochDays(),
                 note = it.note,
                 createdAt = it.createdAtEpochMillis,
+                source = it.source,
+                importBatchId = it.importBatchId,
+                cashCollectedMinor = it.cashCollectedMinor,
+                onlineMinutes = it.onlineMinutes,
+                tripCount = it.tripCount,
+            )
+        }
+        val lines = file.incomeLines.map { IncomeLineEntity(it.id, it.entryId, it.kind, it.amountMinor, it.inCash, it.label) }
+        val batches = file.importBatches.map {
+            ImportBatchEntity(it.id, it.platformId, it.kind, it.fileHash, epochDay(it.periodStart), epochDay(it.periodEnd), it.itemCount, it.importedAtEpochMillis)
+        }
+        val trips = file.trips.map {
+            TripEntity(
+                it.id, it.platformId, it.importBatchId, it.externalId, epochDay(it.date), it.startMinute,
+                it.fareMinor, it.paymentMethod, it.distanceMeters, it.durationSeconds,
+            )
+        }
+        val summaries = file.periodSummaries.map {
+            PeriodSummaryEntity(
+                it.id, it.platformId, it.importBatchId, epochDay(it.periodStart), epochDay(it.periodEnd), it.grossFareMinor,
+                it.cancellationMinor, it.tipsMinor, it.bonusMinor, it.platformFeeMinor, it.earningsMinor,
+                it.distanceMeters, it.tripCount, it.onlineMinutes,
             )
         }
         val platforms = file.platforms.map { PlatformEntity(it.id, it.name, it.colorArgb, it.sortOrder, it.archived) }
@@ -253,14 +377,13 @@ class BackupService(
         }
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                database.recurringExpenseDao().deleteAll()
-                database.vehicleDao().deleteAllReadings()
-                database.vehicleDao().deleteAll()
-                database.expenseDao().deleteAll()
-                database.incomeEntryDao().deleteAll()
-                database.platformDao().deleteAll()
+                deleteAllRows()
                 database.platformDao().insertAll(platforms)
+                database.importDao().insertBatches(batches)
                 database.incomeEntryDao().insertAll(entries)
+                database.importDao().insertLines(lines)
+                database.importDao().insertTrips(trips)
+                database.importDao().insertSummaries(summaries)
                 database.expenseDao().insertAll(expenses)
                 database.vehicleDao().insertAll(vehicles)
                 database.vehicleDao().insertReadings(readings)
@@ -284,15 +407,28 @@ class BackupService(
     suspend fun eraseAll() {
         database.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                database.recurringExpenseDao().deleteAll()
-                database.vehicleDao().deleteAllReadings()
-                database.vehicleDao().deleteAll()
-                database.expenseDao().deleteAll()
-                database.incomeEntryDao().deleteAll()
-                database.platformDao().deleteAll()
+                deleteAllRows()
                 database.platformDao().insertAll(defaultPlatforms)
             }
         }
         settingsRepository.clear()
     }
+
+    /** Children before parents, so foreign keys never block. Call inside a transaction. */
+    private suspend fun deleteAllRows() {
+        database.importDao().deleteAllSummaries()
+        database.importDao().deleteAllTrips()
+        database.importDao().deleteAllLines()
+        database.recurringExpenseDao().deleteAll()
+        database.vehicleDao().deleteAllReadings()
+        database.vehicleDao().deleteAll()
+        database.expenseDao().deleteAll()
+        database.incomeEntryDao().deleteAll()
+        database.importDao().deleteAllBatches()
+        database.platformDao().deleteAll()
+    }
+
+    private fun day(epochDay: Long): String = LocalDate.fromEpochDays(epochDay).toString()
+
+    private fun epochDay(iso: String): Long = LocalDate.parse(iso).toEpochDays()
 }

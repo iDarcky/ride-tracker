@@ -49,6 +49,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.importing.lineLabel
+import app.ridetracker.ui.common.MoneyFormat
+import app.ridetracker.shared.domain.importing.ParsedLine
+import app.ridetracker.shared.domain.IncomeSource
+import app.ridetracker.shared.domain.IncomeLineKind
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.OutlinedCard
 import app.ridetracker.ui.common.PlatformBadge
 import app.ridetracker.ui.common.container
 import app.ridetracker.ui.common.DateFormats
@@ -63,7 +70,7 @@ fun EntryScreen(
     onDone: () -> Unit,
     onManagePlatforms: () -> Unit,
     viewModel: EntryViewModel = viewModel {
-        EntryViewModel(createSavedStateHandle(), container.incomeRepository, container.settingsRepository)
+        EntryViewModel(createSavedStateHandle(), container.incomeRepository, container.importRepository, container.settingsRepository)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -149,6 +156,8 @@ fun EntryScreen(
                 minLines = 2,
             )
 
+            if (state.lines.isNotEmpty()) Breakdown(state)
+
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = viewModel::save,
@@ -189,5 +198,37 @@ fun EntryScreen(
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+/** Read-only breakdown of an imported entry, as the report gave it. */
+@Composable
+private fun Breakdown(state: EntryUiState) {
+    val locale = currentLocale()
+    val money = remember(state.currency, locale) { MoneyFormat(state.currency, locale) }
+    Text(stringResource(R.string.breakdown), style = MaterialTheme.typography.titleSmall)
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.lines.forEach { line ->
+                val parsed = ParsedLine(IncomeLineKind.fromId(line.kind), line.amountMinor, line.inCash, line.label.orEmpty())
+                BreakdownRow(lineLabel(parsed), money.format(line.amountMinor))
+            }
+            state.cashCollectedMinor?.let { BreakdownRow(stringResource(R.string.import_cash_in_hand), money.format(it)) }
+            if (state.source != IncomeSource.MANUAL) {
+                Text(
+                    stringResource(R.string.from_import),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BreakdownRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium.tabular())
     }
 }

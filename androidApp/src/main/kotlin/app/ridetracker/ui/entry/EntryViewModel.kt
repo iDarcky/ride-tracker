@@ -3,9 +3,12 @@ package app.ridetracker.ui.entry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.ridetracker.shared.data.IncomeLineEntity
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
+import app.ridetracker.shared.domain.IncomeSource
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.resolveCurrency
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,11 +34,16 @@ data class EntryUiState(
     val currency: Currency = resolveCurrency(null),
     val amountInvalid: Boolean = false,
     val done: Boolean = false,
+    /** Breakdown of an imported entry (read-only). */
+    val source: IncomeSource = IncomeSource.MANUAL,
+    val lines: List<IncomeLineEntity> = emptyList(),
+    val cashCollectedMinor: Long? = null,
 )
 
 class EntryViewModel(
     savedStateHandle: SavedStateHandle,
     private val incomeRepository: IncomeRepository,
+    private val importRepository: ImportRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -51,6 +59,7 @@ class EntryViewModel(
             val currency = resolveCurrency(settingsRepository.settings.first().currencyCode)
             val digits = currency.defaultFractionDigits.coerceAtLeast(0)
             val entry = entryId?.let { incomeRepository.getEntry(it) }
+            val lines = entry?.let { importRepository.getLines(it.id) }.orEmpty()
             _state.update {
                 it.copy(
                     loading = false,
@@ -59,6 +68,9 @@ class EntryViewModel(
                     amountText = entry?.let { e -> Money.toPlainString(e.amountMinor, digits) } ?: "",
                     date = entry?.let { e -> LocalDate.fromEpochDays(e.date) } ?: it.date,
                     note = entry?.note ?: "",
+                    source = IncomeSource.fromId(entry?.source),
+                    lines = lines,
+                    cashCollectedMinor = entry?.cashCollectedMinor,
                 )
             }
             // Collect platforms only after the entry is loaded, so its (possibly archived) platform stays visible.

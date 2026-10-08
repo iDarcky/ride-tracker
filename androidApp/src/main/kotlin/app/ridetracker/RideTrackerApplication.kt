@@ -2,6 +2,8 @@ package app.ridetracker
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
+import app.ridetracker.importing.ReportReader
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
 import androidx.appcompat.app.AppCompatDelegate
@@ -9,10 +11,12 @@ import app.ridetracker.shared.data.BackupService
 import app.ridetracker.shared.data.createAppDatabase
 import app.ridetracker.shared.data.createSettingsRepository
 import app.ridetracker.shared.domain.ExpenseRepository
+import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.RecurringRepository
 import app.ridetracker.shared.domain.ThemeMode
 import app.ridetracker.shared.domain.VehicleRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -25,6 +29,11 @@ class AppContainer(context: Context) {
     val recurringRepository = RecurringRepository(database)
     val settingsRepository = createSettingsRepository(context)
     val backupService = BackupService(database, settingsRepository)
+    val importRepository = ImportRepository(database)
+    val reportReader = ReportReader(context)
+
+    /** Files shared to the app from the gallery or a file manager, waiting for the Import screen. */
+    val sharedFiles = MutableStateFlow<List<Uri>>(emptyList())
 }
 
 class RideTrackerApplication : Application() {

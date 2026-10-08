@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0
+- **Import from Bolt** (Menu → Import, the + button on Home, or Share → Ride Tracker from the gallery):
+  - **Daily earnings screenshots** (Earnings breakdown, Daily tab): read on the phone, shown for checking
+    (a tick when every figure adds up), then saved as that day's Bolt income with its breakdown
+    (ride payments, tips, campaigns, promotions, tolls, commission) and the cash you collected.
+    A screenshot replaces what you had for that app and day; the same file is never imported twice.
+  - **Rider invoices CSV**: saved as trips (time, price, cash or in-app). Rider names and addresses are
+    never read into the app.
+  - **Monthly summary PDF**: Bolt's own totals and km, kept for checking your days (not added as income).
+- Imported income shows its breakdown when you open it.
+- Database version 6 and backup format 6 (income details, trips, monthly totals, import history).
+
 ## 0.0.10
 - Romanian: the repeat switch is now called „Recurentă”.
 

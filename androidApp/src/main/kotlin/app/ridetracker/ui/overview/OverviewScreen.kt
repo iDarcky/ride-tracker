@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -121,6 +122,7 @@ import kotlin.math.abs
 fun OverviewScreen(
     onAddEntry: () -> Unit,
     onAddExpense: () -> Unit,
+    onImport: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(container.incomeRepository, container.expenseRepository, container.recurringRepository, container.settingsRepository)
     },
@@ -140,7 +142,7 @@ fun OverviewScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }, actions = { MenuButton() }) },
         floatingActionButton = {
-            AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, Modifier.padding(bottom = LocalBottomBarSpace.current))
+            AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = LocalBottomBarSpace.current))
         },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
     ) { padding ->
@@ -497,10 +499,10 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
     }
 }
 
-/** M3 Expressive FAB menu: one button, two actions (add income, add expense). */
+/** M3 Expressive FAB menu: one button, three actions (import, add expense, add income). */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, modifier: Modifier = Modifier) {
+private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport: () -> Unit, modifier: Modifier = Modifier) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = expanded) { expanded = false }
     FloatingActionButtonMenu(
@@ -515,6 +517,14 @@ private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, modifier:
             }
         },
     ) {
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onImport()
+            },
+            icon = { Icon(Icons.Outlined.UploadFile, contentDescription = null) },
+            text = { Text(stringResource(R.string.import_title)) },
+        )
         FloatingActionButtonMenuItem(
             onClick = {
                 expanded = false

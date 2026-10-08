@@ -36,6 +36,8 @@ android {
         targetSdk = 37
         versionCode = appVersionCode
         versionName = appVersionName
+        // Phones are ARM. Leaving out x86 halves the size of the bundled text recognition model.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -68,6 +70,11 @@ android {
         generateLocaleConfig = true
     }
 
+    lint {
+        // ARM only on purpose (see abiFilters): the app is for phones, not Chromebooks.
+        disable += "ChromeOsAbiSupport"
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -83,6 +90,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.mlkit.text.recognition)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)

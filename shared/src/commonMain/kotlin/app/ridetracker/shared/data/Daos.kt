@@ -68,6 +68,9 @@ interface IncomeEntryDao {
     @Query("SELECT * FROM income_entry WHERE id = :id")
     suspend fun getById(id: Long): IncomeEntryEntity?
 
+    @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date = :epochDay ORDER BY id")
+    suspend fun getForDay(platformId: Long, epochDay: Long): List<IncomeEntryEntity>
+
     @Insert
     suspend fun insert(entry: IncomeEntryEntity): Long
 
@@ -197,4 +200,67 @@ interface RecurringExpenseDao {
 
     @Query("DELETE FROM recurring_expense")
     suspend fun deleteAll()
+}
+
+@Dao
+interface ImportDao {
+    @Query("SELECT * FROM income_line WHERE entryId = :entryId ORDER BY id")
+    suspend fun getLines(entryId: Long): List<IncomeLineEntity>
+
+    @Query("SELECT * FROM income_line ORDER BY id")
+    suspend fun getAllLines(): List<IncomeLineEntity>
+
+    @Insert
+    suspend fun insertLines(lines: List<IncomeLineEntity>)
+
+    @Query("DELETE FROM income_line WHERE entryId = :entryId")
+    suspend fun deleteLines(entryId: Long)
+
+    @Query("DELETE FROM income_line")
+    suspend fun deleteAllLines()
+
+    @Query("SELECT * FROM import_batch ORDER BY importedAt DESC, id DESC")
+    fun observeBatches(): Flow<List<ImportBatchEntity>>
+
+    @Query("SELECT * FROM import_batch ORDER BY id")
+    suspend fun getAllBatches(): List<ImportBatchEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM import_batch WHERE fileHash = :fileHash)")
+    suspend fun hasFile(fileHash: String): Boolean
+
+    @Insert
+    suspend fun insertBatch(batch: ImportBatchEntity): Long
+
+    @Insert
+    suspend fun insertBatches(batches: List<ImportBatchEntity>)
+
+    @Query("DELETE FROM import_batch")
+    suspend fun deleteAllBatches()
+
+    @Query("SELECT * FROM trip WHERE date BETWEEN :startEpochDay AND :endEpochDay ORDER BY date DESC, startMinute DESC")
+    fun observeTrips(startEpochDay: Long, endEpochDay: Long): Flow<List<TripEntity>>
+
+    @Query("SELECT * FROM trip ORDER BY id")
+    suspend fun getAllTrips(): List<TripEntity>
+
+    @Query("SELECT externalId FROM trip WHERE platformId = :platformId AND externalId IN (:externalIds)")
+    suspend fun existingTripIds(platformId: Long, externalIds: List<String>): List<String>
+
+    @Insert
+    suspend fun insertTrips(trips: List<TripEntity>)
+
+    @Query("DELETE FROM trip")
+    suspend fun deleteAllTrips()
+
+    @Query("SELECT * FROM period_summary ORDER BY id")
+    suspend fun getAllSummaries(): List<PeriodSummaryEntity>
+
+    @Query("SELECT * FROM period_summary WHERE periodEnd >= :startEpochDay AND periodStart <= :endEpochDay ORDER BY periodStart")
+    fun observeSummaries(startEpochDay: Long, endEpochDay: Long): Flow<List<PeriodSummaryEntity>>
+
+    @Insert
+    suspend fun insertSummaries(summaries: List<PeriodSummaryEntity>)
+
+    @Query("DELETE FROM period_summary")
+    suspend fun deleteAllSummaries()
 }

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +46,7 @@ private data class MenuEntry(val icon: ImageVector, val title: String, val summa
 fun MenuScreen(
     onClose: () -> Unit,
     onManagePlatforms: () -> Unit,
+    onImport: () -> Unit,
     onYourData: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -58,7 +60,12 @@ fun MenuScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(start = 8.dp, bottom = 24.dp),
             )
-            Group(listOf(MenuEntry(Icons.Outlined.Apps, stringResource(R.string.apps), stringResource(R.string.apps_summary), onManagePlatforms)))
+            Group(
+                listOf(
+                    MenuEntry(Icons.Outlined.UploadFile, stringResource(R.string.import_title), stringResource(R.string.import_menu_summary), onImport),
+                    MenuEntry(Icons.Outlined.Apps, stringResource(R.string.apps), stringResource(R.string.apps_summary), onManagePlatforms),
+                ),
+            )
             Spacer(Modifier.height(16.dp))
             Group(
                 listOf(

@@ -29,10 +29,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -44,6 +47,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.ridetracker.R
+import app.ridetracker.RideTrackerApplication
+import app.ridetracker.ui.importing.ImportScreen
 import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.LocalOpenMenu
 import app.ridetracker.ui.entry.EntryScreen
@@ -78,6 +83,12 @@ private val FloatingBarHeight = 64.dp + 16.dp + 8.dp
 fun AppNavigation() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
+    val sharedFiles = (LocalContext.current.applicationContext as RideTrackerApplication).container.sharedFiles
+    val shared by sharedFiles.collectAsState()
+    // Files shared to the app open the Import screen, which takes them from sharedFiles.
+    LaunchedEffect(shared) {
+        if (shared.isNotEmpty() && backStack?.destination?.route != "import") nav.navigate("import")
+    }
     val currentTab = Tab.entries.firstOrNull { it.route == backStack?.destination?.route }
     val barSpace = if (currentTab != null) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + FloatingBarHeight
@@ -88,7 +99,11 @@ fun AppNavigation() {
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
             NavHost(navController = nav, startDestination = Tab.HOME.route) {
-                composable(Tab.HOME.route) { OverviewScreen(onAddEntry = { nav.navigate("entry") }, onAddExpense = { nav.navigate("expense") }) }
+                composable(Tab.HOME.route) { OverviewScreen(
+                        onAddEntry = { nav.navigate("entry") },
+                        onAddExpense = { nav.navigate("expense") },
+                        onImport = { nav.navigate("import") },
+                    ) }
                 composable(Tab.TRIPS.route) {
                     ComingSoonScreen(R.string.nav_trips, Icons.Outlined.Route, R.string.trips_coming_soon)
                 }
@@ -108,6 +123,7 @@ fun AppNavigation() {
                     MenuScreen(
                         onClose = { nav.popBackStack() },
                         onManagePlatforms = { nav.navigate("platforms") },
+                        onImport = { nav.navigate("import") },
                         onYourData = { nav.navigate("data") },
                         onSettings = { nav.navigate("settings") },
                     )
@@ -141,6 +157,7 @@ fun AppNavigation() {
                 composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
+                composable("import") { ImportScreen(onDone = { nav.popBackStack() }, sharedFiles = sharedFiles) }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
             }
         }

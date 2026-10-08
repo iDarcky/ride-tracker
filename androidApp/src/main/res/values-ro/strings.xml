@@ -272,4 +272,70 @@
     <string name="notification_channel_description">Un memento când o cheltuială recurentă e scadentă</string>
     <string name="notification_due_title">%1$s e scadentă</string>
     <string name="notification_due_body">%1$s · apasă Adaugă ca s-o înregistrezi</string>
+
+    <!-- Import -->
+    <string name="done">Gata</string>
+    <string name="import_title">Importă</string>
+    <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt</string>
+    <string name="import_empty_title">Importă din Bolt</string>
+    <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar (PDF) sau facturile către pasageri (CSV). Totul se citește pe acest telefon.</string>
+    <string name="import_choose_screenshots">Alege capturi de ecran</string>
+    <string name="import_choose_files">Alege fișiere PDF sau CSV</string>
+    <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ride Tracker.</string>
+    <string name="import_add_screenshots">Adaugă capturi</string>
+    <string name="import_add_files">Adaugă fișiere</string>
+    <string name="import_reading">Se citește…</string>
+    <string name="import_remove">Elimină</string>
+    <string name="import_more">Importă altele</string>
+    <string name="import_bolt_day">Bolt · câștiguri pe zi</string>
+    <string name="import_bolt_invoices">Bolt · facturi pasageri</string>
+    <string name="import_bolt_month">Bolt · rezumat lunar</string>
+    <string name="import_unknown_file">Nerecunoscut</string>
+    <string name="import_failed">Fișierul nu a putut fi deschis.</string>
+    <string name="import_already">Importat deja.</string>
+    <string name="import_not_a_day">Aceasta e fila Săptămânal sau Lunar. Deschide fila Zilnic în Bolt și fă captura acolo.</string>
+    <string name="import_not_recognised">Deocamdată se pot citi doar detalierea zilnică a câștigurilor, rezumatul lunar și facturile către pasageri din Bolt.</string>
+    <string name="import_your_earnings">Câștigurile tale</string>
+    <string name="import_cash_in_hand">Numerar încasat</string>
+    <string name="import_adds_up">Toate sumele se potrivesc.</string>
+    <string name="import_does_not_add_up">Unele sume nu se potrivesc și poate au fost citite greșit. Verifică-le cu captura sau debifeaz-o.</string>
+    <string name="import_paid_in_app">Plătit în aplicație</string>
+    <string name="import_paid_cash">Plătit cash</string>
+    <string name="import_no_personal_data">Numele și adresele pasagerilor nu se salvează.</string>
+    <string name="import_trips_not_income">Se salvează drept curse. Venitul vine în continuare din detalierile zilnice.</string>
+    <string name="import_gross_fares">Tarife brute</string>
+    <string name="import_distance">Distanță în curse</string>
+    <string name="import_summary_not_income">Totalurile lunare ale Bolt. Folosite ca să-ți verifici zilele, nu se adaugă la venit.</string>
+    <string name="from_import">Importat dintr-o captură de ecran</string>
+    <string name="breakdown">Detaliere</string>
+    <string name="line_fare">Plăți curse</string>
+    <string name="line_tip">Bacșișuri</string>
+    <string name="line_bonus">Bonusuri și campanii</string>
+    <string name="line_promotion">Credite și promoții pasageri</string>
+    <string name="line_toll">Taxe de drum</string>
+    <string name="line_airport_fee">Taxă aeroport</string>
+    <string name="line_cancellation_fee">Taxe de anulare</string>
+    <string name="line_commission">Comision</string>
+    <string name="line_in_app">%1$s (în aplicație)</string>
+    <string name="line_in_cash">%1$s (cash)</string>
+    <plurals name="import_save_count">
+        <item quantity="one">Salvează %d import</item>
+        <item quantity="few">Salvează %d importuri</item>
+        <item quantity="other">Salvează %d de importuri</item>
+    </plurals>
+    <plurals name="import_saved">
+        <item quantity="one">%d import salvat</item>
+        <item quantity="few">%d importuri salvate</item>
+        <item quantity="other">%d de importuri salvate</item>
+    </plurals>
+    <plurals name="import_replaces">
+        <item quantity="one">Înlocuiește înregistrarea pe care o ai deja pentru ziua asta.</item>
+        <item quantity="few">Înlocuiește cele %d înregistrări pe care le ai deja pentru ziua asta.</item>
+        <item quantity="other">Înlocuiește cele %d de înregistrări pe care le ai deja pentru ziua asta.</item>
+    </plurals>
+    <plurals name="import_rides">
+        <item quantity="one">%d cursă</item>
+        <item quantity="few">%d curse</item>
+        <item quantity="other">%d de curse</item>
+    </plurals>
 </resources>

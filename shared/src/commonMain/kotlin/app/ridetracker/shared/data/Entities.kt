@@ -40,6 +40,113 @@ data class IncomeEntryEntity(
     val note: String? = null,
     /** Creation instant in epoch milliseconds. */
     @ColumnInfo(defaultValue = "0") val createdAt: Long,
+    /** [app.ridetracker.shared.domain.IncomeSource] id. Added in version 6. */
+    @ColumnInfo(defaultValue = "manual") val source: String = "manual",
+    /** The import that created or last updated this entry; null when typed in. */
+    val importBatchId: Long? = null,
+    /** Cash the driver collected from riders that day (Bolt's "Cash in hand"). Null if unknown. */
+    val cashCollectedMinor: Long? = null,
+    val onlineMinutes: Int? = null,
+    val tripCount: Int? = null,
+)
+
+/**
+ * One line of an entry's breakdown (fares, tips, commission…). Signed: deductions are negative.
+ * Entries typed in with a single amount have no lines.
+ */
+@Entity(
+    tableName = "income_line",
+    foreignKeys = [ForeignKey(entity = IncomeEntryEntity::class, parentColumns = ["id"], childColumns = ["entryId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("entryId")],
+)
+data class IncomeLineEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val entryId: Long,
+    /** [app.ridetracker.shared.domain.IncomeLineKind] id. */
+    val kind: String,
+    val amountMinor: Long,
+    /** True for the "Cash income" group of a Bolt breakdown. */
+    val inCash: Boolean = false,
+    /** The label as the report wrote it (e.g. "Campaigns"), kept for display. */
+    val label: String? = null,
+)
+
+/** One imported report or screenshot. [fileHash] stops the same file being imported twice. */
+@Entity(
+    tableName = "import_batch",
+    foreignKeys = [ForeignKey(entity = PlatformEntity::class, parentColumns = ["id"], childColumns = ["platformId"], onDelete = ForeignKey.RESTRICT)],
+    indices = [Index("platformId"), Index(value = ["fileHash"], unique = true)],
+)
+data class ImportBatchEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val platformId: Long,
+    /** [app.ridetracker.shared.domain.ImportKind] id. */
+    val kind: String,
+    /** SHA-256 of the file's bytes, hex. */
+    val fileHash: String,
+    /** First and last day the report covers (epoch days). */
+    val periodStart: Long,
+    val periodEnd: Long,
+    /** Entries, trips or summaries the import saved. */
+    val itemCount: Int,
+    val importedAt: Long,
+)
+
+/** A single ride, from a per-trip report. Never holds rider names or addresses. */
+@Entity(
+    tableName = "trip",
+    foreignKeys = [
+        ForeignKey(entity = PlatformEntity::class, parentColumns = ["id"], childColumns = ["platformId"], onDelete = ForeignKey.RESTRICT),
+        ForeignKey(entity = ImportBatchEntity::class, parentColumns = ["id"], childColumns = ["importBatchId"], onDelete = ForeignKey.CASCADE),
+    ],
+    indices = [Index("importBatchId"), Index("date"), Index(value = ["platformId", "externalId"], unique = true)],
+)
+data class TripEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val platformId: Long,
+    val importBatchId: Long,
+    /** The platform's own id for the ride (e.g. Bolt invoice number), to skip duplicates. */
+    val externalId: String,
+    /** Day of the ride (epoch days) and local start time in minutes after midnight. */
+    val date: Long,
+    val startMinute: Int,
+    /** What the rider paid. */
+    val fareMinor: Long,
+    /** [app.ridetracker.shared.domain.PaymentMethod] id. */
+    val paymentMethod: String,
+    val distanceMeters: Long? = null,
+    val durationSeconds: Long? = null,
+)
+
+/**
+ * A platform's own totals for a week or month (Bolt monthly summary, Uber weekly payments).
+ * Not counted as income: used to check that the daily entries add up.
+ */
+@Entity(
+    tableName = "period_summary",
+    foreignKeys = [
+        ForeignKey(entity = PlatformEntity::class, parentColumns = ["id"], childColumns = ["platformId"], onDelete = ForeignKey.RESTRICT),
+        ForeignKey(entity = ImportBatchEntity::class, parentColumns = ["id"], childColumns = ["importBatchId"], onDelete = ForeignKey.CASCADE),
+    ],
+    indices = [Index("platformId"), Index("importBatchId")],
+)
+data class PeriodSummaryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val platformId: Long,
+    val importBatchId: Long,
+    val periodStart: Long,
+    val periodEnd: Long,
+    val grossFareMinor: Long? = null,
+    val cancellationMinor: Long? = null,
+    val tipsMinor: Long? = null,
+    val bonusMinor: Long? = null,
+    /** Commission / service fee, negative. */
+    val platformFeeMinor: Long? = null,
+    /** What the platform says the driver earned. */
+    val earningsMinor: Long? = null,
+    val distanceMeters: Long? = null,
+    val tripCount: Int? = null,
+    val onlineMinutes: Int? = null,
 )
 
 /** Money spent: fuel, repairs, accountant… [category] is an [app.ridetracker.shared.domain.ExpenseCategory] id. */
