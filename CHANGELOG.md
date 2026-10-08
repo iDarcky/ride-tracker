@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+- **Customise Home**: tap "Customise Home" at the bottom of Home. Every card below money kept gets a handle to
+  drag it into place and × to remove it; removed cards wait under "Add widget". Done saves the layout, Reset
+  brings back the default. "When you earn" is off by default. The layout is part of backups.
+- Cards with nothing for the period stay out of the way (while customising they show as empty so you can
+  still place them).
+
 ## 0.3.0
 - **Money tab, one month at a time** (like the cockpit design): a month chip, the month's total with the change
   from the previous month and the Add button, then:

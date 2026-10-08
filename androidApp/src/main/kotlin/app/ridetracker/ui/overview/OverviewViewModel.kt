@@ -13,6 +13,7 @@ import app.ridetracker.shared.domain.ExpenseGroup
 import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.HomeStats
 import app.ridetracker.shared.domain.HomeStatsCalculator
+import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.PendingExpense
@@ -61,6 +62,8 @@ data class OverviewUiState(
     val stats: HomeStats? = null,
     /** All apps (names and colours for charts), including archived ones that still have history. */
     val platforms: List<PlatformEntity> = emptyList(),
+    /** Cards shown below money kept, in the driver's order. */
+    val widgets: List<HomeWidget> = HomeWidget.DEFAULT,
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
 
@@ -87,8 +90,8 @@ class OverviewViewModel(
     val uiState: StateFlow<OverviewUiState> = combine(selected, settingsRepository.settings) { period, settings ->
         // Re-align weeks when the first-day-of-week setting changes.
         val aligned = if (period is Period.Week) Period.Week.containing(period.start, settings.firstDayOfWeek) else period
-        aligned to settings.currencyCode
-    }.flatMapLatest { (period, currencyCode) ->
+        Triple(aligned, settings.currencyCode, settings.homeWidgets)
+    }.flatMapLatest { (period, currencyCode, widgets) ->
         val comparison = Comparisons.of(period, today())
         val previousFlow: Flow<PreviousTotals?> = if (comparison == null) {
             flowOf(null)
@@ -118,6 +121,7 @@ class OverviewViewModel(
             extras,
         ) { entries, totals, expenses, (anyExpense, previous), (stats, platforms) ->
             OverviewUiState(
+                widgets = widgets,
                 stats = stats,
                 platforms = platforms,
                 comparison = comparison,
@@ -166,6 +170,11 @@ class OverviewViewModel(
             val firstDay = settingsRepository.settings.first().firstDayOfWeek
             selected.value = periodOf(type, anchor, firstDay, current)
         }
+    }
+
+    /** Saves the Home layout from Customise. */
+    fun setWidgets(widgets: List<HomeWidget>) {
+        viewModelScope.launch { settingsRepository.setHomeWidgets(widgets) }
     }
 
     /** Opens one day (from the daily activity chart). */

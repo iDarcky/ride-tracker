@@ -423,4 +423,15 @@
         <item quantity="one">See %d entry</item>
         <item quantity="other">See all %d</item>
     </plurals>
+    <!-- Customise Home -->
+    <string name="widget_customise">Customise Home</string>
+    <string name="widget_hint">Drag a card by its handle to move it, or remove it with ×. Hidden cards are under “Add widget”.</string>
+    <string name="widget_breakdown">Kept, fees and expenses</string>
+    <string name="widget_metrics">Trips, km and hours</string>
+    <string name="widget_drag">Move %1$s</string>
+    <string name="widget_remove">Remove %1$s</string>
+    <string name="widget_add">Add %1$s</string>
+    <string name="widget_add_title">Add widget</string>
+    <string name="widget_reset">Reset</string>
+    <string name="widget_empty">Nothing for this period yet.</string>
 </resources>

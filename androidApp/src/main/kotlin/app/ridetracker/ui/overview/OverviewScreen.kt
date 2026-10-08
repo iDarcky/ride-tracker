@@ -85,6 +85,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import app.ridetracker.shared.domain.HomeWidget
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import app.ridetracker.R
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.domain.Comparison
@@ -144,22 +151,47 @@ fun OverviewScreen(
     val dates = remember(locale) { DateFormats(locale) }
     val percent = remember(locale) { NumberFormat.getPercentInstance(locale) }
     var showRangePicker by rememberSaveable { mutableStateOf(false) }
+    var editing by rememberSaveable { mutableStateOf(false) }
+    var order by remember { mutableStateOf(state.widgets) }
+    val listState = rememberLazyListState()
+    val reorder = rememberReorderableLazyListState(listState) { from, to ->
+        val moving = (from.key as? String)?.let(HomeWidget::fromId) ?: return@rememberReorderableLazyListState
+        val target = (to.key as? String)?.let(HomeWidget::fromId) ?: return@rememberReorderableLazyListState
+        order = order.toMutableList().apply { add(indexOf(target), removeAt(indexOf(moving))) }
+    }
+    BackHandler(enabled = editing) { editing = false }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_home)) }, actions = { MenuButton() }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(if (editing) R.string.widget_customise else R.string.nav_home)) },
+                actions = { if (!editing) MenuButton() },
+            )
+        },
         floatingActionButton = {
-            AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = LocalBottomBarSpace.current))
+            if (!editing) AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = LocalBottomBarSpace.current))
         },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + 8.dp,
                 bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 96.dp,
             ),
         ) {
+            if (editing) {
+                item(key = "edit-hint") {
+                    Text(
+                        stringResource(R.string.widget_hint),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             item {
                 PeriodTypeSelector(
                     selected = state.period.type,
@@ -183,87 +215,53 @@ fun OverviewScreen(
                 )
             }
             item {
-                TotalCard(state, money, Modifier.padding(horizontal = 16.dp))
+                TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp))
             }
-            state.stats?.let { stats ->
-                if (stats.grossMinor > 0) {
-                    item {
-                        MoneyBreakdown(
-                            stats,
-                            state.expenseMinor,
-                            state.tracksExpenses,
-                            money,
-                            Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                        )
-                    }
-                }
-                item {
-                    Metrics(
-                        stats,
-                        state.platforms,
-                        money,
-                        Modifier.padding(horizontal = 16.dp).padding(top = if (stats.grossMinor > 0) 0.dp else 16.dp, bottom = 12.dp),
-                    )
-                }
-                if (state.totals.isNotEmpty()) {
-                    item { PlatformSplit(state.totals, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) }
-                }
-                if (state.period !is Period.Day && stats.days.size > 1) {
-                    item {
-                        DailyActivity(
-                            stats.days,
-                            state.platforms,
-                            money,
-                            dates,
-                            onOpenDay = viewModel::openDay,
-                            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
-                        )
-                    }
-                }
-                if (stats.tripCount >= MIN_TRIPS_FOR_HEAT) {
-                    item { BestTimeToDrive(stats.heat, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) }
-                }
-            }
-            if (state.expenseGroups.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.expenses_by_group)) }
-                items(state.expenseGroups, key = { "group-${it.group}" }) { group ->
-                    val share = if (state.expenseMinor > 0) group.totalMinor.toFloat() / state.expenseMinor else 0f
-                    ListItem(
-                        leadingContent = { ExpenseBadge(group.group.icon) },
-                        headlineContent = { Text(stringResource(group.group.label)) },
-                        supportingContent = {
-                            LinearProgressIndicator(
-                                progress = { share },
-                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                                color = MaterialTheme.colorScheme.tertiary,
-                            )
-                        },
-                        trailingContent = {
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(money.format(group.totalMinor), style = MaterialTheme.typography.titleMedium.tabular())
-                                Text(percent.format(share), style = MaterialTheme.typography.bodySmall)
+            val shown = if (editing) order else state.widgets.filter { it.hasContent(state, pending) }
+            items(shown, key = { it.id }) { widget ->
+                ReorderableItem(reorder, key = widget.id, enabled = editing) { dragging ->
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                        val body: @Composable () -> Unit = {
+                            if (widget.hasContent(state, pending)) {
+                                WidgetBody(
+                                    widget, state, pending, money, dates, percent,
+                                    onOpenDay = viewModel::openDay,
+                                    onAcceptDue = { item ->
+                                        viewModel.accept(item)
+                                        scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
+                                    },
+                                    onSkipDue = viewModel::skip,
+                                )
+                            } else {
+                                WidgetPlaceholder()
                             }
-                        },
-                    )
+                        }
+                        if (editing) {
+                            EditFrame(widget, Modifier.draggableHandle(), dragging, onRemove = { order = order - widget }, content = body)
+                        } else {
+                            body()
+                        }
+                    }
                 }
             }
-            if (pending.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.needs_attention)) }
-                items(pending, key = { "due-${it.rule.id}-${it.dueDate}" }) { item ->
-                    DueExpenseCard(
-                        item = item,
-                        money = money,
-                        dates = dates,
-                        onAdd = {
-                            viewModel.accept(item)
-                            scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
-                        },
-                        onSkip = { viewModel.skip(item) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
-                    )
+            if (editing) {
+                val hidden = HomeWidget.entries - order.toSet()
+                if (hidden.isNotEmpty()) {
+                    item(key = "add-header") { SectionHeader(stringResource(R.string.widget_add_title)) }
+                    items(hidden, key = { "add-${it.id}" }) { widget -> AddWidgetRow(widget) { order = order + widget } }
+                }
+                item(key = "done") {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { order = HomeWidget.DEFAULT }) { Text(stringResource(R.string.widget_reset)) }
+                        Spacer(Modifier.weight(1f))
+                        Button(onClick = {
+                            viewModel.setWidgets(order)
+                            editing = false
+                        }) { Text(stringResource(R.string.done)) }
+                    }
                 }
             }
-            if (!state.loading && state.entryCount == 0 && state.expenseMinor == 0L) {
+            if (!editing && !state.loading && state.entryCount == 0 && state.expenseMinor == 0L) {
                 item {
                     Text(
                         stringResource(R.string.empty_period),
@@ -272,6 +270,20 @@ fun OverviewScreen(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            if (!editing) {
+                item(key = "customise") {
+                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        OutlinedButton(onClick = {
+                            order = state.widgets
+                            editing = true
+                        }) {
+                            Icon(Icons.Filled.Tune, contentDescription = null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.widget_customise))
+                        }
+                    }
                 }
             }
         }
@@ -290,9 +302,6 @@ fun OverviewScreen(
 }
 
 // Order follows the design system: Month first.
-/** The heat map needs enough trips to say anything about when to drive. */
-private const val MIN_TRIPS_FOR_HEAT = 20
-
 private val periodLabels = listOf(
     PeriodType.MONTH to R.string.period_month,
     PeriodType.WEEK to R.string.period_week,
@@ -459,7 +468,7 @@ private fun comparisonLabel(comparison: Comparison): String = when (comparison) 
 
 /** A due recurring expense: what, when, how much, and Add / Skip. */
 @Composable
-private fun DueExpenseCard(
+internal fun DueExpenseCard(
     item: PendingExpense,
     money: MoneyFormat,
     dates: DateFormats,

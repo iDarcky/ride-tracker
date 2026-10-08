@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
+import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,6 +26,8 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     /** Only asked in Romania. */
     val drivingType: DrivingType? = null,
+    /** Cards shown on Home, in order (see [HomeWidget]). */
+    val homeWidgets: List<HomeWidget> = HomeWidget.DEFAULT,
 ) {
     /** The app currency, or null when the platform default should be used. */
     val currencyCode: String? get() = country?.currencyCode ?: otherCurrencyCode
@@ -39,7 +42,12 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             firstDayOfWeek = DayOfWeek(prefs[FIRST_DAY_OF_WEEK] ?: DayOfWeek.MONDAY.isoDayNumber),
             themeMode = ThemeMode.fromId(prefs[THEME]),
             drivingType = DrivingType.fromId(prefs[DRIVING_TYPE]),
+            homeWidgets = HomeWidget.parse(prefs[HOME_WIDGETS]),
         )
+    }
+
+    suspend fun setHomeWidgets(widgets: List<HomeWidget>) {
+        dataStore.edit { it[HOME_WIDGETS] = HomeWidget.format(widgets) }
     }
 
     /** Saves the country; [otherCurrencyCode] is only kept for [Country.OTHER]. */
@@ -74,6 +82,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[FIRST_DAY_OF_WEEK] = settings.firstDayOfWeek.isoDayNumber
             prefs[THEME] = settings.themeMode.id
             settings.drivingType?.let { prefs[DRIVING_TYPE] = it.id }
+            prefs[HOME_WIDGETS] = HomeWidget.format(settings.homeWidgets)
         }
     }
 
@@ -89,6 +98,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val FIRST_DAY_OF_WEEK = intPreferencesKey("first_day_of_week")
         private val THEME = stringPreferencesKey("theme_mode")
         private val DRIVING_TYPE = stringPreferencesKey("driving_type")
+        private val HOME_WIDGETS = stringPreferencesKey("home_widgets")
 
         fun create(absolutePath: String): SettingsRepository =
             SettingsRepository(PreferenceDataStoreFactory.createWithPath(produceFile = { absolutePath.toPath() }))

@@ -431,4 +431,15 @@
         <item quantity="few">Vezi toate cele %d</item>
         <item quantity="other">Vezi toate cele %d</item>
     </plurals>
+    <!-- Customise Home -->
+    <string name="widget_customise">Personalizează Acasă</string>
+    <string name="widget_hint">Trage un card de mâner ca să-l muți sau scoate-l cu ×. Cardurile ascunse sunt la „Adaugă widget”.</string>
+    <string name="widget_breakdown">Rămași, comisioane și cheltuieli</string>
+    <string name="widget_metrics">Curse, km și ore</string>
+    <string name="widget_drag">Mută %1$s</string>
+    <string name="widget_remove">Scoate %1$s</string>
+    <string name="widget_add">Adaugă %1$s</string>
+    <string name="widget_add_title">Adaugă widget</string>
+    <string name="widget_reset">Resetează</string>
+    <string name="widget_empty">Nimic în această perioadă încă.</string>
 </resources>

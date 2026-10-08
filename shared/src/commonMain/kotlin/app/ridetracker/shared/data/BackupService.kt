@@ -4,6 +4,7 @@ import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
+import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ThemeMode
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -56,6 +57,8 @@ data class BackupSettings(
     val firstDayOfWeek: Int = 1,
     val themeMode: String? = null,
     val drivingType: String? = null,
+    /** Home cards in order (comma-separated ids). Added in 0.4.0; older backups keep the default layout. */
+    val homeWidgets: String? = null,
 )
 
 @Serializable
@@ -215,6 +218,7 @@ class BackupService(
                 firstDayOfWeek = settings.firstDayOfWeek.isoDayNumber,
                 themeMode = settings.themeMode.id,
                 drivingType = settings.drivingType?.id,
+                homeWidgets = HomeWidget.format(settings.homeWidgets),
             ),
             platforms = database.platformDao().getAll().map {
                 BackupPlatform(it.id, it.name, it.colorArgb, it.sortOrder, it.archived)
@@ -398,6 +402,7 @@ class BackupService(
                 firstDayOfWeek = DayOfWeek(s.firstDayOfWeek.coerceIn(1, 7)),
                 themeMode = ThemeMode.fromId(s.themeMode),
                 drivingType = DrivingType.fromId(s.drivingType),
+                homeWidgets = HomeWidget.parse(s.homeWidgets),
             ),
         )
         return BackupSummary(platforms.size, entries.size, expenses.size)
