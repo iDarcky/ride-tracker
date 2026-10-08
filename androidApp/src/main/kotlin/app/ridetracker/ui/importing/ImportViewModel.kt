@@ -37,7 +37,7 @@ data class ImportItem(
 ) {
     val canSave: Boolean
         get() = !alreadyImported && when (report) {
-            is ReadReport.BoltDay, is ReadReport.BoltTrips, is ReadReport.BoltMonth -> true
+            is ReadReport.BoltDay, is ReadReport.BoltTrips, is ReadReport.BoltMonth, is ReadReport.BoltPeriod -> true
             else -> false
         }
 }
@@ -116,6 +116,13 @@ class ImportViewModel(
                         importRepository.saveDay(platformId, ImportKind.BOLT_DAILY_SCREENSHOT, IncomeSource.SCREENSHOT, r.fileHash, r.day, now)
                     is ReadReport.BoltTrips -> importRepository.saveTrips(platformId, ImportKind.BOLT_RIDER_INVOICES_CSV, r.fileHash, r.trips, now)
                     is ReadReport.BoltMonth -> importRepository.saveSummary(platformId, ImportKind.BOLT_MONTHLY_PDF, r.fileHash, r.summary, now)
+                    is ReadReport.BoltPeriod -> importRepository.saveSummary(
+                        platformId,
+                        if (r.monthly) ImportKind.BOLT_MONTHLY_SCREENSHOT else ImportKind.BOLT_WEEKLY_SCREENSHOT,
+                        r.fileHash,
+                        r.summary,
+                        now,
+                    )
                     else -> null
                 }
                 if (outcome is ImportOutcome.Saved) saved++

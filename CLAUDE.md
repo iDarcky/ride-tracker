@@ -10,7 +10,7 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
 ## Where we are (8 October 2026)
-- App **0.1.0**, database version **6**, backup format **6**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- App **0.1.1**, database version **6**, backup format **6**. What each version added: [CHANGELOG.md](CHANGELOG.md).
 - Direction (owner, 8 Oct): data should come in automatically from screenshots/CSV/PDF. Bolt import is built
   (`shared/.../domain/importing/`, on-device ML Kit OCR in `androidApp/.../importing/ReportReader.kt`).
   Next steps: "Next up" in [docs/product-brief.md](docs/product-brief.md). Propose before building.
@@ -23,6 +23,7 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 ## Release routine (every change the owner should see)
 1. Bump `VERSION_NAME`, add a CHANGELOG entry (and update the brief's "Next up" if scope moved).
 2. Tests, `lintRelease`, `assembleRelease`, `adb install -r` on the running emulator, check on screen.
+   Copy the APK to `~/Desktop/Ride Tracker APKs/RideTracker-<version>.apk` for the owner's phone.
 3. Schema bump ⇒ upgrade test: install the previous release with data, then the new one.
 4. Commit (noreply author) and push to `main`; CI must pass.
 

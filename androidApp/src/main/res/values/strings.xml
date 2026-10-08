@@ -85,8 +85,6 @@
     <string name="local_first">Your data stays on this device.</string>
 
     <!-- Coming soon -->
-    <string name="coming_soon">Coming soon</string>
-    <string name="trips_coming_soon">Import your Uber and Bolt reports to see every trip here.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Home</string>
@@ -293,8 +291,10 @@
     <string name="import_unknown_file">Not recognised</string>
     <string name="import_failed">This file could not be opened.</string>
     <string name="import_already">Already imported.</string>
-    <string name="import_not_a_day">This is the Weekly or Monthly tab. Open the Daily tab in Bolt and take the screenshot there.</string>
-    <string name="import_not_recognised">Only Bolt’s daily earnings breakdown, monthly summary and rider invoices can be read for now.</string>
+    <string name="import_bolt_week">Bolt · weekly totals</string>
+    <string name="import_bolt_month_screen">Bolt · monthly totals</string>
+    <string name="import_period_not_income">Bolt’s own totals for this period. Used to check your days, not added as income. For income, import the Daily tab.</string>
+    <string name="import_not_recognised">Only Bolt’s earnings breakdown, monthly summary and rider invoices can be read for now.</string>
     <string name="import_your_earnings">Your earnings</string>
     <string name="import_cash_in_hand">Cash in hand</string>
     <string name="import_adds_up">All figures add up.</string>
@@ -333,5 +333,40 @@
     <plurals name="import_rides">
         <item quantity="one">%d ride</item>
         <item quantity="other">%d rides</item>
+    </plurals>
+
+    <!-- Trips -->
+    <string name="trips_all">All</string>
+    <string name="trips_filters">Filters</string>
+    <string name="trips_all_payments">All payments</string>
+    <string name="trips_total_fares">Total fares (gross)</string>
+    <string name="trips_footnote">Fares are what riders paid, before the platform’s commission. Distance and duration appear only when the report has them; Bolt invoices don’t.</string>
+    <string name="trips_empty_title">No trips yet</string>
+    <string name="trips_empty_body">Import Bolt’s rider invoices (CSV) and your trips appear here. Files stay on this phone.</string>
+    <string name="payment_cash">Cash</string>
+    <string name="payment_in_app">In the app</string>
+    <string name="payment_business">Business account</string>
+    <string name="trip_km_min">%1$s km · %2$s min</string>
+    <string name="trip_minutes">%1$d min</string>
+    <string name="trip_details">Trip details</string>
+    <string name="trip_completed">Completed</string>
+    <string name="trip_breakdown">Earnings breakdown</string>
+    <string name="trip_fare">Fare paid by the rider</string>
+    <string name="trip_platform_fee">Platform commission</string>
+    <string name="trip_driver_earnings">Your earnings</string>
+    <string name="trip_dash_note">A dash means this report doesn’t include it.</string>
+    <string name="trip_info">Trip information</string>
+    <string name="trip_distance">Distance</string>
+    <string name="trip_duration">Duration</string>
+    <string name="trip_payment">Payment</string>
+    <string name="trip_source">Source</string>
+    <string name="trip_privacy">Rider details are removed during import: no name, phone number or address is stored.</string>
+    <plurals name="trip_count">
+        <item quantity="one">%d trip</item>
+        <item quantity="other">%d trips</item>
+    </plurals>
+    <plurals name="trips_show_all">
+        <item quantity="one">Show %d trip</item>
+        <item quantity="other">Show all %d trips</item>
     </plurals>
 </resources>

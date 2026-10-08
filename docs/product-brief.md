@@ -1,6 +1,6 @@
 # Ride Tracker – product brief v0.2
 
-Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.1.0).
+Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.1.1).
 
 This is the public, trimmed version of the brief: no personal earnings data and no business plan.
 
@@ -130,9 +130,10 @@ See the README for build, versioning and signing rules.
 5. **Answered 8 October 2026:** the owner wants data to come in automatically (screenshots, CSV, PDF), not
    typed. Imports moved forward: database for income details, trips, period totals and import history
    (0.1.0, database 6), **Bolt** daily screenshot, rider invoices CSV and monthly PDF (0.1.0, on-device
-   ML Kit text recognition). Next: Romanian-language Bolt screenshots, Uber screenshots and CSV, Trips tab,
-   monthly check against Bolt's totals, then the cockpit mockup's Home (money per hour, platform split,
-   daily activity). Earlier note: the owner "doesn't vibe" with the app yet. Before building item 4,
+   ML Kit text recognition). 0.1.1: Romanian Bolt screens, weekly/monthly Bolt totals, Trips tab (mockup).
+   **Next (owner, 8 Oct): Home rework like the cockpit mockup** (money kept hero, gross/fees/expenses/kept
+   bar, trips / km / hours metrics, money per hour and per km, platform split, daily activity, best time to
+   drive, needs attention), then Uber screenshots and CSV, and the monthly check against Bolt's totals. Earlier note: the owner "doesn't vibe" with the app yet. Before building item 4,
    find out what feels off. Candidate causes discussed: manual entry feels like a chore and the payoff
    (importing a report) isn't built; we went wide (vehicle, CSV, recurring) before logging a shift felt great;
    no identity (name, icon, generic look vs the darker "cockpit" boards); test data and red minus signs feel

@@ -57,7 +57,8 @@ import app.ridetracker.ui.expense.RecurringEditScreen
 import app.ridetracker.ui.expense.RecurringListScreen
 import app.ridetracker.ui.money.MoneyScreen
 import app.ridetracker.ui.overview.OverviewScreen
-import app.ridetracker.ui.placeholder.ComingSoonScreen
+import app.ridetracker.ui.trips.TripDetailsScreen
+import app.ridetracker.ui.trips.TripsScreen
 import app.ridetracker.ui.platforms.PlatformsScreen
 import app.ridetracker.ui.menu.MenuScreen
 import app.ridetracker.ui.settings.ExportScreen
@@ -105,7 +106,7 @@ fun AppNavigation() {
                         onImport = { nav.navigate("import") },
                     ) }
                 composable(Tab.TRIPS.route) {
-                    ComingSoonScreen(R.string.nav_trips, Icons.Outlined.Route, R.string.trips_coming_soon)
+                    TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
                 }
                 composable(Tab.MONEY.route) {
                     MoneyScreen(
@@ -158,6 +159,9 @@ fun AppNavigation() {
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
                 composable("import") { ImportScreen(onDone = { nav.popBackStack() }, sharedFiles = sharedFiles) }
+                composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                    TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
+                }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
             }
         }

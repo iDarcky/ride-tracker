@@ -84,10 +84,101 @@ class BoltParsersTest {
     }
 
     @Test
-    fun refusesWeeksAndOtherScreens() {
+    fun readsWeeksAsPeriodTotals() {
         val week = dailyRows.map { if (it == "5 Oct") "29 Sep - 5 Oct" else it }
-        assertEquals(DailyParseResult.NotADay, BoltDailyParser.parse(week, today))
+        val result = assertIs<DailyParseResult.Period>(BoltDailyParser.parse(week, today))
+        assertEquals(false, result.monthly)
+        assertTrue(result.addsUp)
+        assertEquals(LocalDate(2026, 9, 29), result.summary.periodStart)
+        assertEquals(LocalDate(2026, 10, 5), result.summary.periodEnd)
+        assertEquals(17550, result.summary.grossFareMinor) // 100.50 + 75.00
+        assertEquals(2000, result.summary.bonusMinor)
+        assertEquals(-4010, result.summary.platformFeeMinor)
+        assertEquals(16140, result.summary.earningsMinor)
+    }
+
+    @Test
+    fun weekAcrossNewYearEndsBeforeTheScreenshot() {
+        val week = dailyRows.map { if (it == "5 Oct") "29 Dec - 4 Jan" else it }
+        val result = assertIs<DailyParseResult.Period>(BoltDailyParser.parse(week, LocalDate(2027, 1, 5)))
+        assertEquals(LocalDate(2026, 12, 29), result.summary.periodStart)
+        assertEquals(LocalDate(2027, 1, 4), result.summary.periodEnd)
+    }
+
+    @Test
+    fun refusesOtherScreens() {
         assertEquals(DailyParseResult.NotRecognised, BoltDailyParser.parse(listOf("Total Earnings", "RON 29.08"), today))
+    }
+
+    /** The same screen with Bolt set to Romanian (made-up numbers). */
+    private val romanianRows = listOf(
+        "19:54",
+        "Defalcarea câștigurilor",
+        "Zilnic Săptămânal Lunar",
+        "6 oct.",
+        "Venituri în aplicație +150,40 lei",
+        "Plăți pentru curse .................. +130,40 lei",
+        "Bacșiș ............................. +5,00 lei",
+        "Taxe de anulare ................... +15,00 lei",
+        "Venituri în numerar +60,50 lei",
+        "Plăți pentru curse .................. +55,00 lei",
+        "Drum cu taxă ....................... +4,00 lei",
+        "Credite și promoții pentru utilizatori ..... +1,50 lei",
+        "Costuri și taxe 0,00 lei",
+        "Comision Bolt -42,10 lei",
+        "Câștigurile tale 168,80 lei",
+        "Numerar în mână +59,00 lei >",
+    )
+
+    @Test
+    fun readsRomanianDailyBreakdown() {
+        val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(romanianRows, today)).day
+        assertEquals(LocalDate(2026, 10, 6), day.date)
+        assertEquals(16880, day.earningsMinor)
+        assertEquals(5900, day.cashCollectedMinor)
+        assertTrue(day.addsUp)
+        assertEquals(
+            listOf(
+                IncomeLineKind.FARE, IncomeLineKind.TIP, IncomeLineKind.CANCELLATION_FEE,
+                IncomeLineKind.FARE, IncomeLineKind.TOLL, IncomeLineKind.PROMOTION, IncomeLineKind.COMMISSION,
+            ),
+            day.lines.map { it.kind },
+        )
+    }
+
+    @Test
+    fun readsRomanianWithoutDiacritics() {
+        val stripped = romanianRows.map(ReportText::plain)
+        val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(stripped, today)).day
+        assertTrue(day.addsUp)
+    }
+
+    @Test
+    fun readsRomanianWeekAndMonth() {
+        val week = romanianRows.map { if (it == "6 oct.") "28 sept. – 4 oct." else it }
+        val w = assertIs<DailyParseResult.Period>(BoltDailyParser.parse(week, today))
+        assertEquals(LocalDate(2026, 9, 28), w.summary.periodStart)
+        assertEquals(LocalDate(2026, 10, 4), w.summary.periodEnd)
+
+        val month = romanianRows.map { if (it == "6 oct.") "sept. 2026" else it }
+        val m = assertIs<DailyParseResult.Period>(BoltDailyParser.parse(month, today))
+        assertTrue(m.monthly)
+        assertEquals(LocalDate(2026, 9, 1), m.summary.periodStart)
+        assertEquals(LocalDate(2026, 9, 30), m.summary.periodEnd)
+        assertEquals(1500, m.summary.cancellationMinor)
+        assertEquals(500, m.summary.tipsMinor)
+    }
+
+    @Test
+    fun toleratesMisreadAccents() {
+        val misread = romanianRows.map { it.replace("Plăți", "Plắți").replace("Bacșiș", "Bacšiš") }
+        val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(misread, today)).day
+        assertEquals(0, day.lines.count { it.kind == IncomeLineKind.OTHER })
+    }
+
+    @Test
+    fun readsRomanianThousands() {
+        assertEquals(ReportText.AmountRow("Venituri în aplicație", 123456), ReportText.amountRow("Venituri în aplicație +1.234,56 lei"))
     }
 
     @Test

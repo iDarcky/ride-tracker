@@ -8,10 +8,13 @@ import app.ridetracker.shared.data.IncomeEntryEntity
 import app.ridetracker.shared.data.IncomeLineEntity
 import app.ridetracker.shared.data.PeriodSummaryEntity
 import app.ridetracker.shared.data.TripEntity
+import app.ridetracker.shared.data.TripWithPlatform
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 
 /** What saving an import did. */
 sealed interface ImportOutcome {
@@ -30,6 +33,13 @@ class ImportRepository(private val database: AppDatabase) {
     fun observeBatches(): Flow<List<ImportBatchEntity>> = imports.observeBatches()
 
     suspend fun isImported(fileHash: String): Boolean = imports.hasFile(fileHash)
+
+    fun observeTrips(range: DateRange): Flow<List<TripWithPlatform>> =
+        imports.observeTrips(range.start.toEpochDays(), range.endInclusive.toEpochDays())
+
+    fun observeTripDays(): Flow<List<LocalDate>> = imports.observeTripDays().map { days -> days.map(LocalDate::fromEpochDays) }
+
+    suspend fun getTrip(id: Long): TripWithPlatform? = imports.getTrip(id)
 
     suspend fun getLines(entryId: Long): List<IncomeLineEntity> = imports.getLines(entryId)
 

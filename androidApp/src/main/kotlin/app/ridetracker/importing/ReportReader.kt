@@ -39,8 +39,8 @@ sealed interface ReadReport {
     data class BoltTrips(override val fileHash: String, val trips: List<ParsedTrip>) : ReadReport
     data class BoltMonth(override val fileHash: String, val summary: ParsedSummary) : ReadReport
 
-    /** A Bolt breakdown on the Weekly or Monthly tab. */
-    data class NotADay(override val fileHash: String) : ReadReport
+    /** A Bolt breakdown on the Weekly or Monthly tab: Bolt's totals for that period. */
+    data class BoltPeriod(override val fileHash: String, val summary: ParsedSummary, val monthly: Boolean, val addsUp: Boolean) : ReadReport
     data class Unknown(override val fileHash: String) : ReadReport
 }
 
@@ -71,7 +71,7 @@ class ReportReader(private val context: Context) {
         val rows = rows(recognize(InputImage.fromFilePath(context, uri)))
         return when (val result = BoltDailyParser.parse(rows, takenOn(uri))) {
             is DailyParseResult.Day -> ReadReport.BoltDay(hash, result.day)
-            DailyParseResult.NotADay -> ReadReport.NotADay(hash)
+            is DailyParseResult.Period -> ReadReport.BoltPeriod(hash, result.summary, result.monthly, result.addsUp)
             DailyParseResult.NotRecognised -> ReadReport.Unknown(hash)
         }
     }

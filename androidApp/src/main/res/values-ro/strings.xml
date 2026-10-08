@@ -84,8 +84,6 @@
     <string name="local_first">Datele tale rămân pe acest dispozitiv.</string>
 
     <!-- Coming soon -->
-    <string name="coming_soon">În curând</string>
-    <string name="trips_coming_soon">Importă rapoartele Uber și Bolt ca să vezi aici fiecare cursă.</string>
 
     <!-- 0.0.4: navigation, money tab, settings, backup -->
     <string name="nav_home">Acasă</string>
@@ -293,8 +291,10 @@
     <string name="import_unknown_file">Nerecunoscut</string>
     <string name="import_failed">Fișierul nu a putut fi deschis.</string>
     <string name="import_already">Importat deja.</string>
-    <string name="import_not_a_day">Aceasta e fila Săptămânal sau Lunar. Deschide fila Zilnic în Bolt și fă captura acolo.</string>
-    <string name="import_not_recognised">Deocamdată se pot citi doar detalierea zilnică a câștigurilor, rezumatul lunar și facturile către pasageri din Bolt.</string>
+    <string name="import_bolt_week">Bolt · totaluri pe săptămână</string>
+    <string name="import_bolt_month_screen">Bolt · totaluri pe lună</string>
+    <string name="import_period_not_income">Totalurile Bolt pentru această perioadă. Folosite ca să-ți verifici zilele, nu se adaugă la venit. Pentru venit, importă fila Zilnic.</string>
+    <string name="import_not_recognised">Deocamdată se pot citi doar defalcarea câștigurilor, rezumatul lunar și facturile către pasageri din Bolt.</string>
     <string name="import_your_earnings">Câștigurile tale</string>
     <string name="import_cash_in_hand">Numerar încasat</string>
     <string name="import_adds_up">Toate sumele se potrivesc.</string>
@@ -337,5 +337,42 @@
         <item quantity="one">%d cursă</item>
         <item quantity="few">%d curse</item>
         <item quantity="other">%d de curse</item>
+    </plurals>
+
+    <!-- Trips -->
+    <string name="trips_all">Toate</string>
+    <string name="trips_filters">Filtre</string>
+    <string name="trips_all_payments">Toate plățile</string>
+    <string name="trips_total_fares">Total tarife (brut)</string>
+    <string name="trips_footnote">Tarifele sunt ce au plătit pasagerii, înainte de comisionul platformei. Distanța și durata apar doar dacă raportul le are; facturile Bolt nu le au.</string>
+    <string name="trips_empty_title">Nicio cursă încă</string>
+    <string name="trips_empty_body">Importă facturile către pasageri din Bolt (CSV) și cursele apar aici. Fișierele rămân pe acest telefon.</string>
+    <string name="payment_cash">Cash</string>
+    <string name="payment_in_app">În aplicație</string>
+    <string name="payment_business">Cont business</string>
+    <string name="trip_km_min">%1$s km · %2$s min</string>
+    <string name="trip_minutes">%1$d min</string>
+    <string name="trip_details">Detalii cursă</string>
+    <string name="trip_completed">Finalizată</string>
+    <string name="trip_breakdown">Defalcarea câștigului</string>
+    <string name="trip_fare">Tarif plătit de pasager</string>
+    <string name="trip_platform_fee">Comisionul platformei</string>
+    <string name="trip_driver_earnings">Câștigul tău</string>
+    <string name="trip_dash_note">O liniuță înseamnă că raportul nu conține informația.</string>
+    <string name="trip_info">Informații despre cursă</string>
+    <string name="trip_distance">Distanță</string>
+    <string name="trip_duration">Durată</string>
+    <string name="trip_payment">Plată</string>
+    <string name="trip_source">Sursă</string>
+    <string name="trip_privacy">Datele pasagerilor sunt eliminate la import: nu se salvează nume, telefon sau adresă.</string>
+    <plurals name="trip_count">
+        <item quantity="one">%d cursă</item>
+        <item quantity="few">%d curse</item>
+        <item quantity="other">%d de curse</item>
+    </plurals>
+    <plurals name="trips_show_all">
+        <item quantity="one">Arată %d cursă</item>
+        <item quantity="few">Arată toate cele %d curse</item>
+        <item quantity="other">Arată toate cele %d de curse</item>
     </plurals>
 </resources>

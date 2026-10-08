@@ -216,7 +216,7 @@ private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, o
             val report = item.report
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val isBolt = report is ReadReport.BoltDay || report is ReadReport.BoltTrips || report is ReadReport.BoltMonth ||
-                    report is ReadReport.NotADay
+                    report is ReadReport.BoltPeriod
                 if (isBolt) {
                     PlatformBadge("Bolt", BOLT_COLOR, size = 32.dp)
                 } else {
@@ -249,7 +249,7 @@ private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, o
 private fun title(report: ReadReport?, failed: Boolean): String = when {
     failed -> stringResource(R.string.import_unknown_file)
     report == null -> stringResource(R.string.import_reading)
-    report is ReadReport.NotADay -> stringResource(R.string.import_bolt_day)
+    report is ReadReport.BoltPeriod -> stringResource(if (report.monthly) R.string.import_bolt_month_screen else R.string.import_bolt_week)
     report is ReadReport.BoltDay -> stringResource(R.string.import_bolt_day)
     report is ReadReport.BoltTrips -> stringResource(R.string.import_bolt_invoices)
     report is ReadReport.BoltMonth -> stringResource(R.string.import_bolt_month)
@@ -260,6 +260,7 @@ private fun subtitle(report: ReadReport?, dates: DateFormats): String? = when (r
     is ReadReport.BoltDay -> dates.day(report.day.date)
     is ReadReport.BoltTrips -> dates.range(DateRange(report.trips.minOf { it.date }, report.trips.maxOf { it.date }))
     is ReadReport.BoltMonth -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
+    is ReadReport.BoltPeriod -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
     else -> null
 }
 
@@ -299,7 +300,22 @@ private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat) {
             s.distanceMeters?.let { Figure(stringResource(R.string.import_distance), stringResource(R.string.km_value, "%.1f".format(currentLocale(), it / 1000.0))) }
             Note(Icons.Outlined.Info, stringResource(R.string.import_summary_not_income))
         }
-        is ReadReport.NotADay -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_not_a_day), warning = true)
+        is ReadReport.BoltPeriod -> {
+            val s = report.summary
+            s.earningsMinor?.let { Figure(stringResource(R.string.import_your_earnings), money.format(it), big = true) }
+            HorizontalDivider()
+            s.grossFareMinor?.let { Figure(stringResource(R.string.line_fare), money.format(it)) }
+            s.bonusMinor?.let { Figure(stringResource(R.string.line_bonus), money.format(it)) }
+            s.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
+            s.cancellationMinor?.let { Figure(stringResource(R.string.line_cancellation_fee), money.format(it)) }
+            s.platformFeeMinor?.let { Figure(stringResource(R.string.line_commission), money.format(it)) }
+            if (report.addsUp) {
+                Note(Icons.Outlined.CheckCircle, stringResource(R.string.import_adds_up))
+            } else {
+                Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_does_not_add_up), warning = true)
+            }
+            Note(Icons.Outlined.Info, stringResource(R.string.import_period_not_income))
+        }
         is ReadReport.Unknown -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_not_recognised), warning = true)
     }
 }

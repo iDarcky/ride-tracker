@@ -73,11 +73,32 @@ object ReportText {
         }
     }
 
+    private val accents: Map<Char, Char> = buildMap {
+        // OCR sometimes reads "ă" as "ắ" or "ș" as "š": strip any accent it might produce.
+        "àáâãäåăắằẳẵặấầẩẫậạả".forEach { put(it, 'a') }
+        "èéêëěẹẻẽếềểễệ".forEach { put(it, 'e') }
+        "ìíîïĩịỉ".forEach { put(it, 'i') }
+        "òóôõöọỏốồổỗộ".forEach { put(it, 'o') }
+        "ùúûüũụủ".forEach { put(it, 'u') }
+        "șşšś".forEach { put(it, 's') }
+        "țţť".forEach { put(it, 't') }
+    }
+
+    /** Lower case without diacritics, so labels match however OCR reads "ș" or "ă". */
+    fun plain(text: String): String = text.trim().lowercase().map { accents[it] ?: it }.joinToString("")
+
+    /** "sept. 2026", "September 2026", "oct 2026" -> first day of that month. */
+    fun monthAndYear(text: String): LocalDate? {
+        val m = Regex("""^([a-z]{3,})\.?\s+(\d{4})$""").find(plain(text)) ?: return null
+        val month = monthNames[m.groupValues[1].take(3)] ?: return null
+        return LocalDate(m.groupValues[2].toInt(), month.number, 1)
+    }
+
     /** "8 Oct", "8 oct.", "08 octombrie", "Oct 8" -> day and month. */
     fun dayAndMonth(text: String): Pair<Int, Month>? {
-        val t = text.trim().lowercase()
-        val dayFirst = Regex("""^(\d{1,2})\s+([a-zăâîșşțţ]{3,})\.?$""").find(t)
-        val monthFirst = Regex("""^([a-zăâîșşțţ]{3,})\.?\s+(\d{1,2})$""").find(t)
+        val t = plain(text)
+        val dayFirst = Regex("""^(\d{1,2})\s+([a-z]{3,})\.?$""").find(t)
+        val monthFirst = Regex("""^([a-z]{3,})\.?\s+(\d{1,2})$""").find(t)
         val (day, name) = when {
             dayFirst != null -> dayFirst.groupValues[1] to dayFirst.groupValues[2]
             monthFirst != null -> monthFirst.groupValues[2] to monthFirst.groupValues[1]

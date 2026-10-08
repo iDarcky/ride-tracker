@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+- **Trips tab**: imported rides by month, grouped by day (day total and count), with app and payment
+  filters (cash / in the app) and a total of fares. Tap a ride for its details; anything the report
+  doesn't include shows a dash. Rider details are never stored.
+- **Bolt in Romanian**: screenshots of „Defalcarea câștigurilor” are read too (Plăți pentru curse, Bacșiș,
+  Campanii, Drum cu taxă, Taxe de anulare, Comision Bolt, Numerar în mână), even when accents are misread.
+- **Weekly and monthly Bolt screenshots** are accepted as Bolt's own totals for that period (kept for
+  checking, not added as income).
+
 ## 0.1.0
 - **Import from Bolt** (Menu → Import, the + button on Home, or Share → Ride Tracker from the gallery):
   - **Daily earnings screenshots** (Earnings breakdown, Daily tab): read on the phone, shown for checking

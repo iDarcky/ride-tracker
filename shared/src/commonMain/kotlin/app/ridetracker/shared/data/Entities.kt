@@ -231,6 +231,22 @@ data class EntryWithPlatform(
     val platformColorArgb: Long,
 )
 
+/** A trip joined with its platform and the kind of report it came from, for the Trips tab. */
+data class TripWithPlatform(
+    val id: Long,
+    val platformId: Long,
+    val platformName: String,
+    val platformColorArgb: Long,
+    val date: Long,
+    val startMinute: Int,
+    val fareMinor: Long,
+    val paymentMethod: String,
+    val distanceMeters: Long?,
+    val durationSeconds: Long?,
+    /** [app.ridetracker.shared.domain.ImportKind] id of the report. */
+    val importKind: String,
+)
+
 /** Sum of income for one platform over a date range. */
 data class PlatformTotal(
     val platformId: Long,

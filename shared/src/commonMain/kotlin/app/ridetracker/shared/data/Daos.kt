@@ -237,8 +237,30 @@ interface ImportDao {
     @Query("DELETE FROM import_batch")
     suspend fun deleteAllBatches()
 
-    @Query("SELECT * FROM trip WHERE date BETWEEN :startEpochDay AND :endEpochDay ORDER BY date DESC, startMinute DESC")
-    fun observeTrips(startEpochDay: Long, endEpochDay: Long): Flow<List<TripEntity>>
+    @Query(
+        """
+        SELECT t.id, t.platformId, p.name AS platformName, p.colorArgb AS platformColorArgb, t.date, t.startMinute,
+               t.fareMinor, t.paymentMethod, t.distanceMeters, t.durationSeconds, b.kind AS importKind
+        FROM trip t JOIN platform p ON p.id = t.platformId JOIN import_batch b ON b.id = t.importBatchId
+        WHERE t.date BETWEEN :startEpochDay AND :endEpochDay
+        ORDER BY t.date DESC, t.startMinute DESC
+        """,
+    )
+    fun observeTrips(startEpochDay: Long, endEpochDay: Long): Flow<List<TripWithPlatform>>
+
+    @Query(
+        """
+        SELECT t.id, t.platformId, p.name AS platformName, p.colorArgb AS platformColorArgb, t.date, t.startMinute,
+               t.fareMinor, t.paymentMethod, t.distanceMeters, t.durationSeconds, b.kind AS importKind
+        FROM trip t JOIN platform p ON p.id = t.platformId JOIN import_batch b ON b.id = t.importBatchId
+        WHERE t.id = :id
+        """,
+    )
+    suspend fun getTrip(id: Long): TripWithPlatform?
+
+    /** Days that have trips, newest first (for the month picker). */
+    @Query("SELECT DISTINCT date FROM trip ORDER BY date DESC")
+    fun observeTripDays(): Flow<List<Long>>
 
     @Query("SELECT * FROM trip ORDER BY id")
     suspend fun getAllTrips(): List<TripEntity>
