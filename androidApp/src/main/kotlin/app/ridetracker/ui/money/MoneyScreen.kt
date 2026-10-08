@@ -101,7 +101,9 @@ fun MoneyScreen(
     onAddExpense: () -> Unit,
     onEditExpense: (Long) -> Unit,
     onOpenRecurring: () -> Unit,
-    viewModel: IncomeListViewModel = viewModel { IncomeListViewModel(container.incomeRepository, container.settingsRepository) },
+    viewModel: IncomeListViewModel = viewModel {
+        IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository)
+    },
     expenseViewModel: ExpenseListViewModel = viewModel {
         ExpenseListViewModel(container.expenseRepository, container.recurringRepository, container.settingsRepository)
     },

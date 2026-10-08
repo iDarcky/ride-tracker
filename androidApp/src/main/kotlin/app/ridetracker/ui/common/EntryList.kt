@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.shared.domain.IncomeSource
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.data.ExpenseEntity
 import app.ridetracker.shared.domain.ExpenseCategory
@@ -111,7 +112,11 @@ fun EntryRow(
     SwipeToDeleteRow(
         leading = { PlatformBadge(entry.platformName, entry.platformColorArgb) },
         title = entry.platformName,
-        note = entry.note,
+        note = if (entry.source == IncomeSource.ESTIMATE.id) {
+            listOfNotNull(stringResource(R.string.estimated), entry.note).joinToString(" · ")
+        } else {
+            entry.note
+        },
         amount = money.format(entry.amountMinor),
         onClick = onClick,
         onDelete = onDelete,

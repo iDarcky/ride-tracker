@@ -53,7 +53,10 @@ class RideTrackerApplication : Application() {
         DueExpensesWorker.schedule(this)
         // Fix breakdown lines imported before the reader recognised their label.
         @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch { container.importRepository.reclassifyLines() }
+        GlobalScope.launch {
+            container.importRepository.reclassifyLines()
+            container.importRepository.refreshEstimates(kotlin.time.Clock.System.now().toEpochMilliseconds())
+        }
     }
 }
 

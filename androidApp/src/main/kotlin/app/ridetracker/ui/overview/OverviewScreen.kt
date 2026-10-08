@@ -408,6 +408,9 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
                 )
                 state.stats?.let { Sparkline(it.days, LocalContentColor.current.copy(alpha = 0.55f), Modifier.width(120.dp).height(40.dp)) }
             }
+            state.stats?.estimatedMinor?.takeIf { it > 0 }?.let {
+                Text(stringResource(R.string.includes_estimated, money.format(it)), style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.DeletedEntry
 import app.ridetracker.shared.domain.HomeStats
 import app.ridetracker.shared.domain.HomeStatsCalculator
+import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.Period
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,6 +44,7 @@ data class IncomeListState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class IncomeListViewModel(
     private val incomeRepository: IncomeRepository,
+    private val importRepository: ImportRepository,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -65,14 +67,15 @@ class IncomeListViewModel(
                 incomeRepository.observeTotals(month.range),
                 incomeRepository.observeEntryDetails(month.range),
                 incomeRepository.observeLines(month.range),
-            ) { totals, details, lines ->
+                importRepository.observeSummaries(month.range),
+            ) { totals, details, lines, summaries ->
                 IncomeListState(
                     months = months,
                     month = month,
                     totalMinor = monthly.sumOf { it.amountMinor },
                     previousMinor = previous.takeIf { it.isNotEmpty() }?.sumOf { it.amountMinor },
                     platforms = totals,
-                    stats = HomeStatsCalculator.compute(month.range, details, lines, emptyList()),
+                    stats = HomeStatsCalculator.compute(month.range, details, lines, emptyList(), summaries),
                     days = monthly.groupBy { it.date }.map { (day, list) ->
                         IncomeDay(LocalDate.fromEpochDays(day), list.sumOf { it.amountMinor }, list)
                     },

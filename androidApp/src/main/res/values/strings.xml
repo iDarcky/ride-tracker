@@ -434,4 +434,9 @@
     <string name="widget_add_title">Add widget</string>
     <string name="widget_reset">Reset</string>
     <string name="widget_empty">Nothing for this period yet.</string>
+    <!-- Estimated income -->
+    <string name="estimated">Estimated</string>
+    <string name="includes_estimated">Includes %1$s estimated for days without a screenshot</string>
+    <string name="estimated_bars">Outlined bars are estimated days (no screenshot that day).</string>
+    <string name="estimate_entry_note">Estimated from Bolt’s monthly total or trips, because this day has no screenshot. A screenshot of the day replaces it; if you save your own amount, it stays as you set it.</string>
 </resources>

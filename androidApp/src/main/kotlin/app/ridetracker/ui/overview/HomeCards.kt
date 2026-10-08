@@ -416,14 +416,18 @@ fun DailyActivity(
                     listOfNotNull(day.tripCount.toLong().takeIf { it > 0 }?.let { tripsColor to it })
                 }
                 var top = chartHeight
+                // Estimated days (no screenshot) are drawn hollow, so they read differently without relying on colour.
+                val estimated = metric == ActivityMetric.MONEY && day.estimatedMinor > 0 && day.estimatedMinor >= day.totalMinor
                 segments.forEachIndexed { s, (color, v) ->
                     val h = chartHeight * v / max
                     val isTop = s == segments.lastIndex
+                    val stroke = 1.5.dp.toPx()
                     drawRoundRect(
                         color = if (faded) lerp(color, surface, 0.55f) else color,
-                        topLeft = Offset(x, top - h),
-                        size = Size(barWidth, h),
+                        topLeft = if (estimated) Offset(x + stroke / 2, top - h + stroke / 2) else Offset(x, top - h),
+                        size = if (estimated) Size(barWidth - stroke, (h - stroke).coerceAtLeast(0f)) else Size(barWidth, h),
                         cornerRadius = if (isTop) CornerRadius(4.dp.toPx().coerceAtMost(barWidth / 2)) else CornerRadius.Zero,
+                        style = if (estimated) Stroke(stroke) else androidx.compose.ui.graphics.drawscope.Fill,
                     )
                     top -= h
                     if (!isTop) drawLine(surface, Offset(x, top), Offset(x + barWidth, top), 2.dp.toPx())
@@ -440,6 +444,14 @@ fun DailyActivity(
                 val layout = measurer.measure(format(average), labelStyle)
                 drawText(layout, topLeft = Offset(size.width - layout.size.width, (y - layout.size.height - 2.dp.toPx()).coerceAtLeast(0f)))
             }
+        }
+        if (metric == ActivityMetric.MONEY && days.any { it.estimatedMinor > 0 }) {
+            Text(
+                stringResource(R.string.estimated_bars),
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         if (metric == ActivityMetric.MONEY && shown.size > 1) {
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

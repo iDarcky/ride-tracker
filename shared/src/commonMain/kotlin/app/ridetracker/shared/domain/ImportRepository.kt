@@ -152,6 +152,55 @@ class ImportRepository(private val database: AppDatabase) {
     }
 
     /**
+     * Rebuilds the estimated days of every platform and month that has trips, monthly totals or estimates:
+     * days without an exact entry are filled from the platform's own reports (see [IncomeEstimator]).
+     * Exact entries are never changed. Run after every import and on start.
+     */
+    suspend fun refreshEstimates(nowEpochMillis: Long) = transaction {
+        val months = buildSet {
+            (imports.getTripDays() + imports.getEstimateDays()).forEach { add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.date))) }
+            imports.getAllSummaries().forEach { add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.periodStart))) }
+        }
+        for ((platformId, month) in months) refreshMonth(platformId, month, nowEpochMillis)
+    }
+
+    private suspend fun refreshMonth(platformId: Long, month: Period.Month, nowEpochMillis: Long) {
+        val start = month.range.start.toEpochDays()
+        val end = month.range.endInclusive.toEpochDays()
+        imports.deleteEstimates(platformId, start, end)
+        val exact = imports.getEntries(platformId, start, end)
+            .groupBy { LocalDate.fromEpochDays(it.date) }
+            .mapValues { (_, list) -> list.sumOf { it.amountMinor } }
+        val fares = imports.getTripFaresByDay(platformId, start, end).associate { LocalDate.fromEpochDays(it.date) to it.totalMinor }
+        val summaries = imports.getSummaries(platformId, start, end)
+        val monthly = summaries.firstOrNull { it.earningsMinor != null }
+        val pdf = summaries.firstOrNull { it.earningsMinor == null && it.grossFareMinor != null }
+        val totals = imports.getFareAndCommission(platformId).associate { it.kind to it.totalMinor }
+        val keepRate = IncomeEstimator.keepRate(totals[IncomeLineKind.FARE.id] ?: 0, totals[IncomeLineKind.COMMISSION.id] ?: 0)
+        val result = IncomeEstimator.estimate(
+            exactByDay = exact,
+            tripFaresByDay = fares,
+            monthlyEarningsMinor = monthly?.earningsMinor,
+            summaryFaresMinor = pdf?.grossFareMinor,
+            summaryCancellationMinor = pdf?.cancellationMinor,
+            summaryTipsMinor = pdf?.tipsMinor,
+            keepRate = keepRate,
+            lastDay = month.range.endInclusive,
+        )
+        result.days.forEach { day ->
+            entries.insert(
+                IncomeEntryEntity(
+                    platformId = platformId,
+                    amountMinor = day.amountMinor,
+                    date = day.date.toEpochDays(),
+                    createdAt = nowEpochMillis,
+                    source = IncomeSource.ESTIMATE.id,
+                ),
+            )
+        }
+    }
+
+    /**
      * Lines saved as "other" because an older reader did not know their label (e.g. an accent misread
      * by OCR) get their proper kind once the reader learns it. Safe to run on every start.
      */

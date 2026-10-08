@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+- **Income from Bolt's monthly totals and trips, without counting twice.** Days with a daily screenshot (or typed
+  in) stay exact. The rest of the month is filled in, best source first: Bolt's monthly breakdown screenshot
+  ("Câștigurile tale" minus the exact days), else the monthly summary PDF (fares after your usual commission, plus
+  tips; it has no campaigns), else the trips' fares after commission. It's spread over the days with trips by
+  their fares and marked **Estimated** (label in lists, outlined bars, a line on Home). A screenshot of a day
+  replaces its estimate; an estimate you edit becomes yours.
+- For a month with Bolt's monthly breakdown, Home and Money take gross, commission, campaigns and tips from it.
+
 ## 0.4.2
 - Importing CSV and PDF files works however the phone labels them: a CSV marked as an Excel file, a PDF opened
   from Gmail or Drive, a UTF-16 spreadsheet export. "Choose PDF or CSV files" now lists every file; anything

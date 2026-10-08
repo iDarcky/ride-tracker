@@ -17,7 +17,7 @@ class CsvExportTest {
     @Test
     fun buildsOneSortedFileWithNegativeExpenses() {
         val csv = CsvExport.build(
-            income = listOf(EntryWithPlatform(1, 1, 31025, day(7), "evening, airport", 2, "Uber", 0)),
+            income = listOf(EntryWithPlatform(1, 1, 31025, day(7), "evening, airport", 2, "manual", "Uber", 0)),
             expenses = listOf(ExpenseEntity(1, 25000, day(6), "fuel", "OMV \"Gold\"", 1)),
             currencyCode = "RON",
             fractionDigits = 2,

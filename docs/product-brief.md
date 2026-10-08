@@ -1,6 +1,6 @@
 # Ride Tracker – product brief v0.2
 
-Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.4.2).
+Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.5.0).
 
 This is the public, trimmed version of the brief: no personal earnings data and no business plan.
 
@@ -134,7 +134,9 @@ See the README for build, versioning and signing rules.
    0.2.0: Home rework like the cockpit mockup. 0.2.1: labelled kept/fees bar, "platform" wording, daily activity
    rework, five metric tiles. 0.3.0: Money tab by month (total → by platform/type or category → recent).
    0.4.0: customisable Home widgets (Customise at the bottom; drag, remove, add on Home itself).
-   **Next:** Uber screenshots and CSV (owner sends the files), the monthly check against Bolt's totals.
+   0.5.0: estimated income from Bolt monthly totals / PDF / trips for days without a screenshot (no double count).
+   **Next (owner, 9 Oct), in order:** Bolt Activity screenshot (online hours per month → RON/h), an "All" period,
+   vehicle step in onboarding, then Uber screenshots and CSV.
    Still open: identity (name, icon, a darker "cockpit" look). The owner said the app lacked identity and had
    gone wide before deep; imports and the cockpit Home address the second.
 

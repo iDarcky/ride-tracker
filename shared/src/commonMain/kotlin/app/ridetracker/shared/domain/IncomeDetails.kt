@@ -6,6 +6,8 @@ enum class IncomeSource(val id: String) {
     SCREENSHOT("screenshot"),
     CSV("csv"),
     PDF("pdf"),
+    /** Filled in from the platform's monthly totals or trips for a day without a screenshot. */
+    ESTIMATE("estimate"),
     ;
 
     companion object {

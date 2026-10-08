@@ -127,6 +127,8 @@ class ImportViewModel(
                 }
                 if (outcome is ImportOutcome.Saved) saved++
             }
+            // Days without a screenshot are filled from the new totals and trips (never the exact days).
+            importRepository.refreshEstimates(Clock.System.now().toEpochMilliseconds())
             _state.update { s -> s.copy(items = emptyList(), saving = false, savedCount = saved) }
         }
     }

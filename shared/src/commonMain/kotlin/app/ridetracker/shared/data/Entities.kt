@@ -227,6 +227,8 @@ data class EntryWithPlatform(
     val date: Long,
     val note: String?,
     val createdAt: Long,
+    /** [app.ridetracker.shared.domain.IncomeSource] id: lists mark estimated days. */
+    val source: String,
     val platformName: String,
     val platformColorArgb: Long,
 )
@@ -255,6 +257,15 @@ data class LineInRange(
     val kind: String,
     val amountMinor: Long,
 )
+
+/** A platform and a day (epoch day). */
+data class PlatformDay(val platformId: Long, val date: Long)
+
+/** A total per day (epoch day). */
+data class DayTotal(val date: Long, val totalMinor: Long)
+
+/** A total per breakdown line kind. */
+data class KindTotal(val kind: String, val totalMinor: Long)
 
 /** Sum of income for one platform over a date range. */
 data class PlatformTotal(

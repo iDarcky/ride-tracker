@@ -156,6 +156,13 @@ fun EntryScreen(
                 minLines = 2,
             )
 
+            if (state.source == IncomeSource.ESTIMATE) {
+                Text(
+                    stringResource(R.string.estimate_entry_note),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (state.lines.isNotEmpty()) Breakdown(state)
 
             Spacer(Modifier.height(8.dp))

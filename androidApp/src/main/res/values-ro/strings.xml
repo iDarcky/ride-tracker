@@ -442,4 +442,9 @@
     <string name="widget_add_title">Adaugă widget</string>
     <string name="widget_reset">Resetează</string>
     <string name="widget_empty">Nimic în această perioadă încă.</string>
+    <!-- Estimated income -->
+    <string name="estimated">Estimat</string>
+    <string name="includes_estimated">Include %1$s estimat pentru zilele fără captură</string>
+    <string name="estimated_bars">Barele conturate sunt zile estimate (fără captură în ziua respectivă).</string>
+    <string name="estimate_entry_note">Estimat din totalul lunar Bolt sau din curse, pentru că ziua nu are captură. O captură a zilei îl înlocuiește; dacă salvezi suma ta, rămâne cum ai pus-o.</string>
 </resources>

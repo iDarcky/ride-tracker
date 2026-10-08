@@ -10,7 +10,13 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
 
 /** Income of one day, per platform (platform id -> amount), and its trips (imported, or as reported). */
-data class DayIncome(val date: LocalDate, val byPlatform: Map<Long, Long>, val tripCount: Int = 0) {
+data class DayIncome(
+    val date: LocalDate,
+    val byPlatform: Map<Long, Long>,
+    val tripCount: Int = 0,
+    /** Part of the day's income that is estimated (no screenshot that day). */
+    val estimatedMinor: Long = 0,
+) {
     val totalMinor: Long get() = byPlatform.values.sum()
 }
 
@@ -21,6 +27,8 @@ data class DayIncome(val date: LocalDate, val byPlatform: Map<Long, Long>, val t
 data class HomeStats(
     /** What the apps paid: the entries' amounts (after commission). */
     val netIncomeMinor: Long,
+    /** Part of [netIncomeMinor] estimated for days without a screenshot. */
+    val estimatedMinor: Long = 0,
     /** Before commission: breakdown lines where known, the entry amount where not. */
     val grossMinor: Long,
     /** Commission and other platform fees (negative or 0). */
@@ -74,7 +82,21 @@ object HomeStatsCalculator {
         var fares = 0L
         var bonuses = 0L
         var feesKnown = true
-        for (entry in entries) {
+        // A platform's own breakdown for exactly this period (Bolt's monthly screenshot) covers every day of it,
+        // estimated ones included: take gross, fees and their parts from it instead of from the entries.
+        val ownTotals = summaries
+            .filter { it.earningsMinor != null && it.periodStart == range.start.toEpochDays() && it.periodEnd == range.endInclusive.toEpochDays() }
+            .distinctBy { it.platformId }
+        for (summary in ownTotals) {
+            val summaryFees = summary.platformFeeMinor ?: 0
+            val summaryGross = (summary.earningsMinor ?: 0) - summaryFees
+            gross += summaryGross
+            fees += summaryFees
+            fares += summary.grossFareMinor ?: 0
+            bonuses += (summary.bonusMinor ?: 0) + (summary.tipsMinor ?: 0)
+        }
+        val covered = ownTotals.map { it.platformId }.toSet()
+        for (entry in entries.filter { it.platformId !in covered }) {
             val own = linesByEntry[entry.id]
             if (own.isNullOrEmpty()) {
                 gross += entry.amountMinor
@@ -93,7 +115,7 @@ object HomeStatsCalculator {
             }
         }
         // Income typed in without a breakdown counts as fares: it is what the driver was paid for rides.
-        fares += entries.filter { linesByEntry[it.id].isNullOrEmpty() }.sumOf { it.amountMinor }
+        fares += entries.filter { it.platformId !in covered && linesByEntry[it.id].isNullOrEmpty() }.sumOf { it.amountMinor }
 
         val timed = entries.filter { (it.onlineMinutes ?: 0) > 0 }
         val minutes = timed.sumOf { it.onlineMinutes ?: 0 }
@@ -124,7 +146,12 @@ object HomeStatsCalculator {
                     val imported = tripsByDay[day.toEpochDays()].orEmpty()
                     // Imported trips per platform; an entry's own trip count where a platform has none imported.
                     val reported = list.filter { e -> imported.none { it.platformId == e.platformId } }.sumOf { it.tripCount ?: 0 }
-                    DayIncome(day, list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } }, imported.size + reported)
+                    DayIncome(
+                        day,
+                        list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } },
+                        imported.size + reported,
+                        list.filter { it.source == IncomeSource.ESTIMATE.id }.sumOf { it.amountMinor },
+                    )
                 }
                 .toList()
         } else {
@@ -140,6 +167,7 @@ object HomeStatsCalculator {
 
         return HomeStats(
             netIncomeMinor = entries.sumOf { it.amountMinor },
+            estimatedMinor = entries.filter { it.source == IncomeSource.ESTIMATE.id }.sumOf { it.amountMinor },
             grossMinor = gross,
             feesMinor = fees,
             feesKnownForAll = feesKnown,

@@ -66,8 +66,10 @@ class IncomeRepository(database: AppDatabase) {
                 ),
             )
         } else {
+            // Editing an estimated day makes it the driver's own: it is never recalculated after that.
+            val source = if (existing.source == IncomeSource.ESTIMATE.id) IncomeSource.MANUAL.id else existing.source
             entries.update(
-                existing.copy(platformId = platformId, amountMinor = amountMinor, date = date.toEpochDays(), note = cleanNote),
+                existing.copy(platformId = platformId, amountMinor = amountMinor, date = date.toEpochDays(), note = cleanNote, source = source),
             )
         }
     }

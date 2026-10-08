@@ -113,6 +113,29 @@ class HomeStatsTest {
     }
 
     @Test
+    fun aPlatformsOwnMonthlyBreakdownGivesGrossAndFees() {
+        val september = DateRange(LocalDate(2026, 9, 1), LocalDate(2026, 9, 30))
+        val summary = app.ridetracker.shared.data.PeriodSummaryEntity(
+            platformId = 2, importBatchId = 1, periodStart = september.start.toEpochDays(), periodEnd = september.endInclusive.toEpochDays(),
+            grossFareMinor = 200000, cancellationMinor = 1000, tipsMinor = 2000, bonusMinor = 50000,
+            platformFeeMinor = -50000, earningsMinor = 210000,
+        )
+        // Estimated days (no lines) add up to the monthly earnings.
+        val entries = listOf(
+            IncomeEntryEntity(id = 1, platformId = 2, amountMinor = 210000, date = september.start.toEpochDays(), createdAt = 0, source = "estimate"),
+        )
+        val s = HomeStatsCalculator.compute(september, entries, emptyList(), emptyList(), listOf(summary))
+        assertEquals(260000, s.grossMinor)
+        assertEquals(-50000, s.feesMinor)
+        assertEquals(s.netIncomeMinor, s.grossMinor + s.feesMinor)
+        assertEquals(200000, s.faresMinor)
+        assertEquals(52000, s.bonusesAndTipsMinor)
+        assertEquals(8000, s.otherIncomeMinor) // cancellations and other parts of the breakdown
+        assertEquals(true, s.feesKnownForAll)
+        assertEquals(210000, s.estimatedMinor)
+    }
+
+    @Test
     fun longRangesSkipTheDailyChart() {
         val year = DateRange(LocalDate(2026, 1, 1), LocalDate(2026, 12, 31))
         assertEquals(0, HomeStatsCalculator.compute(year, emptyList(), emptyList(), emptyList()).days.size)

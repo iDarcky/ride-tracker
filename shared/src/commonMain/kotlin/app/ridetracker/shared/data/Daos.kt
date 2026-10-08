@@ -34,7 +34,7 @@ interface PlatformDao {
 interface IncomeEntryDao {
     @Query(
         """
-        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt,
+        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt, e.source,
                p.name AS platformName, p.colorArgb AS platformColorArgb
         FROM income_entry e JOIN platform p ON p.id = e.platformId
         WHERE e.date BETWEEN :startEpochDay AND :endEpochDay
@@ -45,7 +45,7 @@ interface IncomeEntryDao {
 
     @Query(
         """
-        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt,
+        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt, e.source,
                p.name AS platformName, p.colorArgb AS platformColorArgb
         FROM income_entry e JOIN platform p ON p.id = e.platformId
         WHERE e.date BETWEEN :startEpochDay AND :endEpochDay
@@ -94,7 +94,7 @@ interface IncomeEntryDao {
 
     @Query(
         """
-        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt,
+        SELECT e.id, e.platformId, e.amountMinor, e.date, e.note, e.createdAt, e.source,
                p.name AS platformName, p.colorArgb AS platformColorArgb
         FROM income_entry e JOIN platform p ON p.id = e.platformId
         ORDER BY e.date DESC, e.createdAt DESC
@@ -224,6 +224,38 @@ interface ImportDao {
 
     @Insert
     suspend fun insertLines(lines: List<IncomeLineEntity>)
+
+    @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
+    suspend fun getEntries(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<IncomeEntryEntity>
+
+    @Query("DELETE FROM income_entry WHERE source = 'estimate' AND platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
+    suspend fun deleteEstimates(platformId: Long, startEpochDay: Long, endEpochDay: Long)
+
+    @Query("SELECT platformId, date FROM income_entry WHERE source = 'estimate'")
+    suspend fun getEstimateDays(): List<PlatformDay>
+
+    @Query("SELECT DISTINCT platformId, date FROM trip")
+    suspend fun getTripDays(): List<PlatformDay>
+
+    @Query(
+        """
+        SELECT date, SUM(fareMinor) AS totalMinor FROM trip
+        WHERE platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay GROUP BY date
+        """,
+    )
+    suspend fun getTripFaresByDay(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<DayTotal>
+
+    @Query("SELECT * FROM period_summary WHERE platformId = :platformId AND periodStart = :startEpochDay AND periodEnd = :endEpochDay")
+    suspend fun getSummaries(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<PeriodSummaryEntity>
+
+    /** Fare and commission totals of a platform's imported breakdowns, for its usual commission share. */
+    @Query(
+        """
+        SELECT l.kind, SUM(l.amountMinor) AS totalMinor FROM income_line l JOIN income_entry e ON e.id = l.entryId
+        WHERE e.platformId = :platformId AND l.kind IN ('fare', 'commission') GROUP BY l.kind
+        """,
+    )
+    suspend fun getFareAndCommission(platformId: Long): List<KindTotal>
 
     @Query("SELECT * FROM income_line WHERE kind = :kind AND label IS NOT NULL")
     suspend fun getLinesOfKind(kind: String): List<IncomeLineEntity>
