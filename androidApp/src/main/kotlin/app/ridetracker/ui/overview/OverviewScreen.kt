@@ -82,6 +82,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -142,7 +143,7 @@ fun OverviewScreen(
     },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val pending by viewModel.pending.collectAsStateWithLifecycle()
+    val attention by viewModel.attention.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val addedText = stringResource(R.string.expense_added)
@@ -170,7 +171,9 @@ fun OverviewScreen(
             )
         },
         floatingActionButton = {
-            if (!editing) AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = LocalBottomBarSpace.current))
+            // The FAB menu brings its own spacing; sit 16 dp above the floating bar, not a whole button higher.
+            val fabSpace = (LocalBottomBarSpace.current - FabMenuOwnSpacing).coerceAtLeast(0.dp)
+            if (!editing) AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = fabSpace))
         },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
     ) { padding ->
@@ -217,15 +220,16 @@ fun OverviewScreen(
             item {
                 TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp))
             }
-            val shown = if (editing) order else state.widgets.filter { it.hasContent(state, pending) }
+            val shown = if (editing) order else state.widgets.filter { it.hasContent(state, attention) }
             items(shown, key = { it.id }) { widget ->
                 ReorderableItem(reorder, key = widget.id, enabled = editing) { dragging ->
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                         val body: @Composable () -> Unit = {
-                            if (widget.hasContent(state, pending)) {
+                            if (widget.hasContent(state, attention)) {
                                 WidgetBody(
-                                    widget, state, pending, money, dates, percent,
+                                    widget, state, attention, money, dates, percent,
                                     onOpenDay = viewModel::openDay,
+                                    onImport = onImport,
                                     onAcceptDue = { item ->
                                         viewModel.accept(item)
                                         scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
@@ -539,6 +543,8 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         DateRangePicker(state = pickerState, modifier = Modifier.weight(1f))
     }
 }
+
+private val FabMenuOwnSpacing = 24.dp
 
 /** M3 Expressive FAB menu: one button, three actions (import, add expense, add income). */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

@@ -6,6 +6,9 @@ import kotlinx.datetime.LocalDate
 /** Where a month's estimate came from, best first. Shown with the estimated days. */
 enum class EstimateBasis { MONTHLY_TOTAL, MONTHLY_SUMMARY, TRIP_FARES }
 
+/** A finished month whose income is partly estimated because the platform's own monthly total is missing. */
+data class MissingMonthlyTotal(val platformId: Long, val month: Period.Month)
+
 /** Estimated income for one day without a screenshot. */
 data class EstimatedDay(val date: LocalDate, val amountMinor: Long)
 
@@ -67,4 +70,21 @@ object IncomeEstimator {
      */
     fun keepRate(faresMinor: Long, commissionMinor: Long): Double? =
         if (faresMinor <= 0 || commissionMinor == 0L) null else (faresMinor + commissionMinor).toDouble() / faresMinor
+
+    /**
+     * Finished months with estimated days but no monthly total from the platform (Bolt's Monthly tab): their
+     * estimate lacks campaigns and may lack commission, so the driver is asked for that screenshot. Newest first.
+     */
+    fun missingMonthlyTotals(
+        estimateDays: List<Pair<Long, LocalDate>>,
+        monthlyTotals: List<Pair<Long, Period.Month>>,
+        today: LocalDate,
+    ): List<MissingMonthlyTotal> {
+        val have = monthlyTotals.toSet()
+        return estimateDays.map { (platformId, day) -> platformId to Period.Month.containing(day) }
+            .distinct()
+            .filter { (platformId, month) -> month.range.endInclusive < today && (platformId to month) !in have }
+            .sortedByDescending { it.second.range.start }
+            .map { (platformId, month) -> MissingMonthlyTotal(platformId, month) }
+    }
 }

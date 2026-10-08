@@ -25,6 +25,9 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ridetracker.RideTrackerApplication
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -70,6 +73,8 @@ private fun <T> ConnectedChoice(options: List<T>, selected: T, onSelect: (T) -> 
 /** Group as connected buttons, then that group's categories as chips. */
 @Composable
 fun CategoryPicker(group: ExpenseGroup, category: ExpenseCategory, onGroup: (ExpenseGroup) -> Unit, onCategory: (ExpenseCategory) -> Unit) {
+    val container = (LocalContext.current.applicationContext as RideTrackerApplication).container
+    val settings by container.settingsRepository.settings.collectAsStateWithLifecycle(null)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.category), style = MaterialTheme.typography.titleSmall)
         ConnectedChoice(ExpenseGroup.entries, group, onGroup) {
@@ -78,7 +83,9 @@ fun CategoryPicker(group: ExpenseGroup, category: ExpenseCategory, onGroup: (Exp
             Text(stringResource(it.label), maxLines = 1)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ExpenseCategory.inGroup(group).forEach { c ->
+            // An older expense keeps its category even where it is no longer offered.
+            val offered = ExpenseCategory.offered(group, settings?.country, settings?.drivingType)
+            (if (category.group == group && category !in offered) offered + category else offered).forEach { c ->
                 FilterChip(
                     selected = c == category,
                     onClick = { onCategory(c) },

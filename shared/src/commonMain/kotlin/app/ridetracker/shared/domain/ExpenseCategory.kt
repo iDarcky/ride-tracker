@@ -22,6 +22,9 @@ enum class ExpenseCategory(val id: String, val group: ExpenseGroup) {
     BANK_FEES("bank_fees", ExpenseGroup.BUSINESS),
     PHONE("phone", ExpenseGroup.BUSINESS),
     FLEET_FEES("fleet_fees", ExpenseGroup.BUSINESS),
+
+    /** VAT a Romanian PFA pays on the platforms' commission invoices (reverse charge, form 301). */
+    INTRA_EU_VAT("intra_eu_vat", ExpenseGroup.BUSINESS),
     OTHER_BUSINESS("other_business", ExpenseGroup.BUSINESS),
     OTHER("other", ExpenseGroup.OTHER),
     ;
@@ -29,5 +32,9 @@ enum class ExpenseCategory(val id: String, val group: ExpenseGroup) {
     companion object {
         fun fromId(id: String): ExpenseCategory = entries.firstOrNull { it.id == id } ?: OTHER
         fun inGroup(group: ExpenseGroup): List<ExpenseCategory> = entries.filter { it.group == group }
+
+        /** The categories offered when adding an expense: intra-EU VAT only for Romanian drivers on their own (PFA). */
+        fun offered(group: ExpenseGroup, country: Country?, drivingType: DrivingType?): List<ExpenseCategory> =
+            inGroup(group).filter { it != INTRA_EU_VAT || (country == Country.ROMANIA && drivingType != DrivingType.FLEET) }
     }
 }

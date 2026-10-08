@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.4
+- **Bolt Activity screenshots in English** ("61h 12m", "Past 3 months", "HOURS") are read, as well as past week
+  tabs written "Sep 28 - Oct 4".
+- **Daily breakdowns dated "1 oct."** import again: text recognition sometimes reads "Oct" as "0ct" or a lone
+  "1" as "l".
+- When a screenshot isn't recognised, the message says what can be read and to tap a month's bar first for hours.
+- **Needs attention** on Home lists finished months whose income is estimated from the PDF or trips because
+  Bolt's monthly total is missing (no bonuses), with an Import button.
+- Without a daily breakdown, the usual commission share also comes from Bolt's weekly or monthly screenshots.
+- New expense category **TVA intracomunitar** (Business), offered in Romania to drivers on their own (PFA).
+- Opening and closing screens slides like Android Settings (Material shared axis), and the back gesture follows
+  your finger. Switching tabs stays instant.
+- The + button sits closer to the navigation bar; long values like "12 h 48 min" shrink to fit their tile.
+
 ## 0.5.3
 - **Your car in onboarding**: after country (and, in Romania, how you drive), a "Your car" step asks for the
   car's name, fuel, consumption and fuel price. Optional: "Skip for now" and add it later under Vehicle.

@@ -177,6 +177,16 @@ class BoltParsersTest {
     }
 
     @Test
+    fun readsDateHeadersOcrMisreads() {
+        // "Oct" read with a zero, a lone "1" read as "l".
+        val zero = romanianRows.map { if (it == "6 oct.") "1 0ct." else it }
+        assertEquals(LocalDate(2026, 10, 1), assertIs<DailyParseResult.Day>(BoltDailyParser.parse(zero, today)).day.date)
+        val ell = romanianRows.map { if (it == "6 oct.") "l oct." else it }
+        assertEquals(LocalDate(2026, 10, 1), assertIs<DailyParseResult.Day>(BoltDailyParser.parse(ell, today)).day.date)
+        assertEquals(null, ReportText.dayAndMonth("mail"))
+    }
+
+    @Test
     fun classifiesLabelsForRepair() {
         assertEquals(IncomeLineKind.FARE, BoltDailyParser.lineKind("Plắți pentru curse"))
         assertEquals(IncomeLineKind.TOLL, BoltDailyParser.lineKind("Drum cu taxă"))

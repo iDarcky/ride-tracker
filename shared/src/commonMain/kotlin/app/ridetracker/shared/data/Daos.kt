@@ -244,6 +244,12 @@ interface ImportDao {
     @Query("SELECT platformId, date FROM income_entry WHERE source = 'estimate'")
     suspend fun getEstimateDays(): List<PlatformDay>
 
+    @Query("SELECT DISTINCT platformId, date FROM income_entry WHERE source = 'estimate'")
+    fun observeEstimateDays(): Flow<List<PlatformDay>>
+
+    @Query("SELECT * FROM period_summary WHERE earningsMinor IS NOT NULL")
+    fun observeEarningsSummaries(): Flow<List<PeriodSummaryEntity>>
+
     @Query("SELECT DISTINCT platformId, date FROM trip")
     suspend fun getTripDays(): List<PlatformDay>
 

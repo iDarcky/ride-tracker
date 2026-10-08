@@ -149,6 +149,7 @@
     <string name="cat_bank_fees">Comisioane bancare</string>
     <string name="cat_phone">Telefon și internet</string>
     <string name="cat_fleet_fees">Comision partener de flotă</string>
+    <string name="cat_intra_eu_vat">TVA intracomunitar</string>
     <string name="cat_other_business">Alte costuri de afaceri</string>
     <string name="cat_other">Altele</string>
 
@@ -272,6 +273,8 @@
     <!-- Import -->
     <string name="done">Gata</string>
     <string name="import_title">Importă</string>
+    <string name="missing_monthly_title">%1$s · %2$s</string>
+    <string name="missing_monthly_body">Estimat din PDF sau din curse, fără bonusuri. Importă captura lunară din %1$s (Defalcarea câștigurilor → Lunar) pentru totalul exact.</string>
     <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt</string>
     <string name="import_empty_title">Importă din Bolt</string>
     <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar (PDF) sau facturile către pasageri (CSV). Totul se citește pe acest telefon.</string>
@@ -292,7 +295,7 @@
     <string name="import_bolt_week">Bolt · totaluri pe săptămână</string>
     <string name="import_bolt_month_screen">Bolt · totaluri pe lună</string>
     <string name="import_period_not_income">Totalurile Bolt pentru această perioadă. Folosite ca să-ți verifici zilele, nu se adaugă la venit. Pentru venit, importă fila Zilnic.</string>
-    <string name="import_not_recognised">Deocamdată se pot citi doar defalcarea câștigurilor, rezumatul lunar și facturile către pasageri din Bolt.</string>
+    <string name="import_not_recognised">Deocamdată se pot citi defalcarea câștigurilor, ecranul Activitate (ore), rezumatul lunar (PDF) și facturile către pasageri (CSV) din Bolt. Pentru orele unei luni, atinge întâi bara lunii ca Bolt să le afișeze.</string>
     <string name="import_your_earnings">Câștigurile tale</string>
     <string name="import_cash_in_hand">Numerar încasat</string>
     <string name="import_adds_up">Toate sumele se potrivesc.</string>

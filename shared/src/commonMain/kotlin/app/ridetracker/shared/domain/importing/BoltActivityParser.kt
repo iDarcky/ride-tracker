@@ -27,8 +27,8 @@ data class OnlineTime(val range: DateRange, val minutes: Int)
  */
 object BoltActivityParser {
 
-    private val duration = Regex("""(\d+)\s*(?:ore|oră|ora|h|hours?|hrs?)\s*(\d+)\s*min""")
-    private val minutesOnly = Regex("""^(\d+)\s*min$""")
+    private val duration = Regex("""(\d+)\s*(?:ore|ora|h|hours?|hrs?)\s*(\d+)\s*(?:min|m)\b""")
+    private val minutesOnly = Regex("""^(\d+)\s*(?:min|m)$""")
     private val weekRange = Regex("""(\d{1,2})\.(\d{1,2})\s*[-–]\s*(\d{1,2})\.(\d{1,2})""")
     private val weekdays = mapOf(
         "lun" to DayOfWeek.MONDAY, "mar" to DayOfWeek.TUESDAY, "mie" to DayOfWeek.WEDNESDAY, "joi" to DayOfWeek.THURSDAY,
@@ -42,18 +42,26 @@ object BoltActivityParser {
         val plain = words.map { ReportText.plain(it.text) }
         val all = plain.joinToString(" ")
         if (!("activitate" in all || "activity" in all)) return null
-        if (!("ore online" in all || "online hours" in all || "hours online" in all || "ore conduse" in all)) return null
+        // The Hours tab: "ORE ONLINE" / "Număr ore conduse" (Romanian), "HOURS" / "Waiting and driving hours" (English).
+        val hoursTab = listOf("ore online", "online hours", "hours online", "ore conduse", "driving hours", "waiting and driving")
+        if (hoursTab.none { it in all }) return null
 
-        // Durations, joined from neighbouring words on the same line ("42ore" "55min").
+        // Durations, joined from neighbouring words on the same line ("31ore" "5min").
         val durations = lines(words).mapNotNull { line -> minutesOf(ReportText.plain(line.text))?.let { line to it } }
         if (durations.isEmpty()) return null
         val total = durations.minBy { it.first.top }
         val selected = durations.filter { it !== total }.minByOrNull { it.first.top }
 
-        // Labels under the bars: months or weekdays.
-        val monthLabels = words.mapNotNull { w -> monthOf(ReportText.plain(w.text))?.let { w to it } }
-        val dayLabels = words.mapNotNull { w -> weekdays[ReportText.plain(w.text).trimEnd('.').take(3)]?.let { w to it } }
-        val tabs = words.filter { ReportText.plain(it.text).let { t -> "saptamana" in t || "ultimele" in t || "week" in t || "last" in t || weekRange.containsMatchIn(t) } }
+        // Labels under the bars (below the total; the tabs above it can name months too): months or weekdays.
+        val belowTotal = words.filter { it.centerY > total.first.bottom }
+        val monthLabels = belowTotal.mapNotNull { w -> monthOf(ReportText.plain(w.text))?.let { w to it } }
+        val dayLabels = belowTotal.mapNotNull { w -> weekdays[ReportText.plain(w.text).trimEnd('.').take(3)]?.let { w to it } }
+        val tabs = lines(words, gapFactor = 0.8).filter { line ->
+            ReportText.plain(line.text).let { t ->
+                "saptamana" in t || "ultimele" in t || "week" in t || "last" in t || "past" in t || weekRange.containsMatchIn(t) ||
+                    dayMonthRange(t, reference) != null
+            }
+        }
         val selectedTab = tabs.minByOrNull { abs(it.centerX - width / 2) }?.let { ReportText.plain(it.text) }
 
         return when {
@@ -81,7 +89,7 @@ object BoltActivityParser {
 
     /** Letters OCR reads instead of digits in the small bubbles ("Gore 20min" is "6ore 20min"). */
     private val lookalikes = mapOf('g' to '6', 'b' to '6', 'o' to '0', 'l' to '1', 'i' to '1', '|' to '1', 's' to '5', 'z' to '2')
-    private val digitsBeforeUnit = Regex("""(?<![\p{L}\d])([\dgbolisz|]{1,3})(?=\s*(?:ore|ora|h\b|min))""")
+    private val digitsBeforeUnit = Regex("""(?<![\p{L}\d])([\dgbolisz|]{1,3})(?=\s*(?:ore|ora|h\b|min|m\b))""")
 
     private fun fixDigits(text: String): String =
         digitsBeforeUnit.replace(text) { m -> m.value.map { lookalikes[it] ?: it }.joinToString("") }
@@ -100,25 +108,41 @@ object BoltActivityParser {
         return ReportText.dayAndMonth("1 $t")?.second
     }
 
-    /** "Săptămâna în curs" = the week of [reference]; "28.09-04.10" = that week. Weeks start on Monday. */
+    /**
+     * "Săptămâna în curs" / "Current week" = the week of [reference]; "28.09-04.10" or "Sep 28 - Oct 4" = that week.
+     * Weeks start on Monday.
+     */
     private fun weekOf(tab: String?, reference: LocalDate): DateRange? {
         val m = tab?.let { weekRange.find(it) }
-        val start = if (m != null) {
-            val month = m.groupValues[2].toInt()
-            val year = if (month > reference.month.number) reference.year - 1 else reference.year
-            runCatching { LocalDate(year, month, m.groupValues[1].toInt()) }.getOrNull() ?: return null
-        } else {
-            reference.minus(DatePeriod(days = reference.dayOfWeek.isoDayNumber - 1))
+        val start = when {
+            m != null -> {
+                val month = m.groupValues[2].toInt()
+                val year = if (month > reference.month.number) reference.year - 1 else reference.year
+                runCatching { LocalDate(year, month, m.groupValues[1].toInt()) }.getOrNull() ?: return null
+            }
+            tab != null && dayMonthRange(tab, reference) != null -> dayMonthRange(tab, reference)!!
+            else -> reference.minus(DatePeriod(days = reference.dayOfWeek.isoDayNumber - 1))
         }
         return DateRange(start, start.plus(DatePeriod(days = 6)))
     }
 
-    /** Words on the same line, left to right, joined (bubbles are recognised as "42ore" + "55min"). */
-    private fun lines(words: List<TextBox>): List<TextBox> {
+    /** "sep 28 - oct 4" or "28 sep - 4 oct" -> the first day. */
+    private fun dayMonthRange(text: String, reference: LocalDate): LocalDate? {
+        val parts = text.split('-', '–', '—').map { it.trim() }
+        if (parts.size != 2 || ReportText.dayAndMonth(parts[1]) == null) return null
+        val (day, month) = ReportText.dayAndMonth(parts[0]) ?: return null
+        return ReportText.inferYear(day, month, reference)
+    }
+
+    /**
+     * Words on the same line, left to right, joined (bubbles are recognised as "31ore" + "5min"). Words further apart
+     * than [gapFactor] times their height stay separate (neighbouring tabs).
+     */
+    private fun lines(words: List<TextBox>, gapFactor: Double = 2.0): List<TextBox> {
         val rows = mutableListOf<MutableList<TextBox>>()
         for (w in words.sortedBy { it.centerY }) {
             val row = rows.lastOrNull()
-            if (row != null && abs(row.first().centerY - w.centerY) < (w.bottom - w.top) * 0.6 && w.left - row.maxOf { it.right } < (w.bottom - w.top) * 2) {
+            if (row != null && abs(row.first().centerY - w.centerY) < (w.bottom - w.top) * 0.6 && w.left - row.maxOf { it.right } < (w.bottom - w.top) * gapFactor) {
                 row += w
             } else {
                 rows += mutableListOf(w)

@@ -63,6 +63,40 @@ class BoltActivityParserTest {
     }
 
     @Test
+    fun readsTheEnglishScreen() {
+        val words = listOf(
+            w("Activity", 423, 193, 136),
+            w("Current", 60, 302), w("week", 160, 302), w("Past", 376, 302, 60), w("3", 426, 302, 16), w("months", 501, 302, 108),
+            w("61h", 380, 455, 95), w("12m", 505, 455, 117),
+            w("Aug", 162, 1244, 50), w("Sep", 448, 1244, 47), w("Oct", 735, 1244, 44),
+            w("38h", 406, 1310, 61), w("7m", 480, 1310, 60),
+            w("Waiting", 282, 1808, 82), w("and", 352, 1808, 39), w("driving", 419, 1808, 76), w("hours", 498, 1808, 61),
+            w("HOURS", 149, 1901, 96), w("RIDES", 450, 1901, 77), w("CANCELS", 748, 1901, 130),
+        )
+        assertEquals(
+            listOf(OnlineTime(DateRange(LocalDate(2026, 9, 1), LocalDate(2026, 9, 30)), 38 * 60 + 7)),
+            BoltActivityParser.parse(words, 898, today),
+        )
+    }
+
+    @Test
+    fun readsAnEnglishPastWeekTab() {
+        val words = listOf(
+            w("Activity", 423, 193, 136), w("HOURS", 149, 1901, 96), w("Waiting", 282, 1808, 82), w("and", 352, 1808, 39),
+            w("driving", 419, 1808, 76), w("hours", 498, 1808, 61),
+            w("Sep", 380, 302, 50), w("28", 420, 302, 30), w("-", 448, 302, 10), w("Oct", 480, 302, 50), w("4", 515, 302, 16),
+            w("Current", 760, 302), w("week", 860, 302),
+            w("20h", 380, 455, 95), w("0m", 505, 455, 117),
+            w("Mon", 64, 1244, 50), w("Tue", 192, 1244, 50), w("Wed", 320, 1244, 50), w("Thu", 448, 1244, 50),
+            w("Fri", 576, 1244, 50), w("Sat", 704, 1244, 50), w("Sun", 832, 1244, 50),
+        )
+        assertEquals(
+            listOf(OnlineTime(DateRange(LocalDate(2026, 9, 28), LocalDate(2026, 10, 4)), 20 * 60)),
+            BoltActivityParser.parse(words, 898, today),
+        )
+    }
+
+    @Test
     fun ignoresOtherScreens() {
         assertNull(BoltActivityParser.parse(listOf(w("Earnings breakdown", 500, 300, 400)), 1080, today))
     }

@@ -139,7 +139,35 @@ See the README for build, versioning and signing rules.
    0.5.1: Bolt Activity screenshot (online hours per month / week / day → RON per hour).
    0.5.2: "All" period, monthly activity bars for long periods.
    0.5.3: vehicle step in onboarding (optional).
-   **Next:** Uber screenshots and CSV (owner sends the files).
+   0.5.4: English Activity screen, "0ct" OCR fix, "Needs attention" for months without Bolt's monthly total,
+   TVA intracomunitar (Romania, PFA), shared-axis screen motion with predictive back, lower FAB.
+   **Next (agreed 9 Oct 2026):** 0.6.0 income detail per platform (rides, tips, bonuses, cancellations, minus
+   commission; card vs cash; paid to bank = earned − cash) and a "Cash & card" Home widget; then **Uber**
+   screenshots and CSV (owner sends the files); then the list below.
+
+### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
+Product:
+- [ ] Fleet drivers: check the fleet's weekly payout against Bolt/Uber's numbers (fleet cut, what was paid).
+- [ ] The week first: this week's payout prominent on Home (Bolt pays weekly).
+- [ ] Real profit per hour: after fuel (km × consumption × fuel price from the car) and commission.
+- [ ] Daily/weekly targets ("400 RON today: 120 to go").
+- [ ] Import reminders (e.g. Monday: "import last week's Bolt screenshots"; month end: the Monthly tab).
+- [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
+- [ ] "This didn't import" → send the screenshot (with the driver's OK) so new screen variants get supported.
+- [ ] TVA intracomunitar suggestion from imported commission (rate × commission), PFA only.
+- [ ] Bolt "Rides" (acceptance) and "Cancels" tabs; Bolt's personal data export (ZIP with CSV/JSON) as a
+      one-off history import; Bolt Driver Portal reports (invoices, payouts, balance).
+- [ ] Identity: final name, icon, darker cockpit look.
+Launch:
+- [ ] Play closed test: 12+ testers for 14 days (needed for new personal developer accounts), privacy policy,
+      Data safety form.
+- [ ] Monetisation (proposal, not decided): free core + Pro, no ads. Pro = automatic imports from every platform,
+      insights (per hour, when you earn), card/cash and payout checks, PFA tax estimates, accountant export,
+      fleet payout check. Price to test: ~99 RON/year or ~199 RON lifetime, 1-month trial. On-device work means
+      near-zero cost per user, so a lifetime option is viable.
+- [ ] GTM: Romanian Bolt/Uber drivers in Bucharest first. Driver Facebook groups, TikTok ("screenshot in, real
+      RON/hour out"), WhatsApp groups; later fleet partners. Recruit the closed-test drivers there. Invite a
+      driver → a free Pro month. Measure imports per week, 4-week retention, then Pro conversion.
    Still open: identity (name, icon, a darker "cockpit" look). The owner said the app lacked identity and had
    gone wide before deep; imports and the cockpit Home address the second.
 

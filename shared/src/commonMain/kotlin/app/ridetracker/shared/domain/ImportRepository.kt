@@ -15,6 +15,7 @@ import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 
@@ -46,6 +47,21 @@ class ImportRepository(private val database: AppDatabase) {
         imports.observeSummaries(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 
     suspend fun getTrip(id: Long): TripWithPlatform? = imports.getTrip(id)
+
+    /** Finished months whose income is estimated without the platform's monthly total (for "Needs attention"). */
+    fun observeMissingMonthlyTotals(today: LocalDate): Flow<List<MissingMonthlyTotal>> =
+        combine(imports.observeEstimateDays(), imports.observeEarningsSummaries()) { days, summaries ->
+            IncomeEstimator.missingMonthlyTotals(
+                estimateDays = days.map { it.platformId to LocalDate.fromEpochDays(it.date) },
+                monthlyTotals = summaries.mapNotNull { s ->
+                    val month = Period.Month.containing(LocalDate.fromEpochDays(s.periodStart))
+                    (s.platformId to month).takeIf {
+                        month.range.start.toEpochDays() == s.periodStart && month.range.endInclusive.toEpochDays() == s.periodEnd
+                    }
+                },
+                today = today,
+            )
+        }
 
     suspend fun getLines(entryId: Long): List<IncomeLineEntity> = imports.getLines(entryId)
 
@@ -204,7 +220,10 @@ class ImportRepository(private val database: AppDatabase) {
         val monthly = summaries.firstOrNull { it.earningsMinor != null }
         val pdf = summaries.firstOrNull { it.earningsMinor == null && it.grossFareMinor != null }
         val totals = imports.getFareAndCommission(platformId).associate { it.kind to it.totalMinor }
+        // The usual commission share: from daily breakdowns, else from weekly/monthly ones (any month).
         val keepRate = IncomeEstimator.keepRate(totals[IncomeLineKind.FARE.id] ?: 0, totals[IncomeLineKind.COMMISSION.id] ?: 0)
+            ?: imports.getAllSummaries().filter { it.platformId == platformId && it.earningsMinor != null && it.grossFareMinor != null && (it.platformFeeMinor ?: 0) != 0L }
+                .let { list -> IncomeEstimator.keepRate(list.sumOf { it.grossFareMinor ?: 0 }, list.sumOf { -kotlin.math.abs(it.platformFeeMinor ?: 0) }) }
         val result = IncomeEstimator.estimate(
             exactByDay = exact,
             tripFaresByDay = fares,

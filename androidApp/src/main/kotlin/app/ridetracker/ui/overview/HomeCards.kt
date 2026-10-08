@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,10 +44,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ToggleButton
@@ -245,7 +247,8 @@ private fun MetricTile(tile: Tile, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.titleLarge.tabular(),
                 color = if (tile.value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                // "12 h 48 min" in a third of the width: shrink rather than cut off.
+                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = MaterialTheme.typography.titleLarge.fontSize),
             )
             Text(tile.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             tile.note?.let {
@@ -328,7 +331,7 @@ fun DailyActivity(
     if (!hasMoney && !hasTrips) return
     var metric by remember(hasMoney) { mutableStateOf(if (hasMoney) ActivityMetric.MONEY else ActivityMetric.TRIPS) }
     fun value(d: DayIncome): Long = if (metric == ActivityMetric.MONEY) d.totalMinor else d.tripCount.toLong()
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
     // Money, or "21 trips" with the language's plural form (also used while drawing, so not composable).
     fun format(v: Long): String =
         if (metric == ActivityMetric.MONEY) money.format(v) else resources.getQuantityString(R.plurals.trip_count, v.toInt(), v.toInt())

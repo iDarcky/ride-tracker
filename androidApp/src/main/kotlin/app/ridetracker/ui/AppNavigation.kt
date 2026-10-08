@@ -1,7 +1,15 @@
 package app.ridetracker.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
@@ -101,14 +109,15 @@ fun AppNavigation() {
 
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
-            // No slide/fade between screens: switching should feel instant.
+            // Tabs switch instantly; opening and closing a screen uses Material's shared axis X (as in Settings),
+            // which the predictive back gesture follows under the finger.
             NavHost(
                 navController = nav,
                 startDestination = Tab.HOME.route,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None },
+                enterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = true) },
+                exitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = true) },
+                popEnterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = false) },
+                popExitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = false) },
             ) {
                 composable(Tab.HOME.route) { OverviewScreen(
                         onAddEntry = { nav.navigate("entry") },
@@ -183,6 +192,25 @@ fun AppNavigation() {
             )
         }
     }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boolean =
+    Tab.entries.any { it.route == initialState.destination.route } && Tab.entries.any { it.route == targetState.destination.route }
+
+/** Material shared axis X: the new screen slides in a little from the side it comes from while the old one fades. */
+private object SharedAxis {
+    private val decelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+    private val accelerate = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
+    private const val DURATION = 300
+    private const val SHIFT = 0.1f // of the screen width, about 30-40 dp
+
+    fun enter(forward: Boolean): EnterTransition =
+        slideInHorizontally(tween(DURATION, easing = decelerate)) { width -> ((if (forward) SHIFT else -SHIFT) * width).toInt() } +
+            fadeIn(tween(DURATION / 2, delayMillis = DURATION / 4, easing = decelerate))
+
+    fun exit(forward: Boolean): ExitTransition =
+        slideOutHorizontally(tween(DURATION, easing = decelerate)) { width -> ((if (forward) -SHIFT else SHIFT) * width).toInt() } +
+            fadeOut(tween(DURATION / 4, easing = accelerate))
 }
 
 private fun NavHostController.switchTab(tab: Tab) {

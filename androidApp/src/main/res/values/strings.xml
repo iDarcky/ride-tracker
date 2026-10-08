@@ -150,6 +150,7 @@
     <string name="cat_bank_fees">Bank fees</string>
     <string name="cat_phone">Phone and data</string>
     <string name="cat_fleet_fees">Fleet partner fees</string>
+    <string name="cat_intra_eu_vat">Intra-EU VAT</string>
     <string name="cat_other_business">Other business costs</string>
     <string name="cat_other">Other</string>
 
@@ -272,6 +273,8 @@
     <!-- Import -->
     <string name="done">Done</string>
     <string name="import_title">Import</string>
+    <string name="missing_monthly_title">%1$s · %2$s</string>
+    <string name="missing_monthly_body">Estimated from the PDF or trips, without bonuses. Import %1$s’s Monthly earnings screenshot (Earnings breakdown → Monthly) for the exact total.</string>
     <string name="import_menu_summary">Bolt screenshots and reports</string>
     <string name="import_empty_title">Import from Bolt</string>
     <string name="import_empty_body">Choose screenshots of Bolt’s daily earnings breakdown, the monthly summary PDF or the rider invoices CSV. Everything is read on this phone.</string>
@@ -292,7 +295,7 @@
     <string name="import_bolt_week">Bolt · weekly totals</string>
     <string name="import_bolt_month_screen">Bolt · monthly totals</string>
     <string name="import_period_not_income">Bolt’s own totals for this period. Used to check your days, not added as income. For income, import the Daily tab.</string>
-    <string name="import_not_recognised">Only Bolt’s earnings breakdown, monthly summary and rider invoices can be read for now.</string>
+    <string name="import_not_recognised">Bolt’s earnings breakdown, the Activity screen (hours), the monthly summary (PDF) and rider invoices (CSV) can be read for now. For a month’s hours, tap its bar first so Bolt shows them.</string>
     <string name="import_your_earnings">Your earnings</string>
     <string name="import_cash_in_hand">Cash in hand</string>
     <string name="import_adds_up">All figures add up.</string>

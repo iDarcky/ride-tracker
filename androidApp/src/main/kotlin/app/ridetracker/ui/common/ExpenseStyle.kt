@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.LocalCarWash
 import androidx.compose.material.icons.outlined.LocalGasStation
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Toll
 import androidx.compose.material.icons.outlined.VerifiedUser
@@ -52,6 +53,7 @@ val ExpenseCategory.icon: ImageVector
         ExpenseCategory.BANK_FEES -> Icons.Outlined.AccountBalance
         ExpenseCategory.PHONE -> Icons.Outlined.Smartphone
         ExpenseCategory.FLEET_FEES -> Icons.Outlined.Handshake
+        ExpenseCategory.INTRA_EU_VAT -> Icons.Outlined.Percent
         ExpenseCategory.OTHER_BUSINESS -> Icons.Outlined.BusinessCenter
         ExpenseCategory.OTHER -> Icons.Outlined.MoreHoriz
     }
@@ -73,6 +75,7 @@ val ExpenseCategory.label: Int
         ExpenseCategory.BANK_FEES -> R.string.cat_bank_fees
         ExpenseCategory.PHONE -> R.string.cat_phone
         ExpenseCategory.FLEET_FEES -> R.string.cat_fleet_fees
+        ExpenseCategory.INTRA_EU_VAT -> R.string.cat_intra_eu_vat
         ExpenseCategory.OTHER_BUSINESS -> R.string.cat_other_business
         ExpenseCategory.OTHER -> R.string.cat_other
     }

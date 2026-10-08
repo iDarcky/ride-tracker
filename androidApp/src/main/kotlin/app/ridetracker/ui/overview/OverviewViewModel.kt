@@ -16,6 +16,7 @@ import app.ridetracker.shared.domain.HomeStatsCalculator
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
+import app.ridetracker.shared.domain.MissingMonthlyTotal
 import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.RecurringRepository
@@ -70,6 +71,14 @@ data class OverviewUiState(
     /** The headline number: money kept once expenses are tracked, otherwise income. */
     val headlineMinor: Long get() = if (tracksExpenses) keptMinor else totalMinor
     val previousHeadlineMinor: Long? get() = previous?.let { if (tracksExpenses) it.incomeMinor - it.expenseMinor else it.incomeMinor }
+}
+
+/** What "Needs attention" on Home lists. */
+data class Attention(
+    val pending: List<PendingExpense> = emptyList(),
+    val missingMonthly: List<MissingMonthlyTotal> = emptyList(),
+) {
+    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty()
 }
 
 data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
@@ -147,9 +156,12 @@ class OverviewViewModel(
         OverviewUiState(period = selected.value, today = today(), currencyCode = null),
     )
 
-    /** Recurring expenses that are due and waiting for Add or Skip. */
-    val pending: StateFlow<List<PendingExpense>> = recurringRepository.observePending(today())
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /** Recurring expenses waiting for Add or Skip, and months still missing the platform's own monthly total. */
+    val attention: StateFlow<Attention> = combine(
+        recurringRepository.observePending(today()),
+        importRepository.observeMissingMonthlyTotals(today()),
+    ) { pending, missing -> Attention(pending, missing) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Attention())
 
     fun accept(item: PendingExpense) {
         viewModelScope.launch {

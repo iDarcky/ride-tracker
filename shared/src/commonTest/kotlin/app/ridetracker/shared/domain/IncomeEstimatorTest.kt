@@ -98,4 +98,19 @@ class IncomeEstimatorTest {
         assertEquals(0.8, IncomeEstimator.keepRate(10000, -2000))
         assertEquals(null, IncomeEstimator.keepRate(10000, 0))
     }
+
+    @Test
+    fun asksForMonthlyTotalsOfFinishedMonthsOnly() {
+        val aug = Period.Month.containing(LocalDate(2026, 8, 1))
+        val sep = Period.Month.containing(d(1))
+        val oct = Period.Month.containing(LocalDate(2026, 10, 1))
+        val missing = IncomeEstimator.missingMonthlyTotals(
+            estimateDays = listOf(1L to LocalDate(2026, 8, 3), 1L to d(4), 1L to d(5), 2L to d(6), 1L to LocalDate(2026, 10, 2)),
+            monthlyTotals = listOf(1L to aug),
+            today = LocalDate(2026, 10, 9),
+        )
+        // August has Bolt's total; October is not over yet.
+        assertEquals(listOf(MissingMonthlyTotal(1, sep), MissingMonthlyTotal(2, sep)), missing.sortedBy { it.platformId })
+        assertTrue(oct !in missing.map { it.month })
+    }
 }
