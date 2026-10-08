@@ -3,9 +3,9 @@ package app.ridetracker.ui.money
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.EntryWithPlatform
-import app.ridetracker.shared.data.IncomeEntryEntity
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.domain.DeletedEntry
 import app.ridetracker.shared.domain.HomeStats
 import app.ridetracker.shared.domain.HomeStatsCalculator
 import app.ridetracker.shared.domain.IncomeRepository
@@ -87,13 +87,9 @@ class IncomeListViewModel(
     }
 
     /** Deletes the entry and returns it so the UI can offer Undo. */
-    suspend fun delete(id: Long): IncomeEntryEntity? {
-        val entry = incomeRepository.getEntry(id) ?: return null
-        incomeRepository.deleteEntry(id)
-        return entry
-    }
+    suspend fun delete(id: Long): DeletedEntry? = incomeRepository.deleteForUndo(id)
 
-    fun restore(entry: IncomeEntryEntity) {
-        viewModelScope.launch { incomeRepository.restoreEntry(entry) }
+    fun restore(deleted: DeletedEntry) {
+        viewModelScope.launch { incomeRepository.restore(deleted) }
     }
 }

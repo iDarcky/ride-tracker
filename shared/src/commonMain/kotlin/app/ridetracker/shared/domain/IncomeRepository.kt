@@ -3,15 +3,20 @@ package app.ridetracker.shared.domain
 import app.ridetracker.shared.data.AppDatabase
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.data.IncomeEntryEntity
+import app.ridetracker.shared.data.IncomeLineEntity
 import app.ridetracker.shared.data.LineInRange
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
+/** An income entry and its breakdown lines, kept for Undo. */
+data class DeletedEntry(val entry: IncomeEntryEntity, val lines: List<IncomeLineEntity>)
+
 class IncomeRepository(database: AppDatabase) {
     private val platforms = database.platformDao()
     private val entries = database.incomeEntryDao()
+    private val imports = database.importDao()
 
     fun observePlatforms(): Flow<List<PlatformEntity>> = platforms.observeAll()
 
@@ -69,8 +74,16 @@ class IncomeRepository(database: AppDatabase) {
 
     suspend fun deleteEntry(id: Long) = entries.deleteById(id)
 
-    /** Re-inserts a deleted entry with its original id (used for Undo). */
-    suspend fun restoreEntry(entry: IncomeEntryEntity) {
-        entries.insert(entry)
+    /** Deletes an entry and returns it with its breakdown, so Undo can bring both back. */
+    suspend fun deleteForUndo(id: Long): DeletedEntry? {
+        val entry = entries.getById(id) ?: return null
+        val deleted = DeletedEntry(entry, imports.getLines(id))
+        entries.deleteById(id) // lines go with it (cascade)
+        return deleted
+    }
+
+    suspend fun restore(deleted: DeletedEntry) {
+        entries.insert(deleted.entry)
+        imports.insertLines(deleted.lines)
     }
 }

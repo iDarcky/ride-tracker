@@ -151,9 +151,16 @@ fun SwipeToDeleteRow(
     modifier: Modifier = Modifier,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
+    // The list keeps each row's swipe state by key. After Undo the row comes back with that saved
+    // "swiped away" state: put it back in place instead of deleting the entry a second time.
+    val cameBackSwiped = remember { dismissState.currentValue == SwipeToDismissBoxValue.EndToStart }
     // React to where the swipe ends up, so both slow drags and quick flings delete.
     LaunchedEffect(dismissState.currentValue) {
-        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) onDelete()
+        when {
+            dismissState.currentValue != SwipeToDismissBoxValue.EndToStart -> Unit
+            cameBackSwiped -> dismissState.snapTo(SwipeToDismissBoxValue.Settled)
+            else -> onDelete()
+        }
     }
     SwipeToDismissBox(
         state = dismissState,

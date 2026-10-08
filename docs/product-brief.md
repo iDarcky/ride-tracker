@@ -1,6 +1,6 @@
 # Ride Tracker – product brief v0.2
 
-Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.4.0).
+Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.4.1).
 
 This is the public, trimmed version of the brief: no personal earnings data and no business plan.
 

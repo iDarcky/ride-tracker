@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+- Undo after swiping an entry away works again (it used to delete the entry a second time), and an imported
+  entry comes back with its breakdown.
+- No sliding or fading between screens.
+
 ## 0.4.0
 - **Customise Home**: tap "Customise Home" at the bottom of Home. Every card below money kept gets a handle to
   drag it into place and × to remove it; removed cards wait under "Add widget". Done saves the layout, Reset

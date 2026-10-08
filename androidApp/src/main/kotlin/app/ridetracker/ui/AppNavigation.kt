@@ -1,6 +1,8 @@
 package app.ridetracker.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -99,7 +101,15 @@ fun AppNavigation() {
 
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
-            NavHost(navController = nav, startDestination = Tab.HOME.route) {
+            // No slide/fade between screens: switching should feel instant.
+            NavHost(
+                navController = nav,
+                startDestination = Tab.HOME.route,
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
+            ) {
                 composable(Tab.HOME.route) { OverviewScreen(
                         onAddEntry = { nav.navigate("entry") },
                         onAddExpense = { nav.navigate("expense") },
