@@ -31,7 +31,6 @@ object BoltMonthlySummaryParser {
         var gross: Long? = null
         var cancellation: Long? = null
         var tips: Long? = null
-        var fee: Long? = null
         var distance: Long? = null
         for (row in rows.flatMap(ReportText::splitColumns)) {
             val label = row.lowercase()
@@ -47,11 +46,13 @@ object BoltMonthlySummaryParser {
                 name.startsWith("cancellation") || name.startsWith("taxă de anulare") || name.startsWith("taxa de anulare") ->
                     cancellation = amount.amountMinor
                 name == "tip" || name == "tips" || name.startsWith("bacșiș") || name.startsWith("bacsis") -> tips = amount.amountMinor
-                name.startsWith("bolt fee") || name.startsWith("taxa bolt") || name.startsWith("taxă bolt") -> fee = -abs(amount.amountMinor)
+                // "Bolt Fee" here is Bolt's other costs and fees ("Costuri și taxe"), not the commission, which
+                // this summary does not include.
+                name.startsWith("bolt fee") || name.startsWith("taxa bolt") || name.startsWith("taxă bolt") -> Unit
             }
         }
         if (gross == null) return null
-        return ParsedSummary(start, end, gross, cancellation, tips, platformFeeMinor = fee, distanceMeters = distance)
+        return ParsedSummary(start, end, gross, cancellation, tips, distanceMeters = distance)
     }
 }
 

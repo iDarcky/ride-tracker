@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2
+- Importing CSV and PDF files works however the phone labels them: a CSV marked as an Excel file, a PDF opened
+  from Gmail or Drive, a UTF-16 spreadsheet export. "Choose PDF or CSV files" now lists every file; anything
+  that isn't a Bolt report shows as not recognised. Share → Ride Tracker also accepts CSVs marked as Excel.
+- Bolt's monthly summary: its "Bolt Fee" is Bolt's other costs and fees, not the commission, so it is no longer
+  shown as commission.
+
 ## 0.4.1
 - Undo after swiping an entry away works again (it used to delete the entry a second time), and an imported
   entry comes back with its breakdown.

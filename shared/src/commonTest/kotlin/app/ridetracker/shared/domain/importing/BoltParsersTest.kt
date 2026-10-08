@@ -213,8 +213,7 @@ class BoltParsersTest {
                 grossFareMinor = 123450,
                 cancellationMinor = 1000,
                 tipsMinor = 1500,
-                platformFeeMinor = 0,
-                distanceMeters = 321450,
+                distanceMeters = 321450, // "Bolt Fee" is not the commission, so it is not read as one
             ),
             BoltMonthlySummaryParser.parse(rows),
         )

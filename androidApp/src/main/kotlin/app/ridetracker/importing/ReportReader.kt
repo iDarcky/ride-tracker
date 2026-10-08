@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.graphics.createBitmap
@@ -25,6 +26,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.io.File
 import java.security.MessageDigest
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -60,12 +62,22 @@ class ReportReader(private val context: Context) {
         val hash = sha256(bytes)
         val type = context.contentResolver.getType(uri).orEmpty()
         val name = displayName(uri).orEmpty().lowercase()
+        // Phones label files inconsistently (a .csv can arrive as "Excel" or "octet-stream"), so look at the bytes too.
         when {
-            type.startsWith("image/") -> readScreenshot(uri, hash)
-            type == "application/pdf" || name.endsWith(".pdf") -> readPdf(uri, hash)
+            bytes.startsWith("%PDF") || type == "application/pdf" || name.endsWith(".pdf") -> readPdf(bytes, hash)
+            type.startsWith("image/") || bytes.looksLikeImage() -> readScreenshot(uri, hash)
             else -> readCsv(bytes, hash)
         }
     }
+
+    private fun ByteArray.startsWith(prefix: String): Boolean =
+        size >= prefix.length && prefix.indices.all { this[it] == prefix[it].code.toByte() }
+
+    /** PNG, JPEG or WebP signatures. */
+    private fun ByteArray.looksLikeImage(): Boolean =
+        (size > 3 && this[0] == 0x89.toByte() && this[1] == 'P'.code.toByte()) ||
+            (size > 2 && this[0] == 0xFF.toByte() && this[1] == 0xD8.toByte()) ||
+            (size > 12 && startsWith("RIFF") && this[8] == 'W'.code.toByte())
 
     private suspend fun readScreenshot(uri: Uri, hash: String): ReadReport {
         val rows = rows(recognize(InputImage.fromFilePath(context, uri)))
@@ -76,28 +88,35 @@ class ReportReader(private val context: Context) {
         }
     }
 
-    private suspend fun readPdf(uri: Uri, hash: String): ReadReport {
+    private suspend fun readPdf(bytes: ByteArray, hash: String): ReadReport {
         val rows = mutableListOf<String>()
-        context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
-            PdfRenderer(fd).use { pdf ->
-                for (i in 0 until minOf(pdf.pageCount, 3)) {
-                    pdf.openPage(i).use { page ->
-                        // ~200 dpi: PDF points are 1/72 inch.
-                        val scale = 200f / 72f
-                        val bitmap = createBitmap((page.width * scale).toInt(), (page.height * scale).toInt())
-                        bitmap.eraseColor(Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        rows += rows(recognize(InputImage.fromBitmap(bitmap, 0)))
-                        bitmap.recycle()
+        // PdfRenderer needs a seekable file; files from Gmail or Drive arrive as streams, so copy to a temporary file.
+        val file = File.createTempFile("import", ".pdf", context.cacheDir)
+        try {
+            file.writeBytes(bytes)
+            ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+                PdfRenderer(fd).use { pdf ->
+                    for (i in 0 until minOf(pdf.pageCount, 3)) {
+                        pdf.openPage(i).use { page ->
+                            // ~200 dpi: PDF points are 1/72 inch.
+                            val scale = 200f / 72f
+                            val bitmap = createBitmap((page.width * scale).toInt(), (page.height * scale).toInt())
+                            bitmap.eraseColor(Color.WHITE)
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            rows += rows(recognize(InputImage.fromBitmap(bitmap, 0)))
+                            bitmap.recycle()
+                        }
                     }
                 }
             }
+        } finally {
+            file.delete()
         }
         return BoltMonthlySummaryParser.parse(rows)?.let { ReadReport.BoltMonth(hash, it) } ?: ReadReport.Unknown(hash)
     }
 
     private fun readCsv(bytes: ByteArray, hash: String): ReadReport {
-        val trips = BoltRiderInvoicesParser.parse(bytes.decodeToString())
+        val trips = BoltRiderInvoicesParser.parse(decodeText(bytes))
         return trips?.let { ReadReport.BoltTrips(hash, it) } ?: ReadReport.Unknown(hash)
     }
 
@@ -149,6 +168,13 @@ class ReportReader(private val context: Context) {
             if (c.moveToFirst()) c.getString(0) else null
         }
     }.getOrNull()
+
+    /** UTF-8 by default; UTF-16 when the file starts with its byte-order mark (some spreadsheet exports). */
+    private fun decodeText(bytes: ByteArray): String = when {
+        bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte() -> String(bytes, Charsets.UTF_16LE).removePrefix("\uFEFF")
+        bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte() -> String(bytes, Charsets.UTF_16BE).removePrefix("\uFEFF")
+        else -> bytes.decodeToString()
+    }
 
     private fun sha256(bytes: ByteArray): String =
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }

@@ -92,7 +92,8 @@ fun ImportScreen(
     val pickImages = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { viewModel.add(it) }
     val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { viewModel.add(it) }
     val chooseScreenshots = { pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-    val chooseFiles = { pickFiles.launch(arrayOf("text/csv", "text/comma-separated-values", "application/pdf", "text/plain")) }
+    // Any file: phones label CSVs in many ways (even as Excel); unknown files show as "Not recognised".
+    val chooseFiles = { pickFiles.launch(arrayOf("*/*")) }
 
     val locale = currentLocale()
     val money = remember(state.currency, locale) { MoneyFormat(state.currency, locale) }
