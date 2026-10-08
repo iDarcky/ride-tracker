@@ -90,7 +90,6 @@
     <string name="nav_money">Money</string>
     <string name="nav_settings">Settings</string>
     <string name="income">Income</string>
-    <string name="no_income_yet">No income yet.\nTap “Add income” to log your earnings.</string>
     <string name="section_app_settings">App settings</string>
     <string name="section_data">Your data</string>
     <string name="not_set">Not set</string>
@@ -130,7 +129,6 @@
     <string name="delete_expense">Delete expense</string>
     <string name="delete_expense_title">Delete this expense?</string>
     <string name="expense_deleted">Expense deleted</string>
-    <string name="no_expenses_yet">No expenses yet.\nTap “Add expense” to log fuel, repairs and other costs.</string>
     <string name="category">Category</string>
     <string name="money_kept">Money kept</string>
     <string name="expenses_by_group">Expenses by group</string>
@@ -405,5 +403,24 @@
     <plurals name="days_driven">
         <item quantity="one">%d day driven</item>
         <item quantity="other">%d days driven</item>
+    </plurals>
+    <!-- Money tab -->
+    <string name="by_platform">By platform</string>
+    <string name="by_type">By type</string>
+    <string name="by_category">By category</string>
+    <string name="gross_bonuses_title">Bonuses and tips</string>
+    <string name="other_income">Tolls, cancellations and other</string>
+    <string name="paid_out">Paid to you</string>
+    <string name="total_expenses">Total expenses</string>
+    <string name="change_vs">%1$s vs %2$s</string>
+    <string name="recent">Recent</string>
+    <string name="all_entries">All</string>
+    <string name="show_fewer">Show fewer</string>
+    <string name="clear_filter">Clear filter</string>
+    <string name="no_income_this_month">No income this month.\nImport a Bolt screenshot or add income above.</string>
+    <string name="no_expenses_this_month">No expenses this month.\nAdd fuel, repairs and other costs above.</string>
+    <plurals name="see_all">
+        <item quantity="one">See %d entry</item>
+        <item quantity="other">See all %d</item>
     </plurals>
 </resources>

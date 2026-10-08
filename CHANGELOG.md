@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+- **Money tab, one month at a time** (like the cockpit design): a month chip, the month's total with the change
+  from the previous month and the Add button, then:
+  - Income: by platform (amount and share) and by type from imported breakdowns (ride payments, bonuses and
+    tips, tolls and cancellations, commission, paid to you).
+  - Expenses: by category (icon, amount, share); tap a category to see only its expenses.
+  - Recent entries (5), then "See all". Swipe to delete with Undo as before; recurring expenses stay linked.
+
 ## 0.2.1
 - **Kept / fees / expenses**: each label now sits right under its part of the bar, with its share; gross and
   what it's made of below.

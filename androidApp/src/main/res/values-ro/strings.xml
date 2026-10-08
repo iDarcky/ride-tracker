@@ -89,7 +89,6 @@
     <string name="nav_money">Bani</string>
     <string name="nav_settings">Setări</string>
     <string name="income">Venituri</string>
-    <string name="no_income_yet">Niciun venit încă.\nApasă „Adaugă venit” ca să-l înregistrezi.</string>
     <string name="section_app_settings">Setările aplicației</string>
     <string name="section_data">Datele tale</string>
     <string name="not_set">Nesetat</string>
@@ -129,7 +128,6 @@
     <string name="delete_expense">Șterge cheltuiala</string>
     <string name="delete_expense_title">Ștergi această cheltuială?</string>
     <string name="expense_deleted">Cheltuială ștearsă</string>
-    <string name="no_expenses_yet">Nicio cheltuială încă.\nApasă „Adaugă cheltuială” ca să notezi combustibil, reparații și alte costuri.</string>
     <string name="category">Categorie</string>
     <string name="money_kept">Bani rămași</string>
     <string name="expenses_by_group">Cheltuieli pe grupe</string>
@@ -412,5 +410,25 @@
         <item quantity="one">%d zi lucrată</item>
         <item quantity="few">%d zile lucrate</item>
         <item quantity="other">%d de zile lucrate</item>
+    </plurals>
+    <!-- Money tab -->
+    <string name="by_platform">Pe platforme</string>
+    <string name="by_type">Pe tipuri</string>
+    <string name="by_category">Pe categorii</string>
+    <string name="gross_bonuses_title">Bonusuri și bacșișuri</string>
+    <string name="other_income">Taxe de drum, anulări și altele</string>
+    <string name="paid_out">Primit de tine</string>
+    <string name="total_expenses">Total cheltuieli</string>
+    <string name="change_vs">%1$s față de %2$s</string>
+    <string name="recent">Recente</string>
+    <string name="all_entries">Toate</string>
+    <string name="show_fewer">Arată mai puține</string>
+    <string name="clear_filter">Șterge filtrul</string>
+    <string name="no_income_this_month">Niciun venit luna aceasta.\nImportă o captură Bolt sau adaugă venitul mai sus.</string>
+    <string name="no_expenses_this_month">Nicio cheltuială luna aceasta.\nAdaugă combustibil, reparații și alte costuri mai sus.</string>
+    <plurals name="see_all">
+        <item quantity="one">Vezi %d înregistrare</item>
+        <item quantity="few">Vezi toate cele %d</item>
+        <item quantity="other">Vezi toate cele %d</item>
     </plurals>
 </resources>
