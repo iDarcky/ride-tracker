@@ -80,6 +80,16 @@ interface IncomeEntryDao {
     )
     fun observeLinesInRange(startEpochDay: Long, endEpochDay: Long): Flow<List<LineInRange>>
 
+    /** The earliest day with any income, expense or trip (for the "All" period); null when there is no data. */
+    @Query(
+        """
+        SELECT MIN(d) FROM (
+            SELECT MIN(date) AS d FROM income_entry UNION ALL SELECT MIN(date) FROM expense UNION ALL SELECT MIN(date) FROM trip
+        )
+        """,
+    )
+    suspend fun firstDay(): Long?
+
     @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date = :epochDay ORDER BY id")
     suspend fun getForDay(platformId: Long, epochDay: Long): List<IncomeEntryEntity>
 

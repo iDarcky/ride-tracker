@@ -56,6 +56,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.pluralStringResource
 import kotlinx.datetime.isoDayNumber
 import app.ridetracker.R
+import kotlinx.datetime.toJavaLocalDate
+import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.domain.DayIncome
@@ -318,6 +320,8 @@ fun DailyActivity(
     dates: DateFormats,
     onOpenDay: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    /** Bars are months (long periods such as "All"). */
+    monthly: Boolean = false,
 ) {
     val hasMoney = days.any { it.totalMinor > 0 }
     val hasTrips = days.any { it.tripCount > 0 }
@@ -349,10 +353,15 @@ fun DailyActivity(
     val weekdayNames = remember(locale) {
         java.time.DayOfWeek.entries.associateWith { it.getDisplayName(TextStyle.SHORT, locale).trimEnd('.').take(3) }
     }
-    // Which days get a label under the axis: all of them in a week, otherwise every seventh.
+    val monthFormat = remember(locale) { java.time.format.DateTimeFormatter.ofPattern("LLL", locale) }
+    fun bucketName(date: LocalDate) = if (monthly) dates.period(Period.Month.containing(date)) else dates.day(date)
+    fun bucketShort(date: LocalDate) = if (monthly) dates.period(Period.Month.containing(date)) else dates.shortDay(date)
+    // Which bars get a label under the axis: months (every third when there are many), all days of a week,
+    // otherwise every seventh day.
     val labelled: Map<Int, String> = days.indices.mapNotNull { i ->
         val d = days[i].date
         when {
+            monthly -> if (days.size <= 12 || i % 3 == 0) i to d.toJavaLocalDate().format(monthFormat).trimEnd('.') else null
             days.size <= 7 -> i to (weekdayNames[java.time.DayOfWeek.of(d.dayOfWeek.isoDayNumber)] ?: "")
             d.day in setOf(1, 8, 15, 22, 29) && days.first().date.day == 1 -> i to d.day.toString()
             days.first().date.day != 1 && i % 7 == 0 -> i to dates.shortDay(d)
@@ -361,7 +370,7 @@ fun DailyActivity(
     }.toMap()
     val shown = platforms.filter { p -> days.any { (it.byPlatform[p.id] ?: 0) > 0 } }
 
-    ChartCard(stringResource(R.string.daily_activity), modifier) {
+    ChartCard(stringResource(if (monthly) R.string.monthly_activity else R.string.daily_activity), modifier) {
         if (hasMoney && hasTrips) {
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
                 listOf(ActivityMetric.MONEY to R.string.activity_money, ActivityMetric.TRIPS to R.string.activity_trips).forEachIndexed { index, (m, label) ->
@@ -377,9 +386,11 @@ fun DailyActivity(
         // Summary: how many days, the best one, the average per day driven.
         Text(
             buildString {
-                append(pluralStringResource(R.plurals.days_driven, driven.size, driven.size))
-                if (best != null) append(" · ").append(stringResource(R.string.best_day, dates.shortDay(days[best].date), format(value(days[best]))))
-                if (driven.size > 1) append(" · ").append(stringResource(R.string.average_per_day, format(average)))
+                append(pluralStringResource(if (monthly) R.plurals.months_driven else R.plurals.days_driven, driven.size, driven.size))
+                if (best != null) append(" · ").append(stringResource(R.string.best_day, bucketShort(days[best].date), format(value(days[best]))))
+                if (driven.size > 1) {
+                    append(" · ").append(stringResource(if (monthly) R.string.average_per_month else R.string.average_per_day, format(average)))
+                }
             },
             style = MaterialTheme.typography.bodySmall.tabular(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -387,7 +398,7 @@ fun DailyActivity(
         // The selected day, above the chart.
         val pick = selected?.let { days[it] }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.Bottom) {
-            Text(pick?.let { dates.day(it.date) } ?: stringResource(R.string.tap_a_bar), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Text(pick?.let { bucketName(it.date) } ?: stringResource(R.string.tap_a_bar), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             if (pick != null) Text(format(value(pick)), style = MaterialTheme.typography.titleLarge.tabular())
         }
         Canvas(
@@ -476,7 +487,7 @@ fun DailyActivity(
             }
             // On the left, so the floating + button never covers it.
             TextButton(onClick = { onOpenDay(pick.date) }, modifier = Modifier.padding(top = 4.dp)) {
-                Text(stringResource(R.string.open_day))
+                Text(stringResource(if (monthly) R.string.open_month else R.string.open_day))
             }
         }
     }

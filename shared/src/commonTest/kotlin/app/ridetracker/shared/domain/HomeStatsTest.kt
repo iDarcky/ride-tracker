@@ -158,11 +158,31 @@ class HomeStatsTest {
         val days = HomeStatsCalculator.compute(week, entries, emptyList(), emptyList(), listOf(hours(LocalDate(2026, 9, 10), LocalDate(2026, 9, 10), 240)))
         assertEquals(240, days.onlineMinutes)
         assertEquals(15000, days.perHourMinor) // 600.00 over 4 h; the 11th has no hours
+        // A longer period: the month's total plus a later week, but not a day already inside that week.
+        val autumn = DateRange(LocalDate(2026, 9, 1), LocalDate(2026, 10, 9))
+        val mixed = HomeStatsCalculator.compute(
+            autumn, entries, emptyList(), emptyList(),
+            listOf(
+                hours(september.start, september.endInclusive, 600, id = 1),
+                hours(LocalDate(2026, 10, 5), LocalDate(2026, 10, 11), 300, id = 2), // week still in progress
+                hours(LocalDate(2026, 10, 6), LocalDate(2026, 10, 6), 100, id = 3),
+            ),
+        )
+        assertEquals(900, mixed.onlineMinutes)
     }
 
     @Test
-    fun longRangesSkipTheDailyChart() {
-        val year = DateRange(LocalDate(2026, 1, 1), LocalDate(2026, 12, 31))
-        assertEquals(0, HomeStatsCalculator.compute(year, emptyList(), emptyList(), emptyList()).days.size)
+    fun longRangesChartMonths() {
+        val range = DateRange(LocalDate(2026, 7, 20), LocalDate(2026, 10, 9)) // 82 days
+        val entries = listOf(
+            IncomeEntryEntity(id = 1, platformId = 2, amountMinor = 100, date = LocalDate(2026, 8, 25).toEpochDays(), createdAt = 0),
+            IncomeEntryEntity(id = 2, platformId = 2, amountMinor = 200, date = LocalDate(2026, 9, 3).toEpochDays(), createdAt = 0),
+            IncomeEntryEntity(id = 3, platformId = 1, amountMinor = 50, date = LocalDate(2026, 9, 30).toEpochDays(), createdAt = 0),
+        )
+        val s = HomeStatsCalculator.compute(range, entries, emptyList(), listOf(trip(0, 600, 10).copy(date = LocalDate(2026, 9, 3).toEpochDays())))
+        assertEquals(true, s.monthly)
+        assertEquals(listOf(7, 8, 9, 10), s.days.map { it.date.month.ordinal + 1 })
+        assertEquals(listOf(0L, 100L, 250L, 0L), s.days.map { it.totalMinor })
+        assertEquals(1, s.days[2].tripCount)
     }
 }

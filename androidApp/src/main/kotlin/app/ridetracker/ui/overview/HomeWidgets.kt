@@ -84,7 +84,7 @@ fun WidgetBody(
         HomeWidget.BREAKDOWN -> MoneyBreakdown(stats, state.expenseMinor, state.tracksExpenses, money)
         HomeWidget.METRICS -> Metrics(stats, state.platforms, money)
         HomeWidget.SPLIT -> PlatformSplit(state.totals, money)
-        HomeWidget.ACTIVITY -> DailyActivity(stats.days, state.platforms, money, dates, onOpenDay)
+        HomeWidget.ACTIVITY -> DailyActivity(stats.days, state.platforms, money, dates, onOpenDay, monthly = stats.monthly)
         HomeWidget.WHEN_YOU_EARN -> BestTimeToDrive(stats.heat, money)
         HomeWidget.EXPENSE_GROUPS -> ExpenseGroups(state, money, percent)
         HomeWidget.NEEDS_ATTENTION -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -7,6 +7,7 @@ import app.ridetracker.shared.data.TripWithPlatform
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
 /** Income of one day, per platform (platform id -> amount), and its trips (imported, or as reported). */
@@ -55,8 +56,13 @@ data class HomeStats(
     val tripPlatformIds: Set<Long>,
     val hourPlatformIds: Set<Long>,
     val kmPlatformIds: Set<Long>,
-    /** One item per day of the range (empty days included), for the activity chart and sparkline. */
+    /**
+     * One item per day of the range (empty days included), for the activity chart and sparkline; for ranges longer
+     * than [HomeStatsCalculator.MAX_CHART_DAYS], one item per month instead (dated on its first day).
+     */
     val days: List<DayIncome>,
+    /** True when [days] holds months. */
+    val monthly: Boolean = false,
     /** Trip fares by ISO weekday (index 0 = Monday) and 4-hour slot (index 0 = 00–04). */
     val heat: List<List<Long>>,
 )
@@ -124,25 +130,23 @@ object HomeStatsCalculator {
         // Platforms whose entries have no online time: their own totals (Bolt's Activity screen), for exactly this
         // period, or else added up from single days inside it. Money per hour uses the same span's income.
         val onlineTotals = summaries.filter { (it.onlineMinutes ?: 0) > 0 && it.earningsMinor == null && it.grossFareMinor == null }
+        val start = range.start.toEpochDays()
+        val end = range.endInclusive.toEpochDays()
         for ((platformId, own) in onlineTotals.groupBy { it.platformId }) {
             if (platformId in hourPlatforms) continue
-            val start = range.start.toEpochDays()
-            val end = range.endInclusive.toEpochDays()
-            val exact = own.filter { it.periodStart == start && it.periodEnd == end }.maxByOrNull { it.id }
-            val days = own.filter { it.periodStart == it.periodEnd && it.periodStart in start..end }
-                .groupBy { it.periodStart }.mapValues { (_, list) -> list.maxBy { it.id } }
-            val platformEntries = entries.filter { it.platformId == platformId }
-            when {
-                exact != null -> {
-                    minutes += exact.onlineMinutes ?: 0
-                    timedIncome += platformEntries.sumOf { it.amountMinor }
+            // Totals that start inside the period (a week still in progress counts), longest first (month, week,
+            // day), never overlapping; the newest import wins for the same span.
+            val picked = mutableListOf<PeriodSummaryEntity>()
+            own.filter { it.periodStart in start..end }
+                .groupBy { it.periodStart to it.periodEnd }.map { (_, list) -> list.maxBy { it.id } }
+                .sortedByDescending { it.periodEnd - it.periodStart }
+                .forEach { candidate ->
+                    if (picked.none { candidate.periodStart <= it.periodEnd && it.periodStart <= candidate.periodEnd }) picked += candidate
                 }
-                days.isNotEmpty() -> {
-                    minutes += days.values.sumOf { it.onlineMinutes ?: 0 }
-                    timedIncome += platformEntries.filter { it.date in days.keys }.sumOf { it.amountMinor }
-                }
-                else -> continue
-            }
+            if (picked.isEmpty()) continue
+            minutes += picked.sumOf { it.onlineMinutes ?: 0 }
+            timedIncome += entries.filter { e -> e.platformId == platformId && picked.any { e.date in it.periodStart..it.periodEnd } }
+                .sumOf { it.amountMinor }
             hourPlatforms += platformId
         }
 
@@ -162,26 +166,35 @@ object HomeStatsCalculator {
         val importedTripPlatformDays = trips.map { it.platformId to it.date }.toSet()
         val reportedTrips = entries.filter { (it.platformId to it.date) !in importedTripPlatformDays && (it.tripCount ?: 0) > 0 }
 
-        val days = if (range.dayCount() <= MAX_CHART_DAYS) {
-            val byDay = entries.groupBy { it.date }
-            val tripsByDay = trips.groupBy { it.date }
+        val byDay = entries.groupBy { it.date }
+        val tripsByDay = trips.groupBy { it.date }
+        fun bucket(date: LocalDate, from: LocalDate, to: LocalDate): DayIncome {
+            val list = entries.filter { it.date in from.toEpochDays()..to.toEpochDays() }
+            val imported = trips.filter { it.date in from.toEpochDays()..to.toEpochDays() }
+            val importedDays = imported.map { it.platformId to it.date }.toSet()
+            // Imported trips per platform-day; an entry's own trip count where that platform-day has none imported.
+            val reported = list.filter { (it.platformId to it.date) !in importedDays }.sumOf { it.tripCount ?: 0 }
+            return DayIncome(
+                date,
+                list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } },
+                imported.size + reported,
+                list.filter { it.source == IncomeSource.ESTIMATE.id }.sumOf { it.amountMinor },
+            )
+        }
+        val monthly = range.dayCount() > MAX_CHART_DAYS
+        val days = if (!monthly) {
             generateSequence(range.start) { it.plus(DatePeriod(days = 1)) }
                 .takeWhile { it <= range.endInclusive }
-                .map { day ->
-                    val list = byDay[day.toEpochDays()].orEmpty()
-                    val imported = tripsByDay[day.toEpochDays()].orEmpty()
-                    // Imported trips per platform; an entry's own trip count where a platform has none imported.
-                    val reported = list.filter { e -> imported.none { it.platformId == e.platformId } }.sumOf { it.tripCount ?: 0 }
-                    DayIncome(
-                        day,
-                        list.groupBy { it.platformId }.mapValues { (_, e) -> e.sumOf { it.amountMinor } },
-                        imported.size + reported,
-                        list.filter { it.source == IncomeSource.ESTIMATE.id }.sumOf { it.amountMinor },
-                    )
-                }
+                .map { day -> if (byDay[day.toEpochDays()] == null && tripsByDay[day.toEpochDays()] == null) DayIncome(day, emptyMap()) else bucket(day, day, day) }
                 .toList()
         } else {
-            emptyList()
+            generateSequence(LocalDate(range.start.year, range.start.month, 1)) { it.plus(DatePeriod(months = 1)) }
+                .takeWhile { it <= range.endInclusive }
+                .map { first ->
+                    val last = first.plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1))
+                    bucket(first, maxOf(first, range.start), minOf(last, range.endInclusive))
+                }
+                .toList()
         }
 
         val heat = List(7) { MutableList(6) { 0L } }
@@ -211,6 +224,7 @@ object HomeStatsCalculator {
             hourPlatformIds = hourPlatforms,
             kmPlatformIds = metersByPlatform.keys,
             days = days,
+            monthly = monthly,
             heat = heat,
         )
     }

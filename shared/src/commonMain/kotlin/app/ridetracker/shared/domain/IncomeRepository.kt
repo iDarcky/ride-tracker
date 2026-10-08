@@ -43,6 +43,9 @@ class IncomeRepository(database: AppDatabase) {
     fun observeLines(range: DateRange): Flow<List<LineInRange>> =
         entries.observeLinesInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 
+    /** The earliest day with any income, expense or trip; null without data. */
+    suspend fun firstDay(): LocalDate? = entries.firstDay()?.let(LocalDate::fromEpochDays)
+
     suspend fun getEntry(id: Long): IncomeEntryEntity? = entries.getById(id)
 
     suspend fun saveEntry(

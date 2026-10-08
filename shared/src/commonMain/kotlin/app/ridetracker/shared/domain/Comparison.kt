@@ -46,6 +46,8 @@ object Comparisons {
                     Comparison.WholePrevious(previous, type)
                 }
             }
+            // Everything so far: there is nothing before it to compare with.
+            is Period.All -> null
             is Period.Custom -> {
                 val days = range.lengthInDays
                 Comparison.PreviousDays(

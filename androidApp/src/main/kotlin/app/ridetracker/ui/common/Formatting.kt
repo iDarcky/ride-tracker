@@ -82,6 +82,7 @@ class DateFormats(private val locale: Locale) {
         is Period.Week -> range(period.range)
         is Period.Month -> period.range.start.toJavaLocalDate().format(month).capitalized()
         is Period.Custom -> range(period.range)
+        is Period.All -> range(period.range)
     }
 
     private fun String.capitalized() = replaceFirstChar { it.titlecase(locale) }

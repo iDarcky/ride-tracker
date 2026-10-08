@@ -168,7 +168,7 @@ class OverviewViewModel(
         val anchor = if (today in current.range.start..current.range.endInclusive) today else current.range.start
         viewModelScope.launch {
             val firstDay = settingsRepository.settings.first().firstDayOfWeek
-            selected.value = periodOf(type, anchor, firstDay, current)
+            selected.value = periodOf(type, anchor, firstDay, current, firstDate = incomeRepository.firstDay(), today = today)
         }
     }
 
@@ -177,9 +177,9 @@ class OverviewViewModel(
         viewModelScope.launch { settingsRepository.setHomeWidgets(widgets) }
     }
 
-    /** Opens one day (from the daily activity chart). */
+    /** Opens one day from the activity chart, or the month when its bars are months. */
     fun openDay(date: LocalDate) {
-        selected.value = Period.Day(date)
+        selected.value = if (uiState.value.stats?.monthly == true) Period.Month.containing(date) else Period.Day(date)
     }
 
     fun setCustomRange(range: DateRange) {

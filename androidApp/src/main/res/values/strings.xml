@@ -36,6 +36,7 @@
     <string name="period_day">Day</string>
     <string name="period_week">Week</string>
     <string name="period_month">Month</string>
+    <string name="period_all">All</string>
     <string name="period_custom">Custom</string>
     <string name="previous_period">Previous period</string>
     <string name="next_period">Next period</string>
@@ -441,4 +442,11 @@
     <string name="estimate_entry_note">Estimated from Bolt’s monthly total or trips, because this day has no screenshot. A screenshot of the day replaces it; if you save your own amount, it stays as you set it.</string>
     <string name="import_bolt_activity">Bolt · online hours</string>
     <string name="import_activity_note">Used for hours online and how much you make per hour. A newer screenshot of the same period replaces this one.</string>
+    <string name="monthly_activity">Monthly activity</string>
+    <string name="average_per_month">average %1$s per month driven</string>
+    <string name="open_month">Open month</string>
+    <plurals name="months_driven">
+        <item quantity="one">%d month driven</item>
+        <item quantity="other">%d months driven</item>
+    </plurals>
 </resources>

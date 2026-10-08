@@ -55,6 +55,12 @@ sealed interface Period {
         }
     }
 
+    /** Everything from the first entry, expense or trip to today; there is no previous or next. */
+    data class All(override val range: DateRange) : Period {
+        override fun next() = this
+        override fun previous() = this
+    }
+
     /** A user-picked range; next/previous shift by the range's own length. */
     data class Custom(override val range: DateRange) : Period {
         override fun next() = shift(range.lengthInDays)
@@ -66,19 +72,35 @@ sealed interface Period {
     }
 }
 
-enum class PeriodType { DAY, WEEK, MONTH, CUSTOM }
+enum class PeriodType { DAY, WEEK, MONTH, ALL, CUSTOM }
 
 val Period.type: PeriodType
     get() = when (this) {
         is Period.Day -> PeriodType.DAY
         is Period.Week -> PeriodType.WEEK
         is Period.Month -> PeriodType.MONTH
+        is Period.All -> PeriodType.ALL
         is Period.Custom -> PeriodType.CUSTOM
     }
 
-/** Builds the period of [type] that contains [anchor]. CUSTOM keeps [current] if it is custom, else the anchor's month. */
-fun periodOf(type: PeriodType, anchor: LocalDate, firstDayOfWeek: DayOfWeek, current: Period? = null): Period =
+/**
+ * Builds the period of [type] that contains [anchor]. CUSTOM keeps [current] if it is custom, else the anchor's month.
+ * ALL runs from [firstDate] (the earliest data; the anchor when there is none) to [today].
+ */
+fun periodOf(
+    type: PeriodType,
+    anchor: LocalDate,
+    firstDayOfWeek: DayOfWeek,
+    current: Period? = null,
+    firstDate: LocalDate? = null,
+    today: LocalDate = anchor,
+): Period =
     when (type) {
+        PeriodType.ALL -> {
+            // From the 1st of the first month with data, so whole-month totals (online hours) fit inside it.
+            val first = minOf(firstDate ?: today, today)
+            Period.All(DateRange(LocalDate(first.year, first.month, 1), today))
+        }
         PeriodType.DAY -> Period.Day(anchor)
         PeriodType.WEEK -> Period.Week.containing(anchor, firstDayOfWeek)
         PeriodType.MONTH -> Period.Month.containing(anchor)

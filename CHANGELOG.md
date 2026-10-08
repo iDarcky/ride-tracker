@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+- **"All" period** on Home (Month · Week · Day · All · Custom): everything from the first month with data to
+  today. Long periods (All, or custom ranges over two months) show activity per month; tap a month to open it.
+- Hours online add up Bolt's totals that fit the period without overlapping (a month, then weeks, then days).
+
 ## 0.5.1
 - **Bolt online hours** from the Activity screen (Online hours tab): "Last 3 months" with a month tapped gives
   that month's hours; a week tab gives the week's hours and the tapped day's. Home shows hours online and how

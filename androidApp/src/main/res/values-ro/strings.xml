@@ -34,6 +34,7 @@
     <string name="period_day">Zi</string>
     <string name="period_week">Săpt.</string>
     <string name="period_month">Lună</string>
+    <string name="period_all">Toate</string>
     <string name="period_custom">Interval</string>
     <string name="previous_period">Perioada anterioară</string>
     <string name="next_period">Perioada următoare</string>
@@ -449,4 +450,12 @@
     <string name="estimate_entry_note">Estimat din totalul lunar Bolt sau din curse, pentru că ziua nu are captură. O captură a zilei îl înlocuiește; dacă salvezi suma ta, rămâne cum ai pus-o.</string>
     <string name="import_bolt_activity">Bolt · ore online</string>
     <string name="import_activity_note">Folosite pentru orele online și cât câștigi pe oră. O captură mai nouă a aceleiași perioade o înlocuiește.</string>
+    <string name="monthly_activity">Activitate pe luni</string>
+    <string name="average_per_month">în medie %1$s pe lună lucrată</string>
+    <string name="open_month">Deschide luna</string>
+    <plurals name="months_driven">
+        <item quantity="one">%d lună lucrată</item>
+        <item quantity="few">%d luni lucrate</item>
+        <item quantity="other">%d de luni lucrate</item>
+    </plurals>
 </resources>

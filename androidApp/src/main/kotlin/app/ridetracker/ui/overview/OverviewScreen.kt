@@ -306,6 +306,7 @@ private val periodLabels = listOf(
     PeriodType.MONTH to R.string.period_month,
     PeriodType.WEEK to R.string.period_week,
     PeriodType.DAY to R.string.period_day,
+    PeriodType.ALL to R.string.period_all,
     PeriodType.CUSTOM to R.string.period_custom,
 )
 
@@ -347,10 +348,14 @@ private fun PeriodNavigator(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_period))
+        // "All" has nothing before or after it.
+        val arrows = period !is Period.All
+        if (arrows) {
+            IconButton(onClick = onPrevious) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_period))
+            }
         }
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        Box(Modifier.weight(1f).padding(vertical = if (arrows) 0.dp else 12.dp), contentAlignment = Alignment.Center) {
             if (period is Period.Custom) {
                 TextButton(onClick = onPickRange) {
                     Icon(Icons.Filled.DateRange, contentDescription = null)
@@ -366,8 +371,10 @@ private fun PeriodNavigator(
                 }
             }
         }
-        IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_period))
+        if (arrows) {
+            IconButton(onClick = onNext) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_period))
+            }
         }
     }
 }

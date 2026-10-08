@@ -79,14 +79,14 @@ object BoltActivityParser {
         }
     }
 
-    /** Letters OCR reads instead of digits in the small bubbles ("Gore 4min" is "6ore 4min"). */
+    /** Letters OCR reads instead of digits in the small bubbles ("Gore 20min" is "6ore 20min"). */
     private val lookalikes = mapOf('g' to '6', 'b' to '6', 'o' to '0', 'l' to '1', 'i' to '1', '|' to '1', 's' to '5', 'z' to '2')
     private val digitsBeforeUnit = Regex("""(?<![\p{L}\d])([\dgbolisz|]{1,3})(?=\s*(?:ore|ora|h\b|min))""")
 
     private fun fixDigits(text: String): String =
         digitsBeforeUnit.replace(text) { m -> m.value.map { lookalikes[it] ?: it }.joinToString("") }
 
-    /** "15ore 59min" -> 959; "45min" -> 45. Text is already plain (lower case). */
+    /** "12ore 30min" -> 750; "45min" -> 45. Text is already plain (lower case). */
     private fun minutesOf(raw: String): Int? {
         val text = fixDigits(raw)
         duration.find(text)?.let { return it.groupValues[1].toInt() * 60 + it.groupValues[2].toInt() }
