@@ -134,13 +134,9 @@ See the README for build, versioning and signing rules.
    0.2.0: Home rework like the cockpit mockup. 0.2.1: labelled kept/fees bar, "platform" wording, daily activity
    rework, five metric tiles. 0.3.0: Money tab by month (total → by platform/type or category → recent).
    0.4.0: customisable Home widgets (Customise at the bottom; drag, remove, add on Home itself).
-   **Next:** Uber screenshots and CSV (owner sends the files), the monthly check against Bolt's totals. Earlier note: the owner "doesn't vibe" with the app yet. Before building item 4,
-   find out what feels off. Candidate causes discussed: manual entry feels like a chore and the payoff
-   (importing a report) isn't built; we went wide (vehicle, CSV, recurring) before logging a shift felt great;
-   no identity (name, icon, generic look vs the darker "cockpit" boards); test data and red minus signs feel
-   like a debt tracker. Options offered: one-screen "log today's shift" for all apps at once, Home built around
-   today/this week, choose name + icon + look, bring the Uber/Bolt import forward, use it with real data for
-   a few days. Waiting for the owner's answer.
+   **Next:** Uber screenshots and CSV (owner sends the files), the monthly check against Bolt's totals.
+   Still open: identity (name, icon, a darker "cockpit" look). The owner said the app lacked identity and had
+   gone wide before deep; imports and the cockpit Home address the second.
 
 Later, with imports (v0.5): trips list and detail, import flow with data-quality warnings, import history,
 vehicle odometer and fuel estimates, gross / fees / expenses / kept bar, preset list of known apps.
