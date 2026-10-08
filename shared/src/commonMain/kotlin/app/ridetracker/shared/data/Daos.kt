@@ -68,6 +68,18 @@ interface IncomeEntryDao {
     @Query("SELECT * FROM income_entry WHERE id = :id")
     suspend fun getById(id: Long): IncomeEntryEntity?
 
+    @Query("SELECT * FROM income_entry WHERE date BETWEEN :startEpochDay AND :endEpochDay ORDER BY date, id")
+    fun observeDetailsInRange(startEpochDay: Long, endEpochDay: Long): Flow<List<IncomeEntryEntity>>
+
+    @Query(
+        """
+        SELECT l.entryId, e.platformId, e.date, l.kind, l.amountMinor
+        FROM income_line l JOIN income_entry e ON e.id = l.entryId
+        WHERE e.date BETWEEN :startEpochDay AND :endEpochDay
+        """,
+    )
+    fun observeLinesInRange(startEpochDay: Long, endEpochDay: Long): Flow<List<LineInRange>>
+
     @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date = :epochDay ORDER BY id")
     suspend fun getForDay(platformId: Long, epochDay: Long): List<IncomeEntryEntity>
 
@@ -212,6 +224,12 @@ interface ImportDao {
 
     @Insert
     suspend fun insertLines(lines: List<IncomeLineEntity>)
+
+    @Query("SELECT * FROM income_line WHERE kind = :kind AND label IS NOT NULL")
+    suspend fun getLinesOfKind(kind: String): List<IncomeLineEntity>
+
+    @Query("UPDATE income_line SET kind = :kind WHERE id = :id")
+    suspend fun setLineKind(id: Long, kind: String)
 
     @Query("DELETE FROM income_line WHERE entryId = :entryId")
     suspend fun deleteLines(entryId: Long)

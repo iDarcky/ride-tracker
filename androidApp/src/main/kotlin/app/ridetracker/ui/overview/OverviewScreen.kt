@@ -47,6 +47,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -124,7 +125,13 @@ fun OverviewScreen(
     onAddExpense: () -> Unit,
     onImport: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
-        OverviewViewModel(container.incomeRepository, container.expenseRepository, container.recurringRepository, container.settingsRepository)
+        OverviewViewModel(
+            container.incomeRepository,
+            container.expenseRepository,
+            container.importRepository,
+            container.recurringRepository,
+            container.settingsRepository,
+        )
     },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -153,23 +160,6 @@ fun OverviewScreen(
                 bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 96.dp,
             ),
         ) {
-            if (pending.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.needs_attention)) }
-                items(pending, key = { "due-${it.rule.id}-${it.dueDate}" }) { item ->
-                    DueExpenseCard(
-                        item = item,
-                        money = money,
-                        dates = dates,
-                        onAdd = {
-                            viewModel.accept(item)
-                            scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
-                        },
-                        onSkip = { viewModel.skip(item) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
-                    )
-                }
-                item { Spacer(Modifier.height(12.dp)) }
-            }
             item {
                 PeriodTypeSelector(
                     selected = state.period.type,
@@ -195,26 +185,42 @@ fun OverviewScreen(
             item {
                 TotalCard(state, money, Modifier.padding(horizontal = 16.dp))
             }
-            if (state.totals.size > 1 || (state.totals.size == 1 && state.entryCount > 0)) {
-                item { SectionHeader(stringResource(R.string.by_app)) }
-                items(state.totals, key = { "total-${it.platformId}" }) { total ->
-                    val share = if (state.totalMinor > 0) total.totalMinor.toFloat() / state.totalMinor else 0f
-                    ListItem(
-                        leadingContent = { PlatformBadge(total.name, total.colorArgb) },
-                        headlineContent = { Text(total.name) },
-                        supportingContent = {
-                            LinearProgressIndicator(
-                                progress = { share },
-                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                            )
-                        },
-                        trailingContent = {
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(money.format(total.totalMinor), style = MaterialTheme.typography.titleMedium.tabular())
-                                Text(percent.format(share), style = MaterialTheme.typography.bodySmall)
-                            }
-                        },
+            state.stats?.let { stats ->
+                if (stats.grossMinor > 0) {
+                    item {
+                        MoneyBreakdown(
+                            stats,
+                            state.expenseMinor,
+                            state.tracksExpenses,
+                            money,
+                            Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                        )
+                    }
+                }
+                item {
+                    Metrics(
+                        stats,
+                        money,
+                        Modifier.padding(horizontal = 16.dp).padding(top = if (stats.grossMinor > 0) 0.dp else 16.dp, bottom = 12.dp),
                     )
+                }
+                if (state.totals.isNotEmpty()) {
+                    item { PlatformSplit(state.totals, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) }
+                }
+                if (state.period !is Period.Day && stats.days.size > 1) {
+                    item {
+                        DailyActivity(
+                            stats.days,
+                            state.platforms,
+                            money,
+                            dates,
+                            onOpenDay = viewModel::openDay,
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
+                        )
+                    }
+                }
+                if (stats.tripCount >= MIN_TRIPS_FOR_HEAT) {
+                    item { BestTimeToDrive(stats.heat, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) }
                 }
             }
             if (state.expenseGroups.isNotEmpty()) {
@@ -237,6 +243,22 @@ fun OverviewScreen(
                                 Text(percent.format(share), style = MaterialTheme.typography.bodySmall)
                             }
                         },
+                    )
+                }
+            }
+            if (pending.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.needs_attention)) }
+                items(pending, key = { "due-${it.rule.id}-${it.dueDate}" }) { item ->
+                    DueExpenseCard(
+                        item = item,
+                        money = money,
+                        dates = dates,
+                        onAdd = {
+                            viewModel.accept(item)
+                            scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
+                        },
+                        onSkip = { viewModel.skip(item) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
                     )
                 }
             }
@@ -267,6 +289,9 @@ fun OverviewScreen(
 }
 
 // Order follows the design system: Month first.
+/** The heat map needs enough trips to say anything about when to drive. */
+private const val MIN_TRIPS_FOR_HEAT = 20
+
 private val periodLabels = listOf(
     PeriodType.MONTH to R.string.period_month,
     PeriodType.WEEK to R.string.period_week,
@@ -365,17 +390,13 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
                 ComparisonLine(state.headlineMinor, previous, comparison, money)
             }
             Spacer(Modifier.height(4.dp))
-            if (state.tracksExpenses) {
-                // Income minus expenses, spelled out so "money kept" is never a mystery number.
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    Figure(stringResource(R.string.income), money.format(state.totalMinor))
-                    Figure(stringResource(R.string.nav_expenses), money.format(-state.expenseMinor))
-                }
-            } else {
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    pluralStringResource(R.plurals.entry_count, state.entryCount, state.entryCount),
+                    stringResource(if (state.tracksExpenses) R.string.after_fees_and_expenses else R.string.after_fees),
+                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                state.stats?.let { Sparkline(it.days, LocalContentColor.current.copy(alpha = 0.55f), Modifier.width(120.dp).height(40.dp)) }
             }
         }
     }

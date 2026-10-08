@@ -247,6 +247,15 @@ data class TripWithPlatform(
     val importKind: String,
 )
 
+/** A breakdown line with its entry's day and app, for period totals. */
+data class LineInRange(
+    val entryId: Long,
+    val platformId: Long,
+    val date: Long,
+    val kind: String,
+    val amountMinor: Long,
+)
+
 /** Sum of income for one platform over a date range. */
 data class PlatformTotal(
     val platformId: Long,

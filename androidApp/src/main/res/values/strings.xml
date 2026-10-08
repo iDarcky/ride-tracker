@@ -41,8 +41,7 @@
     <string name="next_period">Next period</string>
     <string name="back_to_today">Back to today</string>
     <string name="total_income">Total income</string>
-    <string name="by_app">By app</string>
-    <string name="empty_period">No income for this period yet.\nTap “Add income” to log your earnings.</string>
+    <string name="empty_period">No income for this period yet.\nImport a Bolt screenshot or add it with the + button.</string>
     <string name="add_income">Add income</string>
     <string name="entry_deleted">Entry deleted</string>
     <plurals name="entry_count">
@@ -369,4 +368,32 @@
         <item quantity="one">Show %d trip</item>
         <item quantity="other">Show all %d trips</item>
     </plurals>
+
+    <!-- Home (cockpit) -->
+    <string name="after_fees">after platform fees</string>
+    <string name="after_fees_and_expenses">after platform fees and expenses</string>
+    <string name="gross">Gross</string>
+    <string name="fees">Fees</string>
+    <string name="kept">Kept</string>
+    <string name="earned">Earned</string>
+    <string name="gross_is">Gross = %1$s</string>
+    <string name="gross_fares">fares %1$s</string>
+    <string name="gross_bonuses">bonuses and tips %1$s</string>
+    <string name="gross_other">other %1$s</string>
+    <string name="fees_partial">Fees are known only for days imported from a report.</string>
+    <string name="metric_trips">Trips</string>
+    <string name="metric_average_fare">Average fare</string>
+    <string name="metric_online">Online</string>
+    <string name="metric_per_hour">Per hour</string>
+    <string name="metric_km">On trips</string>
+    <string name="metric_per_km">Fares per km</string>
+    <string name="hours_minutes">%1$d h %2$d min</string>
+    <string name="metrics_source_note">Trips come from Bolt’s rider invoices, which have no distance or online time.</string>
+    <string name="split_by_app">Split by app</string>
+    <string name="daily_activity">Daily activity</string>
+    <string name="tap_a_bar">Tap a bar to see that day.</string>
+    <string name="open_day">Open day</string>
+    <string name="best_time">Best time to drive</string>
+    <string name="best_time_caption">Trip fares by weekday and time of day. The busiest slot is outlined; tap a cell for its total.</string>
+    <string name="heat_cell">%1$s, %2$s: %3$s in fares</string>
 </resources>

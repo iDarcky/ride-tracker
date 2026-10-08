@@ -39,8 +39,7 @@
     <string name="next_period">Perioada următoare</string>
     <string name="back_to_today">Înapoi la azi</string>
     <string name="total_income">Venit total</string>
-    <string name="by_app">Pe aplicații</string>
-    <string name="empty_period">Niciun venit în această perioadă.\nApasă „Adaugă venit” ca să-l înregistrezi.</string>
+    <string name="empty_period">Niciun venit în această perioadă.\nImportă o captură Bolt sau adaugă venitul cu butonul +.</string>
     <string name="add_income">Adaugă venit</string>
     <string name="entry_deleted">Înregistrare ștearsă</string>
     <plurals name="entry_count">
@@ -375,4 +374,32 @@
         <item quantity="few">Arată toate cele %d curse</item>
         <item quantity="other">Arată toate cele %d de curse</item>
     </plurals>
+
+    <!-- Home (cockpit) -->
+    <string name="after_fees">după comisioanele aplicațiilor</string>
+    <string name="after_fees_and_expenses">după comisioane și cheltuieli</string>
+    <string name="gross">Brut</string>
+    <string name="fees">Comisioane</string>
+    <string name="kept">Rămași</string>
+    <string name="earned">Câștigat</string>
+    <string name="gross_is">Brut = %1$s</string>
+    <string name="gross_fares">curse %1$s</string>
+    <string name="gross_bonuses">bonusuri și bacșișuri %1$s</string>
+    <string name="gross_other">altele %1$s</string>
+    <string name="fees_partial">Comisioanele se știu doar pentru zilele importate dintr-un raport.</string>
+    <string name="metric_trips">Curse</string>
+    <string name="metric_average_fare">Tarif mediu</string>
+    <string name="metric_online">Online</string>
+    <string name="metric_per_hour">Pe oră</string>
+    <string name="metric_km">În curse</string>
+    <string name="metric_per_km">Tarif pe km</string>
+    <string name="hours_minutes">%1$d h %2$d min</string>
+    <string name="metrics_source_note">Cursele vin din facturile Bolt către pasageri, care nu au distanța sau timpul online.</string>
+    <string name="split_by_app">Pe aplicații</string>
+    <string name="daily_activity">Activitate pe zile</string>
+    <string name="tap_a_bar">Atinge o bară ca să vezi ziua.</string>
+    <string name="open_day">Deschide ziua</string>
+    <string name="best_time">Cele mai bune ore</string>
+    <string name="best_time_caption">Tarifele curselor pe zile și intervale orare. Intervalul cel mai bun e conturat; atinge o căsuță pentru total.</string>
+    <string name="heat_cell">%1$s, %2$s: %3$s din curse</string>
 </resources>

@@ -130,7 +130,7 @@ object BoltDailyParser {
                 }
                 label.isIn("cash in hand", "numerar in mana") -> cashInHand = abs(parsed.amountMinor)
                 section == Section.IN_APP || section == Section.CASH ->
-                    lines += ParsedLine(kindOf(label), parsed.amountMinor, section == Section.CASH, parsed.label)
+                    lines += ParsedLine(lineKind(parsed.label), parsed.amountMinor, section == Section.CASH, parsed.label)
                 section == Section.FEES ->
                     lines += ParsedLine(IncomeLineKind.OTHER_FEE, -abs(parsed.amountMinor), false, parsed.label)
             }
@@ -158,6 +158,9 @@ object BoltDailyParser {
     }
 
     private fun String.isIn(vararg names: String) = names.any { this == it }
+
+    /** What a breakdown row is, from its label as the report wrote it (English or Romanian, any accents). */
+    fun lineKind(rawLabel: String): IncomeLineKind = kindOf(ReportText.plain(rawLabel))
 
     /** [label] is already lower case without diacritics. */
     private fun kindOf(label: String): IncomeLineKind = when {

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+- **New Home** (like the cockpit design):
+  - Money kept (or income) with a cumulative line for the period, and the comparison with the previous one.
+  - A bar of gross split into kept, platform fees and expenses, with the figures under it and what gross is
+    made of (fares, bonuses and tips, other). Fees come from imported breakdowns; typed-in days are noted.
+  - Trips and average fare from imported trips; hours, per hour, km and per km appear when a report has them.
+  - Split by app (donut), daily activity (stacked per app; tap a bar for the day, then "Open day") and
+    best time to drive (trip fares by weekday and time of day, once there are 20+ trips).
+  - Chart colours checked for colour-blind readability, in light and dark mode.
+- Breakdown lines saved as "other" by an earlier version are re-sorted when the app starts.
+
 ## 0.1.1
 - **Trips tab**: imported rides by month, grouped by day (day total and count), with app and payment
   filters (cash / in the app) and a total of fares. Tap a ride for its details; anything the report

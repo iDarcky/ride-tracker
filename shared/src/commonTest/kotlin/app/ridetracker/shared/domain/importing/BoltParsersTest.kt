@@ -177,6 +177,13 @@ class BoltParsersTest {
     }
 
     @Test
+    fun classifiesLabelsForRepair() {
+        assertEquals(IncomeLineKind.FARE, BoltDailyParser.lineKind("Plắți pentru curse"))
+        assertEquals(IncomeLineKind.TOLL, BoltDailyParser.lineKind("Drum cu taxă"))
+        assertEquals(IncomeLineKind.OTHER, BoltDailyParser.lineKind("Cash income"))
+    }
+
+    @Test
     fun readsRomanianThousands() {
         assertEquals(ReportText.AmountRow("Venituri în aplicație", 123456), ReportText.amountRow("Venituri în aplicație +1.234,56 lei"))
     }

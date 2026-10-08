@@ -16,7 +16,10 @@ import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.RecurringRepository
 import app.ridetracker.shared.domain.ThemeMode
 import app.ridetracker.shared.domain.VehicleRepository
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -48,6 +51,9 @@ class RideTrackerApplication : Application() {
         applyThemeMode(runBlocking { container.settingsRepository.settings.first().themeMode })
         DueExpenseNotifier.createChannel(this)
         DueExpensesWorker.schedule(this)
+        // Fix breakdown lines imported before the reader recognised their label.
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch { container.importRepository.reclassifyLines() }
     }
 }
 

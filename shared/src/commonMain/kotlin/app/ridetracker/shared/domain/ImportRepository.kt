@@ -9,6 +9,7 @@ import app.ridetracker.shared.data.IncomeLineEntity
 import app.ridetracker.shared.data.PeriodSummaryEntity
 import app.ridetracker.shared.data.TripEntity
 import app.ridetracker.shared.data.TripWithPlatform
+import app.ridetracker.shared.domain.importing.BoltDailyParser
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
@@ -144,6 +145,17 @@ class ImportRepository(private val database: AppDatabase) {
             ),
         )
         ImportOutcome.Saved(batchId, saved = 1, skipped = 0)
+    }
+
+    /**
+     * Lines saved as "other" because an older reader did not know their label (e.g. an accent misread
+     * by OCR) get their proper kind once the reader learns it. Safe to run on every start.
+     */
+    suspend fun reclassifyLines() {
+        for (line in imports.getLinesOfKind(IncomeLineKind.OTHER.id)) {
+            val kind = BoltDailyParser.lineKind(line.label ?: continue)
+            if (kind != IncomeLineKind.OTHER) imports.setLineKind(line.id, kind.id)
+        }
     }
 
     private suspend fun <T> transaction(block: suspend () -> T): T =

@@ -66,6 +66,9 @@ class DateFormats(private val locale: Locale) {
 
     fun day(date: LocalDate): String = date.toJavaLocalDate().format(day).capitalized()
 
+    /** "5 Oct", for chart axes. */
+    fun shortDay(date: LocalDate): String = date.toJavaLocalDate().format(shortDay)
+
     fun range(range: DateRange): String = with(range) {
         if (start.year == endInclusive.year) {
             "${start.toJavaLocalDate().format(shortDay)} – ${endInclusive.toJavaLocalDate().format(shortDay)} ${start.year}"

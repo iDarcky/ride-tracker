@@ -3,6 +3,7 @@ package app.ridetracker.shared.domain
 import app.ridetracker.shared.data.AppDatabase
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.data.IncomeEntryEntity
+import app.ridetracker.shared.data.LineInRange
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,13 @@ class IncomeRepository(database: AppDatabase) {
 
     fun observeTotals(range: DateRange): Flow<List<PlatformTotal>> =
         entries.observeTotalsInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
+
+    /** Entries with all their details (online time, cash…), for Home's statistics. */
+    fun observeEntryDetails(range: DateRange): Flow<List<IncomeEntryEntity>> =
+        entries.observeDetailsInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
+
+    fun observeLines(range: DateRange): Flow<List<LineInRange>> =
+        entries.observeLinesInRange(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 
     suspend fun getEntry(id: Long): IncomeEntryEntity? = entries.getById(id)
 

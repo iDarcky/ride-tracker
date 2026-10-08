@@ -2,6 +2,7 @@ package app.ridetracker.ui.overview
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.Comparison
@@ -10,6 +11,9 @@ import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseGroup
 import app.ridetracker.shared.domain.ExpenseRepository
+import app.ridetracker.shared.domain.HomeStats
+import app.ridetracker.shared.domain.HomeStatsCalculator
+import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Period
@@ -53,6 +57,10 @@ data class OverviewUiState(
     /** Totals of the comparison range; null when that range has no data (then nothing is shown). */
     val previous: PreviousTotals? = null,
     val loading: Boolean = true,
+    /** Gross, fees, metrics, daily activity and heat map for the period. */
+    val stats: HomeStats? = null,
+    /** All apps (names and colours for charts), including archived ones that still have history. */
+    val platforms: List<PlatformEntity> = emptyList(),
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
 
@@ -67,6 +75,7 @@ data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
 class OverviewViewModel(
     private val incomeRepository: IncomeRepository,
     private val expenseRepository: ExpenseRepository,
+    private val importRepository: ImportRepository,
     private val recurringRepository: RecurringRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
@@ -94,14 +103,22 @@ class OverviewViewModel(
                 if (totals.isEmpty() && expenses.isEmpty()) null else PreviousTotals(income, expense)
             }
         }
+        val statsFlow: Flow<HomeStats> = combine(
+            incomeRepository.observeEntryDetails(period.range),
+            incomeRepository.observeLines(period.range),
+            importRepository.observeTrips(period.range),
+        ) { details, lines, trips -> HomeStatsCalculator.compute(period.range, details, lines, trips) }
+        val extras = combine(statsFlow, incomeRepository.observePlatforms()) { stats, platforms -> stats to platforms }
         combine(
             incomeRepository.observeEntries(period.range),
             incomeRepository.observeTotals(period.range),
             expenseRepository.observeInRange(period.range),
-            expenseRepository.observeAny(),
-            previousFlow,
-        ) { entries, totals, expenses, anyExpense, previous ->
+            combine(expenseRepository.observeAny(), previousFlow) { any, previous -> any to previous },
+            extras,
+        ) { entries, totals, expenses, (anyExpense, previous), (stats, platforms) ->
             OverviewUiState(
+                stats = stats,
+                platforms = platforms,
                 comparison = comparison,
                 previous = previous,
                 period = period,
@@ -148,6 +165,11 @@ class OverviewViewModel(
             val firstDay = settingsRepository.settings.first().firstDayOfWeek
             selected.value = periodOf(type, anchor, firstDay, current)
         }
+    }
+
+    /** Opens one day (from the daily activity chart). */
+    fun openDay(date: LocalDate) {
+        selected.value = Period.Day(date)
     }
 
     fun setCustomRange(range: DateRange) {
