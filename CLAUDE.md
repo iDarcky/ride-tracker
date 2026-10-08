@@ -9,6 +9,20 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 - Design: Material 3 **Expressive** components only (no hand-built components), "Rideshare cockpit"
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
+## Where we are (8 October 2026)
+- App **0.0.10**, database version **5**, backup format **5**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- Next work and the open "vibe" question: "Next up" in [docs/product-brief.md](docs/product-brief.md).
+  Start there; propose, don't build, until the owner picks a direction.
+- Owner's taste so far: hated the drawn car silhouettes (removed); no grey surfaces behind panels/cards
+  (plain background, outlines instead); each setting on its own page; Romanian copy must sound natural
+  (e.g. „Recurentă”, not „Se repetă”).
+
+## Release routine (every change the owner should see)
+1. Bump `VERSION_NAME`, add a CHANGELOG entry (and update the brief's "Next up" if scope moved).
+2. Tests, `lintRelease`, `assembleRelease`, `adb install -r` on the running emulator, check on screen.
+3. Schema bump ⇒ upgrade test: install the previous release with data, then the new one.
+4. Commit (noreply author) and push to `main`; CI must pass.
+
 ## Stack and layout
 - Kotlin Multiplatform. `shared/` = Room KMP database, DataStore settings, money/period logic, backup.
   `androidApp/` = Jetpack Compose UI (material3 1.5.0-alpha, pinned in `gradle/libs.versions.toml`).

@@ -1,6 +1,6 @@
 # Ride Tracker – product brief v0.2
 
-Working name: Ride Tracker (final name not chosen). Last updated 7 October 2026.
+Working name: Ride Tracker (final name not chosen). Last updated 8 October 2026 (app at 0.0.10).
 
 This is the public, trimmed version of the brief: no personal earnings data and no business plan.
 
@@ -38,7 +38,7 @@ technically "ride-hailing". Inside the app the word is rarely needed: "apps", "U
 ## Onboarding
 
 1. Country: **Romania** (currency RON) or **Other** (pick a currency). *(Built in 0.0.2.)*
-2. Romania only: **How do you drive?** PFA or through a fleet. *(Planned.)*
+2. Romania only: **How do you drive?** PFA or through a fleet. *(Built; changeable in Settings.)*
    - PFA: tax estimate, cash-register (Z report) and fiscal receipt (CUI) features are offered.
    - Fleet: those are hidden (the fleet handles them); fleet commission becomes an income field.
    - Other countries: none of the Romanian tax features.
@@ -127,6 +127,13 @@ See the README for build, versioning and signing rules.
 4. From the inspiration boards, before imports: **app filter chips on Home**, **daily activity chart**,
    **expenses by category** (Money → Expenses, with a month filter), **optional hours worked** on income
    entries so Home can show money per hour.
+5. **Open question first (8 October 2026): the owner "doesn't vibe" with the app yet.** Before building item 4,
+   find out what feels off. Candidate causes discussed: manual entry feels like a chore and the payoff
+   (importing a report) isn't built; we went wide (vehicle, CSV, recurring) before logging a shift felt great;
+   no identity (name, icon, generic look vs the darker "cockpit" boards); test data and red minus signs feel
+   like a debt tracker. Options offered: one-screen "log today's shift" for all apps at once, Home built around
+   today/this week, choose name + icon + look, bring the Uber/Bolt import forward, use it with real data for
+   a few days. Waiting for the owner's answer.
 
 Later, with imports (v0.5): trips list and detail, import flow with data-quality warnings, import history,
 vehicle odometer and fuel estimates, gross / fees / expenses / kept bar, preset list of known apps.
