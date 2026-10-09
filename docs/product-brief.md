@@ -148,8 +148,7 @@ See the README for build, versioning and signing rules.
    0.7.0: edit imports before saving (and type in unrecognised screenshots), "Your Bolt data" checklist on Import.
    0.7.1: period header (month title with month list and "Custom range…"; arrows only for Week and Day), same
    title on Money; plain outlined menus.
-   **Next:** **Uber** (new chat, owner sends the files); then the list below. Then **Uber** (new chat, owner sends the files);
-   then the list below.
+   **Next:** **Uber** (new chat, owner sends the files); then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:
