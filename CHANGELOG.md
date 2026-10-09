@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0
+- **Correct an import before saving.** Each read screenshot or PDF has an Edit button: change the date, any amount,
+  remove a line or add one Bolt shows but wasn't read, fix hours. A live check says whether the lines add up to
+  the earnings. Corrected items say "Corrected by you".
+- **Type in a screenshot that wasn't recognised**: "Type in a day" or "Type in hours" on its card.
+- **Your Bolt data** on the Import screen: for this month and last, what's imported and what's missing (Monthly
+  screenshot, daily screenshots, trips CSV, online hours). Tap a row to see where to find it in Bolt.
+- The edit sheet uses the plain background, not grey.
+
 ## 0.6.1
 - **No more swipe to delete.** Long press an entry, expense or odometer reading for a menu with Edit and Delete;
   Delete asks first, then Undo is still offered. Tap still opens the entry.

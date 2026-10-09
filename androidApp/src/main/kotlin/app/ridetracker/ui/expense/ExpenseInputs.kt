@@ -53,7 +53,7 @@ import kotlinx.datetime.LocalDate
 /** Connected M3 Expressive toggle buttons, one per option. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun <T> ConnectedChoice(options: List<T>, selected: T, onSelect: (T) -> Unit, content: @Composable (T) -> Unit) {
+internal fun <T> ConnectedChoice(options: List<T>, selected: T, onSelect: (T) -> Unit, content: @Composable (T) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
         options.forEachIndexed { index, option ->
             ToggleButton(

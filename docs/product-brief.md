@@ -143,7 +143,12 @@ See the README for build, versioning and signing rules.
    TVA intracomunitar (Romania, PFA), shared-axis screen motion with predictive back, lower FAB.
    0.6.0: income detail per platform (what it's made of; card vs cash; paid to your account = earned − cash in
    hand) and a "Card and cash" Home widget.
-   **Next:** **Uber** screenshots and CSV (owner sends the files); then the list below.
+   0.6.1: long press (Edit/Delete) instead of swipe to delete, tap the current tab to scroll up, frosted-glass
+   nav bar (Haze blur), "Breakdown"/"Defalcare".
+   0.7.0: edit imports before saving (and type in unrecognised screenshots), "Your Bolt data" checklist on Import.
+   **Next:** Home/Money period header like the mockup (month title on top with a month picker, arrows only for
+   week and day, Custom behind a calendar icon); mock first. Then **Uber** (new chat, owner sends the files);
+   then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:

@@ -19,7 +19,10 @@ data class ParsedDay(
     val lines: List<ParsedLine>,
     /** True when every group adds up to its total and the totals add up to [earningsMinor]. */
     val addsUp: Boolean,
-)
+) {
+    /** After the driver corrected it: the lines (deductions included) add up to the earnings. */
+    fun rechecked(): ParsedDay = copy(addsUp = lines.isNotEmpty() && lines.sumOf { it.amountMinor } == earningsMinor)
+}
 
 sealed interface DailyParseResult {
     data class Day(val day: ParsedDay) : DailyParseResult

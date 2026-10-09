@@ -7,13 +7,18 @@ import androidx.lifecycle.viewModelScope
 import app.ridetracker.importing.ReadReport
 import app.ridetracker.importing.ReportReader
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.domain.DateRange
+import app.ridetracker.shared.domain.ImportChecklist
+import app.ridetracker.shared.domain.ImportChecklists
 import app.ridetracker.shared.domain.ImportKind
+import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.ImportOutcome
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.IncomeSource
 import app.ridetracker.ui.common.resolveCurrency
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -23,6 +28,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Currency
 import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 /** One picked or shared file and what was found in it. */
 data class ImportItem(
@@ -34,6 +41,8 @@ data class ImportItem(
     /** Entries for the same app and day that saving will replace. */
     val replaces: Int = 0,
     val selected: Boolean = true,
+    /** The driver corrected or typed in what was read. */
+    val edited: Boolean = false,
 ) {
     val canSave: Boolean
         get() = !alreadyImported && when (report) {
@@ -49,6 +58,8 @@ data class ImportUiState(
     val saving: Boolean = false,
     /** Set once saving finished: how many items were saved. */
     val savedCount: Int? = null,
+    /** What last month and this month have from Bolt, newest first. */
+    val checklists: List<ImportChecklist> = emptyList(),
 ) {
     val reading: Boolean get() = items.any { it.report == null && !it.failed }
     val toSave: List<ImportItem> get() = items.filter { it.canSave && it.selected }
@@ -69,6 +80,21 @@ class ImportViewModel(
         viewModelScope.launch {
             val currency = resolveCurrency(settingsRepository.settings.first().currencyCode)
             _state.update { it.copy(currency = currency) }
+        }
+        viewModelScope.launch {
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            val current = Period.Month.containing(today)
+            val months = listOf(current, current.previous() as Period.Month)
+            val range = DateRange(months.last().range.start, current.range.endInclusive)
+            combine(
+                incomeRepository.observePlatforms(),
+                incomeRepository.observeEntryDetails(range),
+                importRepository.observeTrips(range),
+                importRepository.observeSummaries(range),
+            ) { platforms, entries, trips, summaries ->
+                val bolt = platforms.firstOrNull { it.name.trim().equals("Bolt", ignoreCase = true) }?.id ?: -1L
+                months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) }
+            }.collect { lists -> _state.update { it.copy(checklists = lists) } }
         }
     }
 
@@ -99,6 +125,17 @@ class ImportViewModel(
     fun startOver() = _state.update { it.copy(savedCount = null) }
 
     fun toggle(uri: Uri) = replace(uri) { it.copy(selected = !it.selected) }
+
+    /** Keeps the driver's corrections (or a screenshot typed in by hand) in place of what was read. */
+    fun edit(uri: Uri, report: ReadReport) {
+        replace(uri) { it.copy(report = report, edited = true, selected = true) }
+        if (report is ReadReport.BoltDay) {
+            viewModelScope.launch {
+                val replaces = importRepository.existingEntries(boltPlatformId(), report.day)
+                replace(uri) { it.copy(replaces = replaces) }
+            }
+        }
+    }
 
     fun remove(uri: Uri) = _state.update { s -> s.copy(items = s.items.filterNot { it.uri == uri }) }
 

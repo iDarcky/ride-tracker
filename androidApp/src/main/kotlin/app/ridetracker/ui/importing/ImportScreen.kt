@@ -53,6 +53,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.shared.domain.ImportChecklist
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import kotlin.time.Clock
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.TimeZone
+import app.ridetracker.shared.domain.importing.OnlineTime
+import app.ridetracker.shared.domain.importing.ParsedDay
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.outlined.Edit
 import app.ridetracker.importing.ReadReport
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.IncomeLineKind
@@ -98,6 +110,15 @@ fun ImportScreen(
     val locale = currentLocale()
     val money = remember(state.currency, locale) { MoneyFormat(state.currency, locale) }
     val dates = remember(locale) { DateFormats(locale) }
+    var editing by remember { mutableStateOf<Pair<Uri, ReadReport>?>(null) }
+    editing?.let { (uri, report) ->
+        ImportEditSheet(
+            report = report,
+            currency = state.currency,
+            onSave = { viewModel.edit(uri, it); editing = null },
+            onDismiss = { editing = null },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -134,14 +155,19 @@ fun ImportScreen(
             state.items.isEmpty() && state.savedCount != null ->
                 DoneState(state.savedCount!!, onMore = viewModel::startOver, onDone = onDone, modifier = Modifier.padding(padding))
             state.items.isEmpty() ->
-                EmptyState(onScreenshots = chooseScreenshots, onFiles = chooseFiles, modifier = Modifier.padding(padding))
+                EmptyState(state.checklists, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, modifier = Modifier.padding(padding))
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(state.items, key = { it.uri.toString() }) { item ->
-                    ItemCard(item, money, dates, onToggle = { viewModel.toggle(item.uri) }, onRemove = { viewModel.remove(item.uri) })
+                    ItemCard(
+                        item, money, dates,
+                        onToggle = { viewModel.toggle(item.uri) },
+                        onRemove = { viewModel.remove(item.uri) },
+                        onEdit = { editing = item.uri to it },
+                    )
                 }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -155,11 +181,16 @@ fun ImportScreen(
 }
 
 @Composable
-private fun EmptyState(onScreenshots: () -> Unit, onFiles: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyState(
+    checklists: List<ImportChecklist>,
+    dates: DateFormats,
+    onScreenshots: () -> Unit,
+    onFiles: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
-        modifier.fillMaxSize().padding(24.dp),
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
         Icon(Icons.Outlined.UploadFile, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(16.dp))
@@ -190,6 +221,15 @@ private fun EmptyState(onScreenshots: () -> Unit, onFiles: () -> Unit, modifier:
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (checklists.isNotEmpty()) {
+            Spacer(Modifier.height(32.dp))
+            Text(
+                stringResource(R.string.import_whats_missing),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            checklists.forEach { ImportChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
+        }
     }
 }
 
@@ -211,7 +251,14 @@ private fun DoneState(count: Int, onMore: () -> Unit, onDone: () -> Unit, modifi
 }
 
 @Composable
-private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, onToggle: () -> Unit, onRemove: () -> Unit) {
+private fun ItemCard(
+    item: ImportItem,
+    money: MoneyFormat,
+    dates: DateFormats,
+    onToggle: () -> Unit,
+    onRemove: () -> Unit,
+    onEdit: (ReadReport) -> Unit,
+) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val report = item.report
@@ -242,6 +289,33 @@ private fun ItemCard(item: ImportItem, money: MoneyFormat, dates: DateFormats, o
                 item.alreadyImported -> Note(Icons.Outlined.Info, stringResource(R.string.import_already))
                 else -> Details(report, item.replaces, money, dates)
             }
+            if (item.edited) Note(Icons.Outlined.Edit, stringResource(R.string.import_edited))
+            if (report != null && !item.alreadyImported) EditActions(report, onEdit)
+        }
+    }
+}
+
+/** Edit what was read, or type in a screenshot that wasn't recognised (a day's breakdown or hours). */
+@Composable
+private fun EditActions(report: ReadReport, onEdit: (ReadReport) -> Unit) {
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+        when (report) {
+            is ReadReport.BoltDay, is ReadReport.BoltPeriod, is ReadReport.BoltMonth, is ReadReport.BoltActivity ->
+                TextButton(onClick = { onEdit(report) }) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.import_edit))
+                }
+            is ReadReport.Unknown -> {
+                OutlinedButton(onClick = {
+                    onEdit(ReadReport.BoltDay(report.fileHash, ParsedDay(today, 0, null, emptyList(), addsUp = false)))
+                }) { Text(stringResource(R.string.import_type_day)) }
+                OutlinedButton(onClick = {
+                    onEdit(ReadReport.BoltActivity(report.fileHash, listOf(OnlineTime(DateRange(today, today), 0))))
+                }) { Text(stringResource(R.string.import_type_hours)) }
+            }
+            is ReadReport.BoltTrips -> Unit
         }
     }
 }

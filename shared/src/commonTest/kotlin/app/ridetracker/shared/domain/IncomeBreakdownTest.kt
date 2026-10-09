@@ -74,3 +74,24 @@ class IncomeBreakdownTest {
         assertEquals(7000, b.withoutBreakdownMinor)
     }
 }
+
+class ImportChecklistTest {
+    private val sep = Period.Month.containing(LocalDate(2026, 9, 1))
+    private fun day(d: Int) = LocalDate(2026, 9, d).toEpochDays()
+
+    @Test
+    fun saysWhatAMonthHas() {
+        val entries = listOf(
+            IncomeEntryEntity(id = 1, platformId = 1, amountMinor = 100, date = day(2), createdAt = 0, source = IncomeSource.SCREENSHOT.id),
+            IncomeEntryEntity(id = 2, platformId = 1, amountMinor = 100, date = day(3), createdAt = 0, source = IncomeSource.ESTIMATE.id),
+            IncomeEntryEntity(id = 3, platformId = 2, amountMinor = 100, date = day(4), createdAt = 0),
+        )
+        val trip = TripWithPlatform(0, 1, "P", 0, day(5), 0, 100, "cash", null, null, "x")
+        val hours = PeriodSummaryEntity(id = 1, platformId = 1, importBatchId = 1, periodStart = day(1), periodEnd = day(30), onlineMinutes = 600)
+        val c = ImportChecklists.compute(sep, 1, entries, listOf(trip), listOf(hours), today = LocalDate(2026, 10, 9))
+        assertEquals(1, c.exactDays)
+        assertEquals(2, c.daysWithoutScreenshot) // the estimated 3rd and the 5th with a trip
+        assertTrue(c.hasTrips && c.hasHours && c.monthOver)
+        assertEquals(false, c.hasMonthlyTotal)
+    }
+}
