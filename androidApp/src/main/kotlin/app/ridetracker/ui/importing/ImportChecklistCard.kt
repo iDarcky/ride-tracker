@@ -145,6 +145,12 @@ fun UberChecklistCard(c: ImportChecklist, dates: DateFormats, modifier: Modifier
                 if (c.hasHours) Status.DONE else Status.MISSING,
                 stringResource(R.string.checklist_uber_hours_how),
             )
+            ChecklistRow(
+                stringResource(R.string.checklist_uber_screens),
+                stringResource(R.string.checklist_uber_screens_status),
+                Status.LATER,
+                stringResource(R.string.checklist_uber_screens_how),
+            )
         }
     }
 }

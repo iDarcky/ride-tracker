@@ -6,6 +6,10 @@ import android.net.Uri
 import app.ridetracker.importing.ReportReader
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
+import app.ridetracker.notifications.ZReportReminderScheduler
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import androidx.appcompat.app.AppCompatDelegate
 import app.ridetracker.shared.data.BackupService
 import app.ridetracker.shared.data.createAppDatabase
@@ -51,6 +55,14 @@ class RideTrackerApplication : Application() {
         applyThemeMode(runBlocking { container.settingsRepository.settings.first().themeMode })
         DueExpenseNotifier.createChannel(this)
         DueExpensesWorker.schedule(this)
+        ZReportReminderScheduler.createChannel(this)
+        // The Raportul Z alarm follows its settings (on/off, time) and the country, whatever changes them.
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch {
+            combine(container.settingsRepository.zReport, container.settingsRepository.settings.map { it.country }) { z, country -> z to country }
+                .distinctUntilChanged { a, b -> a.first.enabled == b.first.enabled && a.first.minuteOfDay == b.first.minuteOfDay && a.second == b.second }
+                .collect { (z, country) -> ZReportReminderScheduler.schedule(this@RideTrackerApplication, z, country) }
+        }
         // Fix breakdown lines imported before the reader recognised their label.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {

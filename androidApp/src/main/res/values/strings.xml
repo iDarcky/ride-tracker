@@ -560,4 +560,35 @@
         <item quantity="one">%d day with income</item>
         <item quantity="other">%d days with income</item>
     </plurals>
+    <!-- Uber screenshots -->
+    <string name="import_uber_day">Uber · day</string>
+    <string name="import_uber_week">Uber · week</string>
+    <string name="import_uber_payments_week">Uber · week with Uber’s fee</string>
+    <string name="import_uber_joined">Uber · second part</string>
+    <string name="import_uber_joined_note">Joined with the other part of this week’s Payments screen.</string>
+    <string name="import_uber_payments_part_note">Only part of Uber’s Payments screen. Add the other part too, or take one long screenshot (Capture more).</string>
+    <string name="import_uber_week_note">Uber’s total for the week. It fills the days of that week you haven’t imported, without counting any twice.</string>
+    <string name="import_customer_fares">Customer fares</string>
+    <string name="import_third_party_fees">Airport and other fees</string>
+    <string name="checklist_uber_screens">Or: screenshots from Uber Driver</string>
+    <string name="checklist_uber_screens_status">Instead of the files, week by week</string>
+    <string name="checklist_uber_screens_how">In Uber Driver → Earnings: with no day tapped you get the week (total, hours online); tap a day’s bar for that day. For Uber’s fee, the week’s Payments screen, as one long screenshot (Capture more) or in two parts.</string>
+    <!-- Raportul Z reminder (Romania) -->
+    <string name="z_channel">Raportul Z</string>
+    <string name="z_channel_description">A daily reminder to print the Z report from your cash register</string>
+    <string name="z_notification_title">Raportul Z</string>
+    <string name="z_notification_body">Don’t forget today’s Z report.</string>
+    <string name="z_done">Done</string>
+    <string name="z_setting">Raportul Z</string>
+    <string name="z_setting_on">Every day at %1$s</string>
+    <string name="z_setting_off">Off</string>
+    <string name="z_page_intro">A reminder every day to print the Z report from your cash register at the end of your day, as every driver in Romania who takes cash must.</string>
+    <string name="z_remind">Remind me every day</string>
+    <string name="z_time">Time</string>
+    <string name="z_waiting">For %1$s</string>
+    <string name="z_suggest">Set a reminder for Raportul Z</string>
+    <string name="z_not_now">Not now</string>
+    <string name="z_exact_title">Remind me on time</string>
+    <string name="z_exact_body">Without “Alarms &amp; reminders”, Android may show it up to an hour late.</string>
+    <string name="z_exact_allow">Allow</string>
 </resources>

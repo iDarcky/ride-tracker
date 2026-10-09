@@ -11,6 +11,9 @@ import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.ThemeMode
+import app.ridetracker.shared.domain.ZReportReminder
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +56,18 @@ class SettingsViewModel(
     fun setThemeMode(mode: ThemeMode) {
         applyThemeMode(mode)
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    }
+
+    val zReport: StateFlow<ZReportReminder> = settingsRepository.zReport
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ZReportReminder())
+
+    fun setZReportEnabled(enabled: Boolean) {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toEpochDays()
+        viewModelScope.launch { settingsRepository.setZReportEnabled(enabled, today) }
+    }
+
+    fun setZReportTime(hour: Int, minute: Int) {
+        viewModelScope.launch { settingsRepository.setZReportTime(hour * 60 + minute) }
     }
 
     fun setFirstDayOfWeek(day: DayOfWeek) {

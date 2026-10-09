@@ -1,5 +1,7 @@
 package app.ridetracker.shared.domain
 
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import app.ridetracker.shared.data.AppDatabase
@@ -81,6 +83,9 @@ class ImportRepository(private val database: AppDatabase) {
         fileHash: String,
         day: ParsedDay,
         nowEpochMillis: Long,
+        /** Hours online that day and trips, when the screenshot shows them (Uber's Earnings screen). */
+        onlineMinutes: Int? = null,
+        tripCount: Int? = null,
     ): ImportOutcome = transaction {
         if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
         val epochDay = day.date.toEpochDays()
@@ -103,10 +108,11 @@ class ImportRepository(private val database: AppDatabase) {
                 importBatchId = batchId,
                 cashCollectedMinor = day.cashCollectedMinor,
                 onlineMinutes = existing.firstNotNullOfOrNull { it.onlineMinutes },
-                tripCount = existing.firstNotNullOfOrNull { it.tripCount },
+                tripCount = tripCount ?: existing.firstNotNullOfOrNull { it.tripCount },
             ),
         )
         imports.insertLines(day.lines.map { IncomeLineEntity(entryId = entryId, kind = it.kind.id, amountMinor = it.amountMinor, inCash = it.inCash, label = it.label) })
+        onlineMinutes?.takeIf { it > 0 }?.let { insertOnlineTime(platformId, batchId, OnlineTime(DateRange(day.date, day.date), it)) }
         ImportOutcome.Saved(batchId, saved = 1, skipped = 0)
     }
 
@@ -258,20 +264,23 @@ class ImportRepository(private val database: AppDatabase) {
                 itemCount = times.size, importedAt = nowEpochMillis,
             ),
         )
-        times.forEach { t ->
-            val start = t.range.start.toEpochDays()
-            val end = t.range.endInclusive.toEpochDays()
-            imports.deleteOnlineTime(platformId, start, end)
-            imports.insertSummaries(
-                listOf(
-                    PeriodSummaryEntity(
-                        platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = t.minutes,
-                        distanceMeters = distanceMeters?.takeIf { times.size == 1 },
-                    ),
-                ),
-            )
-        }
+        times.forEach { insertOnlineTime(platformId, batchId, it, distanceMeters?.takeIf { times.size == 1 }) }
         ImportOutcome.Saved(batchId, saved = times.size, skipped = 0)
+    }
+
+    /** Online time for a period, as its own total; it replaces an older one for the same period. */
+    private suspend fun insertOnlineTime(platformId: Long, batchId: Long, time: OnlineTime, distanceMeters: Long? = null) {
+        val start = time.range.start.toEpochDays()
+        val end = time.range.endInclusive.toEpochDays()
+        imports.deleteOnlineTime(platformId, start, end)
+        imports.insertSummaries(
+            listOf(
+                PeriodSummaryEntity(
+                    platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = time.minutes,
+                    distanceMeters = distanceMeters,
+                ),
+            ),
+        )
     }
 
     /** Saves a platform's own totals for a period (used to check the daily entries, not counted as income). */
@@ -281,6 +290,8 @@ class ImportRepository(private val database: AppDatabase) {
         fileHash: String,
         summary: ParsedSummary,
         nowEpochMillis: Long,
+        /** Hours online for the same period, when the screenshot shows them (Uber's Earnings screen, a week). */
+        onlineMinutes: Int? = null,
     ): ImportOutcome = transaction {
         if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
         val start = summary.periodStart.toEpochDays()
@@ -301,6 +312,9 @@ class ImportRepository(private val database: AppDatabase) {
                 ),
             ),
         )
+        onlineMinutes?.takeIf { it > 0 }?.let {
+            insertOnlineTime(platformId, batchId, OnlineTime(DateRange(summary.periodStart, summary.periodEnd), it))
+        }
         ImportOutcome.Saved(batchId, saved = 1, skipped = 0)
     }
 
@@ -312,7 +326,10 @@ class ImportRepository(private val database: AppDatabase) {
     suspend fun refreshEstimates(nowEpochMillis: Long) = transaction {
         val months = buildSet {
             (imports.getTripDays() + imports.getEstimateDays()).forEach { add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.date))) }
-            imports.getAllSummaries().forEach { add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.periodStart))) }
+            imports.getAllSummaries().forEach {
+                add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.periodStart)))
+                add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.periodEnd))) // a week across two months
+            }
         }
         for ((platformId, month) in months) refreshMonth(platformId, month, nowEpochMillis)
     }
@@ -321,13 +338,11 @@ class ImportRepository(private val database: AppDatabase) {
         val start = month.range.start.toEpochDays()
         val end = month.range.endInclusive.toEpochDays()
         imports.deleteEstimates(platformId, start, end)
-        val exact = imports.getEntries(platformId, start, end)
-            .groupBy { LocalDate.fromEpochDays(it.date) }
-            .mapValues { (_, list) -> list.sumOf { it.amountMinor } }
+        val exact = exactByDay(platformId, start, end)
         // A payments report (Uber) is the whole record of the days it covers: a day in it without income had none,
         // and its trip earnings are already after the fee, so its trips never make an estimate.
         val covered = imports.getBatchesOfKind(platformId, ImportKind.UBER_PAYMENTS_CSV.id).map { it.periodStart..it.periodEnd }
-        val fares = imports.getTripFaresByDay(platformId, start, end)
+        suspend fun faresByDay(from: Long, to: Long) = imports.getTripFaresByDay(platformId, from, to)
             .filter { day -> covered.none { day.date in it } }
             .associate { LocalDate.fromEpochDays(it.date) to it.totalMinor }
         val summaries = imports.getSummaries(platformId, start, end)
@@ -338,9 +353,39 @@ class ImportRepository(private val database: AppDatabase) {
         val keepRate = IncomeEstimator.keepRate(totals[IncomeLineKind.FARE.id] ?: 0, totals[IncomeLineKind.COMMISSION.id] ?: 0)
             ?: imports.getAllSummaries().filter { it.platformId == platformId && it.earningsMinor != null && it.grossFareMinor != null && (it.platformFeeMinor ?: 0) != 0L }
                 .let { list -> IncomeEstimator.keepRate(list.sumOf { it.grossFareMinor ?: 0 }, list.sumOf { -kotlin.math.abs(it.platformFeeMinor ?: 0) }) }
+
+        // Without the month's own total, a week's total (Uber's or Bolt's weekly screen) fills the days of that week
+        // that have no exact entry: the week's total minus its exact days, like the month's total does. Those days
+        // then count as known for the rest of the month.
+        val today = kotlin.time.Instant.fromEpochMilliseconds(nowEpochMillis).toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val weekEstimates = mutableMapOf<LocalDate, Long>()
+        val weekDays = mutableSetOf<LocalDate>()
+        if (monthly == null) {
+            val weeks = imports.getAllSummaries()
+                .filter { it.platformId == platformId && it.earningsMinor != null && it.periodEnd - it.periodStart == 6L }
+                .filter { it.periodStart <= end && it.periodEnd >= start }
+                .groupBy { it.periodStart }.map { (_, list) -> list.maxBy { it.id } }
+            for (week in weeks) {
+                val days = (week.periodStart..week.periodEnd).map { LocalDate.fromEpochDays(it) }
+                weekDays += days
+                val r = IncomeEstimator.estimate(
+                    exactByDay = exactByDay(platformId, week.periodStart, week.periodEnd),
+                    tripFaresByDay = faresByDay(week.periodStart, week.periodEnd),
+                    monthlyEarningsMinor = week.earningsMinor,
+                    summaryFaresMinor = null, summaryCancellationMinor = null, summaryTipsMinor = null,
+                    keepRate = keepRate,
+                    // A week still running gets its rest today, never on a day still to come.
+                    lastDay = days.last().coerceAtMost(today).coerceAtLeast(days.first()),
+                )
+                // Never on days a payments report covers: Uber's week runs Monday 4:00 to Monday 4:00, so its total
+                // can differ a little from the report's calendar days.
+                r.days.filter { d -> d.date.toEpochDays() in start..end && covered.none { d.date.toEpochDays() in it } }
+                    .forEach { weekEstimates[it.date] = it.amountMinor }
+            }
+        }
         val result = IncomeEstimator.estimate(
-            exactByDay = exact,
-            tripFaresByDay = fares,
+            exactByDay = exact + weekEstimates,
+            tripFaresByDay = faresByDay(start, end).filterKeys { it !in weekDays },
             monthlyEarningsMinor = monthly?.earningsMinor,
             summaryFaresMinor = pdf?.grossFareMinor,
             summaryCancellationMinor = pdf?.cancellationMinor,
@@ -348,7 +393,7 @@ class ImportRepository(private val database: AppDatabase) {
             keepRate = keepRate,
             lastDay = month.range.endInclusive,
         )
-        result.days.forEach { day ->
+        (weekEstimates.map { (date, amount) -> EstimatedDay(date, amount) } + result.days).forEach { day ->
             entries.insert(
                 IncomeEntryEntity(
                     platformId = platformId,
@@ -360,6 +405,13 @@ class ImportRepository(private val database: AppDatabase) {
             )
         }
     }
+
+    /** What each day has from exact entries (screenshots, reports, typed in), estimates left out. */
+    private suspend fun exactByDay(platformId: Long, from: Long, to: Long): Map<LocalDate, Long> =
+        imports.getEntries(platformId, from, to)
+            .filter { it.source != IncomeSource.ESTIMATE.id }
+            .groupBy { LocalDate.fromEpochDays(it.date) }
+            .mapValues { (_, list) -> list.sumOf { it.amountMinor } }
 
     /**
      * Lines saved as "other" because an older reader did not know their label (e.g. an accent misread

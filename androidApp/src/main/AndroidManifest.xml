@@ -3,6 +3,9 @@
 
     <!-- Reminders when a recurring expense is due (asked when the first one is created). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The Raportul Z reminder at the driver's exact time; Android 14+ asks the driver to allow it. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".RideTrackerApplication"
@@ -40,6 +43,23 @@
         <receiver
             android:name=".notifications.AddDueExpenseReceiver"
             android:exported="false" />
+
+        <!-- Raportul Z reminder: its alarm and "Gata" button (in-app only), and setting the alarm again after a restart,
+             an update or a change of time (system broadcasts). -->
+        <receiver
+            android:name=".notifications.ZReportReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".notifications.ZReportRescheduleReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Stores the in-app language choice on Android 12 and older (Android 13+ stores it itself). -->
         <service

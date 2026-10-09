@@ -1,5 +1,12 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -87,6 +94,9 @@ fun WidgetBody(
     onImport: () -> Unit,
     onAcceptDue: (PendingExpense) -> Unit,
     onSkipDue: (PendingExpense) -> Unit,
+    onZReportDone: (LocalDate) -> Unit = {},
+    onOpenZReport: () -> Unit = {},
+    onDismissZReport: () -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -111,12 +121,40 @@ fun WidgetBody(
         }
         HomeWidget.NEEDS_ATTENTION -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.needs_attention), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            attention.zReportDay?.let { day -> ZReportCard(day, dates, onDone = { onZReportDone(day) }) }
+            if (attention.suggestZReport) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AssistChip(
+                        onClick = onOpenZReport,
+                        label = { Text(stringResource(R.string.z_suggest)) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onDismissZReport) { Text(stringResource(R.string.z_not_now)) }
+                }
+            }
             attention.missingMonthly.forEach { missing ->
                 MissingMonthlyCard(missing, state.platforms.firstOrNull { it.id == missing.platformId }, dates, onImport)
             }
             attention.pending.forEach { item ->
                 DueExpenseCard(item = item, money = money, dates = dates, onAdd = { onAcceptDue(item) }, onSkip = { onSkipDue(item) })
             }
+        }
+    }
+}
+
+/** Raportul Z for [day] isn't marked done yet. */
+@Composable
+private fun ZReportCard(day: LocalDate, dates: DateFormats, onDone: () -> Unit) {
+    OutlinedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+        ListItem(
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            leadingContent = { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null) },
+            headlineContent = { Text(stringResource(R.string.z_notification_title)) },
+            supportingContent = { Text(stringResource(R.string.z_waiting, dates.day(day))) },
+        )
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
+            FilledTonalButton(onClick = onDone) { Text(stringResource(R.string.z_done)) }
         }
     }
 }

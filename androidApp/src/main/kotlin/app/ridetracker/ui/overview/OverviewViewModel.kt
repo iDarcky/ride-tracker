@@ -1,5 +1,9 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.shared.domain.Country
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.toLocalDateTime
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.PlatformEntity
@@ -81,8 +85,12 @@ data class OverviewUiState(
 data class Attention(
     val pending: List<PendingExpense> = emptyList(),
     val missingMonthly: List<MissingMonthlyTotal> = emptyList(),
+    /** The day whose Raportul Z is still waiting for "Done" (Romania). */
+    val zReportDay: LocalDate? = null,
+    /** Offer to set up the Raportul Z reminder (Romania, not set up, not dismissed). */
+    val suggestZReport: Boolean = false,
 ) {
-    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty()
+    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport
 }
 
 data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
@@ -191,8 +199,28 @@ class OverviewViewModel(
     val attention: StateFlow<Attention> = combine(
         recurringRepository.observePending(today()),
         importRepository.observeMissingMonthlyTotals(today()),
-    ) { pending, missing -> Attention(pending, missing) }
+        settingsRepository.zReport,
+        settingsRepository.settings,
+        // The Raportul Z day waits from the reminder's time on: look again every minute.
+        flow { while (true) { emit(Unit); delay(60_000) } },
+    ) { pending, missing, z, settings, _ ->
+        val romania = settings.country == Country.ROMANIA
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        Attention(
+            pending, missing,
+            zReportDay = if (romania) z.waitingDay(now) else null,
+            suggestZReport = romania && !z.enabled && !z.suggestionDismissed,
+        )
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Attention())
+
+    fun zReportDone(day: LocalDate) {
+        viewModelScope.launch { settingsRepository.markZReportDone(day.toEpochDays()) }
+    }
+
+    fun dismissZReportSuggestion() {
+        viewModelScope.launch { settingsRepository.dismissZReportSuggestion() }
+    }
 
     fun accept(item: PendingExpense) {
         viewModelScope.launch {

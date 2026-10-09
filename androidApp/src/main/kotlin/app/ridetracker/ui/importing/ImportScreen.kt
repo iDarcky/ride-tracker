@@ -99,6 +99,26 @@ private fun uberEditTarget(uri: Uri, report: ReadReport, dayIndex: Int? = null):
     is ReadReport.UberTotals -> EditTarget(uri, ReadReport.BoltPeriod(report.fileHash, report.summary, monthly = true, addsUp = true)) {
         report.copy(summary = (it as ReadReport.BoltPeriod).summary)
     }
+    is ReadReport.UberDay -> EditTarget(uri, ReadReport.BoltDay(report.fileHash, report.day)) {
+        report.copy(day = (it as ReadReport.BoltDay).day)
+    }
+    is ReadReport.UberWeek -> EditTarget(uri, ReadReport.BoltPeriod(report.fileHash, report.summary, monthly = false, addsUp = report.addsUp)) {
+        report.copy(summary = (it as ReadReport.BoltPeriod).summary)
+    }
+    is ReadReport.UberPaymentsScreen -> report.week.asSummary()?.let { summary ->
+        EditTarget(uri, ReadReport.BoltPeriod(report.fileHash, summary, monthly = false, addsUp = report.week.addsUp)) {
+            val s = (it as ReadReport.BoltPeriod).summary
+            // What isn't a named part (airport and other third-party fees) is the rest of the total.
+            val named = listOfNotNull(s.grossFareMinor, s.platformFeeMinor, s.bonusMinor, s.tipsMinor, s.cancellationMinor).sum()
+            report.copy(
+                week = report.week.copy(
+                    customerFareMinor = s.grossFareMinor, serviceFeeMinor = s.platformFeeMinor, bonusMinor = s.bonusMinor,
+                    tipsMinor = s.tipsMinor, earningsMinor = s.earningsMinor,
+                    thirdPartyMinor = s.earningsMinor?.let { e -> (e - named).takeIf { d -> d != 0L } },
+                ),
+            )
+        }
+    }
     is ReadReport.UberHours -> EditTarget(uri, ReadReport.BoltActivity(report.fileHash, listOf(OnlineTime(report.time.period, report.time.onlineMinutes)))) {
         report.copy(time = report.time.copy(onlineMinutes = (it as ReadReport.BoltActivity).times.single().minutes))
     }
@@ -314,7 +334,8 @@ private fun ItemCard(
                 val isBolt = report is ReadReport.BoltDay || report is ReadReport.BoltTrips || report is ReadReport.BoltMonth ||
                     report is ReadReport.BoltPeriod || report is ReadReport.BoltActivity
                 val isUber = report is ReadReport.UberDays || report is ReadReport.UberTrips || report is ReadReport.UberTotals ||
-                    report is ReadReport.UberHours || report is ReadReport.UberNotNeeded
+                    report is ReadReport.UberHours || report is ReadReport.UberNotNeeded || report is ReadReport.UberDay ||
+                    report is ReadReport.UberWeek || report is ReadReport.UberPaymentsScreen || report is ReadReport.UberJoined
                 if (isBolt) {
                     PlatformBadge("Bolt", BOLT_COLOR, size = 32.dp)
                 } else if (isUber) {
@@ -354,7 +375,7 @@ private fun EditActions(report: ReadReport, onEdit: (ReadReport) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
         when (report) {
             is ReadReport.BoltDay, is ReadReport.BoltPeriod, is ReadReport.BoltMonth, is ReadReport.BoltActivity,
-            is ReadReport.UberTotals, is ReadReport.UberHours ->
+            is ReadReport.UberTotals, is ReadReport.UberHours, is ReadReport.UberDay, is ReadReport.UberWeek ->
                 TextButton(onClick = { onEdit(report) }) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -369,7 +390,16 @@ private fun EditActions(report: ReadReport, onEdit: (ReadReport) -> Unit) {
                 }) { Text(stringResource(R.string.import_type_hours)) }
             }
             // Uber's days are edited one by one in the list of days.
-            is ReadReport.BoltTrips, is ReadReport.UberDays, is ReadReport.UberTrips, is ReadReport.UberNotNeeded -> Unit
+            // Half of the Payments screen is edited once joined.
+            is ReadReport.UberPaymentsScreen -> if (report.week.complete) {
+                TextButton(onClick = { onEdit(report) }) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.import_edit))
+                }
+            }
+            is ReadReport.BoltTrips, is ReadReport.UberDays, is ReadReport.UberTrips, is ReadReport.UberNotNeeded,
+            is ReadReport.UberJoined -> Unit
         }
     }
 }
@@ -388,6 +418,10 @@ private fun title(report: ReadReport?, failed: Boolean): String = when {
     report is ReadReport.UberTotals -> stringResource(R.string.import_uber_totals)
     report is ReadReport.UberHours -> stringResource(R.string.import_uber_hours)
     report is ReadReport.UberNotNeeded -> stringResource(R.string.import_uber_not_needed)
+    report is ReadReport.UberDay -> stringResource(R.string.import_uber_day)
+    report is ReadReport.UberWeek -> stringResource(R.string.import_uber_week)
+    report is ReadReport.UberPaymentsScreen -> stringResource(R.string.import_uber_payments_week)
+    report is ReadReport.UberJoined -> stringResource(R.string.import_uber_joined)
     else -> stringResource(R.string.import_unknown_file)
 }
 
@@ -402,6 +436,9 @@ private fun subtitle(report: ReadReport?, dates: DateFormats): String? = when (r
     is ReadReport.UberTotals -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
     is ReadReport.UberHours -> dates.range(report.time.period)
     is ReadReport.UberNotNeeded -> report.report.key
+    is ReadReport.UberDay -> dates.day(report.day.date)
+    is ReadReport.UberWeek -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
+    is ReadReport.UberPaymentsScreen -> report.week.week?.let { dates.range(it) }
     else -> null
 }
 
@@ -502,8 +539,51 @@ private fun Details(
             Note(Icons.Outlined.Info, stringResource(R.string.import_uber_hours_note))
         }
         is ReadReport.UberNotNeeded -> Note(Icons.Outlined.Info, stringResource(R.string.import_uber_not_needed_note))
+        is ReadReport.UberDay -> {
+            val day = report.day
+            Figure(stringResource(R.string.import_your_earnings), money.format(day.earningsMinor), big = true)
+            HorizontalDivider()
+            day.lines.forEach { line -> Figure(lineLabel(line), money.format(line.amountMinor)) }
+            UberStats(report.onlineMinutes, report.trips)
+            if (day.addsUp) Note(Icons.Outlined.CheckCircle, stringResource(R.string.import_adds_up))
+            else Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_does_not_add_up), warning = true)
+            if (replaces > 0) Note(Icons.Outlined.Info, pluralStringResource(R.plurals.import_replaces, replaces, replaces))
+        }
+        is ReadReport.UberWeek -> {
+            val s = report.summary
+            s.earningsMinor?.let { Figure(stringResource(R.string.import_your_earnings), money.format(it), big = true) }
+            HorizontalDivider()
+            s.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
+            s.bonusMinor?.let { Figure(stringResource(R.string.line_bonus), money.format(it)) }
+            UberStats(report.onlineMinutes, trips = null)
+            Note(Icons.Outlined.Info, stringResource(R.string.import_uber_week_note))
+        }
+        is ReadReport.UberPaymentsScreen -> {
+            val w = report.week
+            w.earningsMinor?.let { Figure(stringResource(R.string.import_your_earnings), money.format(it), big = true) }
+            HorizontalDivider()
+            w.customerFareMinor?.let { Figure(stringResource(R.string.import_customer_fares), money.format(it)) }
+            w.bonusMinor?.let { Figure(stringResource(R.string.line_bonus), money.format(it)) }
+            w.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
+            w.thirdPartyMinor?.let { Figure(stringResource(R.string.import_third_party_fees), money.format(it)) }
+            w.serviceFeeMinor?.let { Figure(stringResource(R.string.import_service_fee), money.format(it)) }
+            when {
+                !w.complete -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_uber_payments_part_note), warning = true)
+                w.addsUp -> Note(Icons.Outlined.CheckCircle, stringResource(R.string.import_adds_up))
+                else -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_does_not_add_up), warning = true)
+            }
+            if (w.complete) Note(Icons.Outlined.Info, stringResource(R.string.import_uber_week_note))
+        }
+        is ReadReport.UberJoined -> Note(Icons.Outlined.Info, stringResource(R.string.import_uber_joined_note))
         is ReadReport.Unknown -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_not_recognised), warning = true)
     }
+}
+
+/** Hours online and trips from Uber's Earnings screen. */
+@Composable
+private fun UberStats(onlineMinutes: Int?, trips: Int?) {
+    onlineMinutes?.let { Figure(stringResource(R.string.import_online), stringResource(R.string.hours_minutes, it / 60, it % 60)) }
+    trips?.let { Figure(stringResource(R.string.nav_trips), it.toString()) }
 }
 
 /** Uber's payments: the period's earnings and what they're made of, then each day (tap one to correct it). */

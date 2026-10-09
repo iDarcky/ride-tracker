@@ -4,12 +4,15 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ThemeMode
+import app.ridetracker.shared.domain.ZReportReminder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -46,6 +49,38 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         )
     }
 
+    /** The Raportul Z reminder (Romania). Kept apart from [AppSettings]: it isn't in backups and survives a restore. */
+    val zReport: Flow<ZReportReminder> = dataStore.data.map { prefs ->
+        ZReportReminder(
+            enabled = prefs[Z_ENABLED] ?: false,
+            minuteOfDay = prefs[Z_MINUTE] ?: ZReportReminder.DEFAULT_MINUTE,
+            doneThrough = prefs[Z_DONE_THROUGH],
+            enabledFrom = prefs[Z_ENABLED_FROM],
+            suggestionDismissed = prefs[Z_SUGGESTION_DISMISSED] ?: false,
+        )
+    }
+
+    /** Turns the reminder on or off; turning it on starts from [todayEpochDay] (earlier days never wait). */
+    suspend fun setZReportEnabled(enabled: Boolean, todayEpochDay: Long) {
+        dataStore.edit {
+            if (enabled && it[Z_ENABLED] != true) it[Z_ENABLED_FROM] = todayEpochDay
+            it[Z_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setZReportTime(minuteOfDay: Int) {
+        dataStore.edit { it[Z_MINUTE] = minuteOfDay.coerceIn(0, 24 * 60 - 1) }
+    }
+
+    /** "Gata": the Z report for [epochDay] (and every day before it) is done. */
+    suspend fun markZReportDone(epochDay: Long) {
+        dataStore.edit { prefs -> prefs[Z_DONE_THROUGH] = maxOf(epochDay, prefs[Z_DONE_THROUGH] ?: Long.MIN_VALUE) }
+    }
+
+    suspend fun dismissZReportSuggestion() {
+        dataStore.edit { it[Z_SUGGESTION_DISMISSED] = true }
+    }
+
     suspend fun setHomeWidgets(widgets: List<HomeWidget>) {
         dataStore.edit { it[HOME_WIDGETS] = HomeWidget.format(widgets) }
     }
@@ -76,7 +111,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     /** Replaces every setting (used by restore). */
     suspend fun replaceAll(settings: AppSettings) {
         dataStore.edit { prefs ->
+            val zKeys = listOf(Z_ENABLED, Z_SUGGESTION_DISMISSED).associateWith { prefs[it] }
+            val zLongs = listOf(Z_DONE_THROUGH, Z_ENABLED_FROM).associateWith { prefs[it] }
+            val zMinute = prefs[Z_MINUTE]
             prefs.clear()
+            zKeys.forEach { (key, value) -> if (value != null) prefs[key] = value }
+            zLongs.forEach { (key, value) -> if (value != null) prefs[key] = value }
+            if (zMinute != null) prefs[Z_MINUTE] = zMinute
             settings.country?.let { prefs[COUNTRY] = it.id }
             settings.otherCurrencyCode?.let { prefs[CURRENCY] = it }
             prefs[FIRST_DAY_OF_WEEK] = settings.firstDayOfWeek.isoDayNumber
@@ -99,6 +140,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val THEME = stringPreferencesKey("theme_mode")
         private val DRIVING_TYPE = stringPreferencesKey("driving_type")
         private val HOME_WIDGETS = stringPreferencesKey("home_widgets")
+        private val Z_ENABLED = booleanPreferencesKey("z_report_enabled")
+        private val Z_MINUTE = intPreferencesKey("z_report_minute")
+        private val Z_DONE_THROUGH = longPreferencesKey("z_report_done_through")
+        private val Z_ENABLED_FROM = longPreferencesKey("z_report_enabled_from")
+        private val Z_SUGGESTION_DISMISSED = booleanPreferencesKey("z_report_suggestion_dismissed")
 
         fun create(absolutePath: String): SettingsRepository =
             SettingsRepository(PreferenceDataStoreFactory.createWithPath(produceFile = { absolutePath.toPath() }))

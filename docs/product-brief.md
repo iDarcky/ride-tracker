@@ -150,8 +150,11 @@ See the README for build, versioning and signing rules.
    title on Money; plain outlined menus.
    0.8.0: **Uber CSV import** (Supplier portal: payments_order, payments_organization, trip_activity,
    driver_time_and_distance; the other files are flagged "not needed"), "Your Uber data" checklist.
-   **Next:** Uber screenshots (daily/weekly, English and Romanian; owner sends them), English Uber CSV columns
-   (owner exports one in English to confirm); then the list below.
+   0.8.1–0.8.3: import edit sheet fix, new navigation bar (outline, round blue + beside it on every tab).
+   0.9.0: Uber screenshots (Earnings day/week, Payments week with Uber's fee), week totals fill missing days,
+   Raportul Z daily reminder (Romania, every driver who takes cash).
+   **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
+   maybe "See customer fare breakdown" per day; then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:

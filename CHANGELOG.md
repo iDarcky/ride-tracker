@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0
+- **Uber screenshots** (Uber Driver in English), so Uber can come in without the Supplier portal files:
+  - **Earnings, a day tapped**: that day's income, hours online and trips. **No day tapped**: the week's total and
+    hours. Ride Tracker tells them apart by the tapped day's blue label.
+  - **Payments** for a week: customer fares, **Uber's fee**, Quest and other bonuses, airport fees and tips. One long
+    screenshot (Capture more), or the two halves picked together, which are joined into one.
+  - Each can be corrected before saving, like Bolt's.
+- **A week's total fills that week's missing days**: Uber's (or Bolt's) weekly total minus the days you imported,
+  on the days with trips, or today for a week still running. Days in Uber's payments file are never filled.
+- **Raportul Z reminder** (Romania): Settings → Raportul Z, one time for every day. The notification has "Gata"; a day
+  not marked done waits under "Needs attention" on Home. A chip on Home offers to set it up. For the exact time,
+  Android 14+ asks once to allow "Alarms & reminders".
+- "Your Uber data" mentions the screenshots as an alternative to the files.
+
 ## 0.8.3
 - The navigation bar has its thin outline back, and the **+** is exactly as tall as the bar.
 

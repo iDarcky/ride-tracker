@@ -1,5 +1,7 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.ui.platform.LocalContext
+import app.ridetracker.notifications.ZReportReminderScheduler
 import androidx.compose.material3.DatePickerDefaults
 import app.ridetracker.ui.common.GLASS_DIALOG
 import app.ridetracker.ui.common.glassContainer
@@ -130,6 +132,7 @@ import kotlin.math.abs
 @Composable
 fun OverviewScreen(
     onImport: () -> Unit,
+    onOpenZReport: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
             container.incomeRepository,
@@ -142,6 +145,7 @@ fun OverviewScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val attention by viewModel.attention.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -245,6 +249,12 @@ fun OverviewScreen(
                                         scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
                                     },
                                     onSkipDue = viewModel::skip,
+                                    onZReportDone = { day ->
+                                        viewModel.zReportDone(day)
+                                        ZReportReminderScheduler.cancelNotification(context)
+                                    },
+                                    onOpenZReport = onOpenZReport,
+                                    onDismissZReport = viewModel::dismissZReportSuggestion,
                                 )
                             } else {
                                 WidgetPlaceholder()

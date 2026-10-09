@@ -576,4 +576,35 @@
         <item quantity="few">%d zile cu venit</item>
         <item quantity="other">%d de zile cu venit</item>
     </plurals>
+    <!-- Capturi Uber -->
+    <string name="import_uber_day">Uber · zi</string>
+    <string name="import_uber_week">Uber · săptămână</string>
+    <string name="import_uber_payments_week">Uber · săptămână cu comisionul Uber</string>
+    <string name="import_uber_joined">Uber · a doua parte</string>
+    <string name="import_uber_joined_note">Unită cu cealaltă parte a ecranului Plăți pentru aceeași săptămână.</string>
+    <string name="import_uber_payments_part_note">Doar o parte din ecranul Plăți din Uber. Adaugă și cealaltă parte sau fă o singură captură lungă (cu derulare).</string>
+    <string name="import_uber_week_note">Totalul Uber pentru săptămână. Completează zilele din săptămâna respectivă pe care nu le-ai importat, fără să numere ceva de două ori.</string>
+    <string name="import_customer_fares">Tarife plătite de clienți</string>
+    <string name="import_third_party_fees">Aeroport și alte taxe</string>
+    <string name="checklist_uber_screens">Sau: capturi din Uber Driver</string>
+    <string name="checklist_uber_screens_status">În locul fișierelor, săptămână cu săptămână</string>
+    <string name="checklist_uber_screens_how">În Uber Driver → Câștiguri: fără nicio zi atinsă ai săptămâna (total, ore online); atinge bara unei zile pentru ziua respectivă. Pentru comisionul Uber, ecranul Plăți al săptămânii, ca o singură captură lungă (cu derulare) sau în două părți.</string>
+    <!-- Memento raportul Z -->
+    <string name="z_channel">Raportul Z</string>
+    <string name="z_channel_description">Un memento zilnic să scoți raportul Z din casa de marcat</string>
+    <string name="z_notification_title">Raportul Z</string>
+    <string name="z_notification_body">Nu uita raportul Z de azi.</string>
+    <string name="z_done">Gata</string>
+    <string name="z_setting">Raportul Z</string>
+    <string name="z_setting_on">Zilnic la %1$s</string>
+    <string name="z_setting_off">Oprit</string>
+    <string name="z_page_intro">Un memento în fiecare zi să scoți raportul Z din casa de marcat la finalul zilei, cum trebuie să facă orice șofer din România care încasează numerar.</string>
+    <string name="z_remind">Amintește-mi zilnic</string>
+    <string name="z_time">Ora</string>
+    <string name="z_waiting">Pentru %1$s</string>
+    <string name="z_suggest">Setează un memento pentru raportul Z</string>
+    <string name="z_not_now">Nu acum</string>
+    <string name="z_exact_title">Memento la ora exactă</string>
+    <string name="z_exact_body">Fără „Alarme și mementouri”, Android îl poate afișa cu până la o oră întârziere.</string>
+    <string name="z_exact_allow">Permite</string>
 </resources>

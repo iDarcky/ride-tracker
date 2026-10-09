@@ -49,7 +49,9 @@ data class ImportItem(
         get() = !alreadyImported && when (report) {
             is ReadReport.BoltDay, is ReadReport.BoltTrips, is ReadReport.BoltMonth, is ReadReport.BoltPeriod,
             is ReadReport.BoltActivity, is ReadReport.UberDays, is ReadReport.UberTrips, is ReadReport.UberTotals,
-            is ReadReport.UberHours -> true
+            is ReadReport.UberHours, is ReadReport.UberDay, is ReadReport.UberWeek -> true
+            // Half of the Payments screen can't be saved until the other half joins it.
+            is ReadReport.UberPaymentsScreen -> report.week.complete
             else -> false
         }
 }
@@ -120,6 +122,7 @@ class ImportViewModel(
                 val already = duplicateInList || importRepository.isImported(report.fileHash)
                 val replaces = if (already) 0 else replaces(report)
                 replace(uri) { it.copy(report = report, alreadyImported = already, replaces = replaces) }
+                joinPaymentParts()
             }
         }
     }
@@ -132,7 +135,7 @@ class ImportViewModel(
     /** Keeps the driver's corrections (or a screenshot typed in by hand) in place of what was read. */
     fun edit(uri: Uri, report: ReadReport) {
         replace(uri) { it.copy(report = report, edited = true, selected = true) }
-        if (report is ReadReport.BoltDay || report is ReadReport.UberDays) {
+        if (report is ReadReport.BoltDay || report is ReadReport.UberDays || report is ReadReport.UberDay) {
             viewModelScope.launch {
                 val replaces = replaces(report)
                 replace(uri) { it.copy(replaces = replaces) }
@@ -144,6 +147,7 @@ class ImportViewModel(
     private suspend fun replaces(report: ReadReport): Int = when (report) {
         is ReadReport.BoltDay -> importRepository.existingEntries(platformId(BOLT, BOLT_COLOR), report.day)
         is ReadReport.UberDays -> platformId(UBER, UBER_COLOR).let { uber -> report.payments.days.sumOf { importRepository.existingEntries(uber, it) } }
+        is ReadReport.UberDay -> importRepository.existingEntries(platformId(UBER, UBER_COLOR), report.day)
         else -> 0
     }
 
@@ -158,7 +162,7 @@ class ImportViewModel(
             val uber = platformId(UBER, UBER_COLOR)
             var saved = 0
             // Oldest days first, so a later screenshot of the same day wins.
-            for (item in items.sortedBy { (it.report as? ReadReport.BoltDay)?.day?.date }) {
+            for (item in items.sortedBy { (it.report as? ReadReport.BoltDay)?.day?.date ?: (it.report as? ReadReport.UberDay)?.day?.date }) {
                 val now = Clock.System.now().toEpochMilliseconds()
                 val outcome = when (val r = item.report) {
                     is ReadReport.BoltDay ->
@@ -178,6 +182,16 @@ class ImportViewModel(
                         uber, ImportKind.UBER_PAYMENTS_CSV, IncomeSource.CSV, r.fileHash, r.payments.period, r.payments.days,
                         r.payments.tripFares, now,
                     )
+                    is ReadReport.UberDay -> importRepository.saveDay(
+                        uber, ImportKind.UBER_DAILY_SCREENSHOT, IncomeSource.SCREENSHOT, r.fileHash, r.day, now,
+                        onlineMinutes = r.onlineMinutes, tripCount = r.trips,
+                    )
+                    is ReadReport.UberWeek -> importRepository.saveSummary(
+                        uber, ImportKind.UBER_WEEKLY_SCREENSHOT, r.fileHash, r.summary, now, onlineMinutes = r.onlineMinutes,
+                    )
+                    is ReadReport.UberPaymentsScreen -> r.week.asSummary()?.let {
+                        importRepository.saveSummary(uber, ImportKind.UBER_PAYMENTS_SCREENSHOT, r.fileHash, it, now)
+                    }
                     is ReadReport.UberTrips -> importRepository.mergeTrips(uber, ImportKind.UBER_TRIPS_CSV, r.fileHash, r.trips, now)
                     is ReadReport.UberTotals -> importRepository.saveSummary(uber, ImportKind.UBER_TOTALS_CSV, r.fileHash, r.summary, now)
                     is ReadReport.UberHours -> importRepository.saveOnlineTimes(
@@ -192,6 +206,33 @@ class ImportViewModel(
             importRepository.refreshEstimates(Clock.System.now().toEpochMilliseconds())
             _state.update { s -> s.copy(items = emptyList(), saving = false, savedCount = saved) }
         }
+    }
+
+    /**
+     * Uber's Payments screen is taller than the phone: the part with the week and the part below it, picked
+     * together, become one. Parts are matched by a figure both show (Uber's fee, say); with just one of each, they go
+     * together anyway.
+     */
+    private fun joinPaymentParts() = _state.update { s ->
+        fun parts() = s.items.mapNotNull { item -> (item.report as? ReadReport.UberPaymentsScreen)?.let { item to it } }
+            .filter { (_, r) -> !r.week.complete }
+        var items = s.items
+        val tops = parts().filter { it.second.week.week != null }
+        val bottoms = parts().filter { it.second.week.week == null }
+        for ((topItem, top) in tops) {
+            val bottom = bottoms.firstOrNull { it.second.week.overlaps(top.week) }
+                ?: bottoms.singleOrNull()?.takeIf { tops.size == 1 }
+                ?: continue
+            val (bottomItem, part) = bottom
+            items = items.map {
+                when (it.uri) {
+                    topItem.uri -> it.copy(report = top.copy(week = top.week.merge(part.week), joined = top.joined + part.fileHash))
+                    bottomItem.uri -> it.copy(report = ReadReport.UberJoined(part.fileHash, top.fileHash))
+                    else -> it
+                }
+            }
+        }
+        s.copy(items = items)
     }
 
     /** The user's Bolt or Uber app, created if they removed or renamed it. */

@@ -1,5 +1,28 @@
 package app.ridetracker.ui.settings
 
+import android.content.Intent
+import androidx.core.net.toUri
+import android.provider.Settings
+import androidx.compose.material3.FilledTonalButton
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import app.ridetracker.notifications.ZReportReminderScheduler
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.TimePickerDialogDefaults
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.ui.draw.clip
+import androidx.core.content.ContextCompat
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glass
+import app.ridetracker.ui.common.glassContainer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -86,6 +109,7 @@ enum class SettingsPage(val route: String) {
     LANGUAGE("settings/language"),
     THEME("settings/theme"),
     WEEK_START("settings/week"),
+    Z_REPORT("settings/z-report"),
 }
 
 private val weekStartOptions = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
@@ -156,6 +180,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
                     stringResource(R.string.driving_type),
                     settings?.drivingType?.let { drivingName(it) } ?: stringResource(R.string.not_set),
                 ) { onOpen(SettingsPage.DRIVING) }
+            }
+        }
+        if (country == Country.ROMANIA) {
+            item {
+                val z by viewModel.zReport.collectAsStateWithLifecycle()
+                Row(
+                    Icons.AutoMirrored.Outlined.ReceiptLong,
+                    stringResource(R.string.z_setting),
+                    if (z.enabled) stringResource(R.string.z_setting_on, timeText(z.hour, z.minute)) else stringResource(R.string.z_setting_off),
+                ) { onOpen(SettingsPage.Z_REPORT) }
             }
         }
         item { Row(Icons.Outlined.Language, stringResource(R.string.language), languageName(languageTag)) { onOpen(SettingsPage.LANGUAGE) } }
@@ -255,6 +289,7 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             onSelect = viewModel::setThemeMode,
             onBack = onBack,
         )
+        SettingsPage.Z_REPORT -> ZReportPage(viewModel, onBack)
         SettingsPage.WEEK_START -> ChoicePage(
             title = stringResource(R.string.first_day_of_week),
             options = weekStartOptions,
@@ -263,6 +298,108 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             onSelect = viewModel::setFirstDayOfWeek,
             onBack = onBack,
         )
+    }
+}
+
+/** "9:00 PM" or "21:00", as the phone shows times. */
+@Composable
+fun timeText(hour: Int, minute: Int): String {
+    val context = LocalContext.current
+    val locale = currentLocale()
+    val pattern = if (android.text.format.DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
+    return java.time.LocalTime.of(hour, minute).format(java.time.format.DateTimeFormatter.ofPattern(pattern, locale))
+}
+
+/** Raportul Z: on/off and one time for every day. Turning it on asks for notifications (Android 13+). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ZReportPage(viewModel: SettingsViewModel, onBack: () -> Unit) {
+    val z by viewModel.zReport.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
+    // Checked again each time the page comes back (after the driver allows it in Settings).
+    var exact by remember { mutableStateOf(ZReportReminderScheduler.canBeExact(context)) }
+    LifecycleResumeEffect(Unit) {
+        exact = ZReportReminderScheduler.canBeExact(context)
+        onPauseOrDispose { }
+    }
+    if (pickingTime) {
+        val state = rememberTimePickerState(
+            initialHour = z.hour, initialMinute = z.minute,
+            is24Hour = android.text.format.DateFormat.is24HourFormat(context),
+        )
+        TimePickerDialog(
+            onDismissRequest = { pickingTime = false },
+            modifier = Modifier.clip(TimePickerDialogDefaults.shape).glass(GLASS_DIALOG),
+            containerColor = glassContainer(),
+            title = { Text(stringResource(R.string.z_time)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.setZReportTime(state.hour, state.minute)
+                    pickingTime = false
+                }) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = { TextButton(onClick = { pickingTime = false }) { Text(stringResource(R.string.cancel)) } },
+        ) {
+            // The app's light blue instead of the default grey dial and boxes.
+            val tint = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            TimePicker(
+                state,
+                colors = TimePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    clockDialColor = tint,
+                    timeSelectorContainerColor = tint,
+                    periodSelectorContainerColor = Color.Transparent,
+                ),
+            )
+        }
+    }
+    SettingsFrame(stringResource(R.string.z_setting), onBack) {
+        item {
+            Text(
+                stringResource(R.string.z_page_intro),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            ListItem(
+                modifier = Modifier.toggleable(value = z.enabled, role = Role.Switch) { on ->
+                    if (on && Build.VERSION.SDK_INT >= 33 &&
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    viewModel.setZReportEnabled(on)
+                },
+                headlineContent = { Text(stringResource(R.string.z_remind), style = MaterialTheme.typography.titleLarge) },
+                trailingContent = { Switch(checked = z.enabled, onCheckedChange = null) },
+            )
+        }
+        item {
+            ListItem(
+                modifier = Modifier.clickable(enabled = z.enabled) { pickingTime = true },
+                headlineContent = { Text(stringResource(R.string.z_time), style = MaterialTheme.typography.titleLarge) },
+                supportingContent = { Text(timeText(z.hour, z.minute)) },
+            )
+        }
+        if (z.enabled && !exact && Build.VERSION.SDK_INT >= 31) {
+            item {
+                // Without "Alarms & reminders", Android may deliver the reminder up to an hour late.
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.z_exact_title)) },
+                    supportingContent = { Text(stringResource(R.string.z_exact_body)) },
+                    trailingContent = {
+                        FilledTonalButton(onClick = {
+                            context.startActivity(
+                                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, "package:${context.packageName}".toUri()),
+                            )
+                        }) { Text(stringResource(R.string.z_exact_allow)) }
+                    },
+                )
+            }
+        }
     }
 }
 
