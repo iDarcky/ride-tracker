@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1
+- **Ride Tracker Beta**: a second app with an orange icon, installed next to Ride Tracker, with its own data. New
+  versions go to Beta first for testing (real imports, deleting, anything) and to Ride Tracker once they're good.
+  To test with your data, back up Ride Tracker (Your data → Back up) and restore the file in Beta.
+- Raportul Z's page text is shorter.
+
 ## 0.9.0
 - **Uber screenshots** (Uber Driver in English), so Uber can come in without the Supplier portal files:
   - **Earnings, a day tapped**: that day's income, hours online and trips. **No day tapped**: the week's total and

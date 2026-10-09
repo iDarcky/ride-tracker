@@ -21,17 +21,22 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
   frosted glass: `ui/common/Glass.kt` (`GlassDropdownMenu`, `Modifier.glass()`, `glassContainer()`), never grey; each setting on its own page; Romanian copy must sound natural
   (e.g. „Recurentă”, not „Se repetă”).
 
-## Release routine (once per session, at the end)
+## Release routine (once per session, at the end): Beta first
 Owner (9 Oct 2026): one release per session with everything in it, not one per change. Exception: an urgent
 fix the owner is waiting for (e.g. an import that fails on their phone) can go out on its own.
+Two apps (owner, 9 Oct 2026): **Ride Tracker** (`app.ridetracker`, the owner's live data) and **Ride Tracker Beta**
+(`beta` build type, `app.ridetracker.beta`, orange icon, own data; `androidApp/src/beta/res`). Every release goes
+to Beta first; the live app gets the same version only when the owner says so.
 1. Bump `VERSION_NAME`, add a CHANGELOG entry (and update the brief's "Next up" if scope moved).
-2. Tests, `lintRelease`, `assembleRelease`, `adb install -r` on the running emulator, check on screen.
-   Copy the APK to `~/Desktop/Ride Tracker APKs/RideTracker-<version>.apk` for the owner's phone.
-3. Schema bump ⇒ upgrade test: install the previous release with data, then the new one.
-4. Commit (noreply author) and push to `main`; CI must pass.
-5. Publish the APK for the owner's phone (approved 8 Oct 2026): `gh release create v<version>
-   "RideTracker-<version>.apk" --target main --title v<version> --notes "<this version's CHANGELOG section>"`.
-   CI has no signing secrets yet, so the APK comes from the local signed build (same key, installs over).
+2. Tests, `lintBeta`, `assembleBeta`, `adb install -r` the beta APK on the emulator (test there, not in the live app),
+   check on screen. Copy to `~/Desktop/Ride Tracker APKs/RideTracker-<version>-beta.apk`.
+3. Schema bump ⇒ upgrade test: install the previous version with data, then the new one (both apps).
+4. Commit (noreply author) and push to `main`; CI must pass (wait for the run of *this* commit).
+5. Publish Beta: `gh release create v<version>-beta "RideTracker-<version>-beta.apk" --prerelease --target main
+   --title "v<version> beta" --notes "<this version's CHANGELOG section>"`.
+6. When the owner says the beta is good: `lintRelease`, `assembleRelease`, copy `RideTracker-<version>.apk`, then
+   `gh release create v<version> "RideTracker-<version>.apk" --target main --title v<version> --notes "<CHANGELOG>"`.
+   CI has no signing secrets yet, so APKs come from the local signed build (same key, installs over).
 
 ## Stack and layout
 - Kotlin Multiplatform. `shared/` = Room KMP database, DataStore settings, money/period logic, backup.

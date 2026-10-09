@@ -63,6 +63,14 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = releaseSigning
         }
+        // "Ride Tracker Beta": the same release build as a second app (app.ridetracker.beta) with its own data, orange
+        // icon and name (src/beta/res), installed next to the live app for testing. New versions go here first.
+        create("beta") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".beta"
+            versionNameSuffix = "-beta"
+            matchingFallbacks += listOf("release")
+        }
     }
 
     androidResources {

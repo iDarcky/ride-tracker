@@ -598,7 +598,7 @@
     <string name="z_setting">Raportul Z</string>
     <string name="z_setting_on">Zilnic la %1$s</string>
     <string name="z_setting_off">Oprit</string>
-    <string name="z_page_intro">Un memento în fiecare zi să scoți raportul Z din casa de marcat la finalul zilei, cum trebuie să facă orice șofer din România care încasează numerar.</string>
+    <string name="z_page_intro">Un memento în fiecare zi să scoți raportul Z din casa de marcat la finalul zilei.</string>
     <string name="z_remind">Amintește-mi zilnic</string>
     <string name="z_time">Ora</string>
     <string name="z_waiting">Pentru %1$s</string>

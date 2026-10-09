@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ride Tracker Beta: its own name and an orange icon, so it can't be mistaken for the live app. -->
+<resources>
+    <string name="app_name" translatable="false">Ride Tracker Beta</string>
+    <color name="ic_launcher_background">#E0631F</color>
+</resources>

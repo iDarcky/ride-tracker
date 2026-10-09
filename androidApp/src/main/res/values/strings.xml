@@ -582,7 +582,7 @@
     <string name="z_setting">Raportul Z</string>
     <string name="z_setting_on">Every day at %1$s</string>
     <string name="z_setting_off">Off</string>
-    <string name="z_page_intro">A reminder every day to print the Z report from your cash register at the end of your day, as every driver in Romania who takes cash must.</string>
+    <string name="z_page_intro">A reminder every day to print the Z report from your cash register at the end of your day.</string>
     <string name="z_remind">Remind me every day</string>
     <string name="z_time">Time</string>
     <string name="z_waiting">For %1$s</string>
