@@ -1,5 +1,11 @@
 package app.ridetracker.ui.settings
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.Button
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import app.ridetracker.shared.domain.TargetSettings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -338,19 +344,23 @@ fun targetBasisName(basis: TargetBasis): String = stringResource(
 
 /**
  * The monthly target: this month's amount (each month keeps its own; a new month starts with the last one), what it
- * counts, and the days the driver drives (for "per day" and the pace).
+ * counts, and the days the driver drives (for "per day" and the pace). Changes are kept on the page until Save.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TargetPage(viewModel: SettingsViewModel, currency: java.util.Currency, onBack: () -> Unit) {
-    val target by viewModel.target.collectAsStateWithLifecycle()
+    val saved by viewModel.targetLoaded.collectAsStateWithLifecycle()
+    val loaded = saved ?: return
     val locale = currentLocale()
     val digits = currency.defaultFractionDigits.coerceAtLeast(0)
     val month = remember { Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault())) }
     val dates = remember(locale) { DateFormats(locale) }
-    var amount by rememberSaveable { mutableStateOf<String?>(null) }
-    // Filled from the saved target once it has loaded; then the field is the driver's.
-    val shown = amount ?: target.targetFor(month)?.let { Money.toPlainString(it, digits) }.orEmpty()
+    val focus = LocalFocusManager.current
+    var amount by rememberSaveable { mutableStateOf(loaded.targetFor(month)?.let { Money.toPlainString(it, digits) }.orEmpty()) }
+    var basis by rememberSaveable { mutableStateOf(loaded.basis) }
+    var days by rememberSaveable { mutableStateOf(TargetSettings.formatDays(loaded.drivingDays)) }
+    val drivingDays = TargetSettings.parseDays(days)
+    val minor = if (amount.isBlank()) 0L else Money.parseToMinor(amount, digits)
     SettingsFrame(stringResource(R.string.target_setting), onBack) {
         item {
             Text(
@@ -361,31 +371,28 @@ private fun TargetPage(viewModel: SettingsViewModel, currency: java.util.Currenc
         }
         item {
             OutlinedTextField(
-                value = shown,
-                onValueChange = { text ->
-                    amount = text
-                    val minor = if (text.isBlank()) 0L else Money.parseToMinor(text, digits)
-                    if (minor != null) viewModel.setTarget(month, minor)
-                },
+                value = amount,
+                onValueChange = { amount = it },
                 label = { Text(stringResource(R.string.target_for_month, dates.period(month))) },
                 suffix = { Text(currency.getSymbol(locale)) },
-                isError = shown.isNotBlank() && Money.parseToMinor(shown, digits) == null,
+                isError = minor == null,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
                 supportingText = { Text(stringResource(R.string.target_each_month)) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             )
         }
         item { Section(stringResource(R.string.target_counts)) }
-        TargetBasis.entries.forEach { basis ->
+        TargetBasis.entries.forEach { option ->
             item {
                 ListItem(
-                    modifier = Modifier.selectable(selected = target.basis == basis, role = Role.RadioButton) { viewModel.setTargetBasis(basis) },
-                    headlineContent = { Text(targetBasisName(basis), style = MaterialTheme.typography.titleLarge) },
+                    modifier = Modifier.selectable(selected = basis == option, role = Role.RadioButton) { basis = option },
+                    headlineContent = { Text(targetBasisName(option), style = MaterialTheme.typography.titleLarge) },
                     supportingContent = {
-                        Text(stringResource(if (basis == TargetBasis.INCOME) R.string.target_basis_income_detail else R.string.target_basis_kept_detail))
+                        Text(stringResource(if (option == TargetBasis.INCOME) R.string.target_basis_income_detail else R.string.target_basis_kept_detail))
                     },
-                    trailingContent = { RadioButton(selected = target.basis == basis, onClick = null) },
+                    trailingContent = { RadioButton(selected = basis == option, onClick = null) },
                 )
             }
         }
@@ -401,17 +408,27 @@ private fun TargetPage(viewModel: SettingsViewModel, currency: java.util.Currenc
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 DayOfWeek.entries.forEach { day ->
-                    val on = day in target.drivingDays
+                    val on = day in drivingDays
                     FilterChip(
                         selected = on,
                         onClick = {
-                            val days = if (on) target.drivingDays - day else target.drivingDays + day
-                            if (days.isNotEmpty()) viewModel.setDrivingDays(days)
+                            val next = if (on) drivingDays - day else drivingDays + day
+                            if (next.isNotEmpty()) days = TargetSettings.formatDays(next)
                         },
                         label = { Text(day.toJavaDayOfWeek().getDisplayName(TextStyle.SHORT, locale)) },
                     )
                 }
             }
+        }
+        item {
+            Button(
+                onClick = {
+                    viewModel.saveTarget(month, minor ?: 0L, basis, drivingDays)
+                    onBack()
+                },
+                enabled = minor != null,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp).height(56.dp),
+            ) { Text(stringResource(R.string.save)) }
         }
     }
 }

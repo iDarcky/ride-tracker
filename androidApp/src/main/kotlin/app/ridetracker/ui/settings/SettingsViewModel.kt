@@ -76,16 +76,17 @@ class SettingsViewModel(
     val target: StateFlow<TargetSettings> = settingsRepository.target
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TargetSettings())
 
-    fun setTarget(month: Period.Month, amountMinor: Long) {
-        viewModelScope.launch { settingsRepository.setTarget(month, amountMinor) }
-    }
+    /** The saved targets, null until read (the target page fills its fields from them once). */
+    val targetLoaded: StateFlow<TargetSettings?> = settingsRepository.target
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun setTargetBasis(basis: TargetBasis) {
-        viewModelScope.launch { settingsRepository.setTargetBasis(basis) }
-    }
-
-    fun setDrivingDays(days: Set<DayOfWeek>) {
-        viewModelScope.launch { settingsRepository.setDrivingDays(days) }
+    /** Save on the target page: this month's amount, what it counts and the driving days. */
+    fun saveTarget(month: Period.Month, amountMinor: Long, basis: TargetBasis, days: Set<DayOfWeek>) {
+        viewModelScope.launch {
+            settingsRepository.setTargetBasis(basis)
+            settingsRepository.setDrivingDays(days)
+            settingsRepository.setTarget(month, amountMinor)
+        }
     }
 
     fun setFirstDayOfWeek(day: DayOfWeek) {

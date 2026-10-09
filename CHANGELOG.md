@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1
+- **Monthly target page has a Save button.** Change the amount, what it counts and your driving days, then Save;
+  leaving with Back keeps the target as it was. The keyboard's ✓ closes the keyboard.
+
 ## 0.10.0
 - **Monthly target.** Settings → Monthly target (or the "Set a monthly target" chip on Home): how much you want to make
   this month, counted as income after platform fees or as money kept after expenses, your choice. Each month keeps its
