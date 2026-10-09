@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.3
+- The navigation bar has its thin outline back, and the **+** is exactly as tall as the bar.
+
 ## 0.8.2
 - **New navigation bar:** no outline, just frosted glass, with a round blue **+** beside it (like Google Photos'
   bar and search button). The + is on every tab, so the bar never moves; it opens Import, Add expense and Add

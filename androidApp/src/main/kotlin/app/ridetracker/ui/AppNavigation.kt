@@ -1,5 +1,9 @@
 package app.ridetracker.ui
 
+import androidx.compose.foundation.border
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -227,16 +231,22 @@ fun AppNavigation() {
             }
         }
         if (currentTab != null) {
+            // The + is a circle exactly as tall as the bar.
+            val density = LocalDensity.current
+            var barHeight by remember { mutableStateOf(48.dp) }
             BarWithAddButton(
+                buttonSize = barHeight,
                 bar = {
                     FloatingNavBar(
                         current = currentTab,
                         haze = haze,
                         onSelect = { if (it == currentTab) reselects[it] = (reselects[it] ?: 0) + 1 else nav.switchTab(it) },
+                        modifier = Modifier.onSizeChanged { barHeight = with(density) { it.height.toDp() } },
                     )
                 },
                 addButton = {
                     AddMenu(
+                        size = barHeight,
                         onAddIncome = { nav.navigate("entry") },
                         onAddExpense = { nav.navigate("expense") },
                         onImport = { nav.navigate("import") },
@@ -284,14 +294,15 @@ private fun NavHostController.switchTab(tab: Tab) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    // Frosted glass (see Glass.kt) instead of a grey container, with no outline.
+    // Frosted glass (see Glass.kt) with a hairline outline instead of a grey container.
     val glass = rememberGlassStyle()
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier
             .animateContentSize()
             .clip(CircleShape)
-            .hazeBlur(HazeInput.Sources(haze), glass),
+            .hazeBlur(HazeInput.Sources(haze), glass)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = Color.Transparent),
     ) {
         Tab.entries.forEach { tab ->
@@ -320,9 +331,6 @@ private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Uni
 /** Space between the bar and the + button, as in Google Photos' bar and search button. */
 private val BarButtonGap = 8.dp
 
-/** The size of the + button while closed: the bar's height (Material's floating toolbar is 64 dp). */
-private val AddButtonSize = 64.dp
-
 /** Material's FAB menu keeps this margin around its button, to the right and below. */
 private val FabMenuMargin = 16.dp
 
@@ -331,13 +339,18 @@ private val FabMenuMargin = 16.dp
  * without moving the bar; the open menu's items may reach over the bar.
  */
 @Composable
-private fun BarWithAddButton(bar: @Composable () -> Unit, addButton: @Composable () -> Unit, modifier: Modifier = Modifier) {
+private fun BarWithAddButton(
+    buttonSize: Dp,
+    bar: @Composable () -> Unit,
+    addButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Layout(contents = listOf(bar, addButton), modifier = modifier) { (barMeasurables, addMeasurables), constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val barPlaceable = barMeasurables.first().measure(loose)
         val addPlaceable = addMeasurables.first().measure(loose)
         val gap = BarButtonGap.roundToPx()
-        val button = AddButtonSize.roundToPx()
+        val button = buttonSize.roundToPx()
         val margin = FabMenuMargin.roundToPx()
         // The menu's bottom margin hangs below the bar's line, into the space under the bar.
         val height = maxOf(barPlaceable.height, addPlaceable.height - margin)
@@ -356,7 +369,7 @@ private fun BarWithAddButton(bar: @Composable () -> Unit, addButton: @Composable
 /** M3 Expressive FAB menu next to the bar on every tab: one blue button, three actions (import, add expense, add income). */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport: () -> Unit, modifier: Modifier = Modifier) {
+private fun AddMenu(size: Dp, onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport: () -> Unit, modifier: Modifier = Modifier) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = expanded) { expanded = false }
     FloatingActionButtonMenu(
@@ -371,8 +384,8 @@ private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport:
                     finalColor = MaterialTheme.colorScheme.primary,
                 ),
                 // A circle as tall as the bar, like the search button next to Google Photos' bar.
-                containerSize = ToggleFloatingActionButtonDefaults.containerSize(initialSize = AddButtonSize),
-                containerCornerRadius = ToggleFloatingActionButtonDefaults.containerCornerRadius(initialSize = AddButtonSize / 2),
+                containerSize = ToggleFloatingActionButtonDefaults.containerSize(initialSize = size),
+                containerCornerRadius = ToggleFloatingActionButtonDefaults.containerCornerRadius(initialSize = size / 2),
             ) {
                 Icon(
                     if (expanded) Icons.Filled.Close else Icons.Filled.Add,
