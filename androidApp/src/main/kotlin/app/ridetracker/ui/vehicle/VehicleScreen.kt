@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,7 +34,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.data.OdometerReadingEntity
 import app.ridetracker.shared.domain.FuelType
 import app.ridetracker.shared.domain.Money
@@ -79,7 +80,7 @@ import app.ridetracker.ui.common.LocalBottomBarSpace
 import app.ridetracker.ui.common.MenuButton
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.SectionHeader
-import app.ridetracker.ui.common.SwipeToDeleteRow
+import app.ridetracker.ui.common.ActionRow
 import app.ridetracker.ui.common.container
 import app.ridetracker.ui.common.currentLocale
 import app.ridetracker.ui.common.icon
@@ -146,7 +147,10 @@ fun VehicleScreen(
         }
         if (vehicle == null) return@Scaffold
         val fuel = FuelType.fromId(vehicle.fuelType)
+        val listState = rememberLazyListState()
+        ScrollToTopOnReselect(listState)
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = bottomSpace + 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -198,7 +202,8 @@ fun VehicleScreen(
                             )
                         }
                         Spacer(Modifier.height(16.dp))
-                        FilledTonalButton(onClick = { updateOdometer = true }, modifier = Modifier.fillMaxWidth()) {
+                        // Filled primary on the light primary card: no grey tonal button.
+                        Button(onClick = { updateOdometer = true }, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Outlined.Speed, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.update_odometer))
@@ -259,13 +264,15 @@ fun VehicleScreen(
             if (state.readings.isNotEmpty()) {
                 item { SectionHeader(stringResource(R.string.odometer_history)) }
                 items(state.readings, key = { "reading-${it.id}" }) { reading ->
-                    SwipeToDeleteRow(
+                    ActionRow(
                         leading = { ExpenseBadge(Icons.Outlined.Speed) },
                         title = stringResource(R.string.km_value, numbers.format(reading.km)),
                         note = dates.day(LocalDate.fromEpochDays(reading.date)),
                         amount = "",
                         onClick = { deleteReadingId = reading.id },
                         onDelete = { deleteWithUndo(reading.id) },
+                        deleteTitle = stringResource(R.string.delete_reading_title),
+                        onEdit = null,
                         modifier = Modifier.animateItem(),
                     )
                 }

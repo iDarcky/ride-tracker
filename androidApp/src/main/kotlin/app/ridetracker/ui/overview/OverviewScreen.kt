@@ -94,6 +94,7 @@ import app.ridetracker.shared.domain.HomeWidget
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import app.ridetracker.R
+import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.data.EntryWithPlatform
 import app.ridetracker.shared.domain.Comparison
 import app.ridetracker.shared.domain.ExpenseCategory
@@ -155,6 +156,7 @@ fun OverviewScreen(
     var editing by rememberSaveable { mutableStateOf(false) }
     var order by remember { mutableStateOf(state.widgets) }
     val listState = rememberLazyListState()
+    ScrollToTopOnReselect(listState)
     val reorder = rememberReorderableLazyListState(listState) { from, to ->
         val moving = (from.key as? String)?.let(HomeWidget::fromId) ?: return@rememberReorderableLazyListState
         val target = (to.key as? String)?.let(HomeWidget::fromId) ?: return@rememberReorderableLazyListState

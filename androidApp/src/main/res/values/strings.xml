@@ -9,6 +9,8 @@
     <string name="save">Save</string>
     <string name="close">Close</string>
     <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="more_actions">More actions</string>
     <string name="undo">Undo</string>
     <string name="search">Search</string>
 
@@ -412,7 +414,7 @@
     <string name="by_platform">By platform</string>
     <string name="by_category">By category</string>
     <string name="paid_out">Paid to you</string>
-    <string name="made_of">What it’s made of</string>
+    <string name="made_of">Breakdown</string>
     <string name="line_other">Other income</string>
     <string name="line_other_fee">Other fees</string>
     <string name="without_breakdown">Without a breakdown</string>

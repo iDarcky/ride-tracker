@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.ui.common.DateFormats
@@ -152,7 +154,10 @@ private fun IncomeTab(
     val undoLabel = stringResource(R.string.undo)
     var showAll by rememberSaveable(state.month) { mutableStateOf(false) }
 
+    val listState = rememberLazyListState()
+    ScrollToTopOnReselect(listState)
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
     ) {
@@ -243,7 +248,10 @@ private fun ExpenseTab(
     val undoLabel = stringResource(R.string.undo)
     var showAll by rememberSaveable(state.month, state.category) { mutableStateOf(false) }
 
+    val listState = rememberLazyListState()
+    ScrollToTopOnReselect(listState)
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
     ) {

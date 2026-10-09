@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -57,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.data.TripWithPlatform
 import app.ridetracker.shared.domain.PaymentMethod
 import app.ridetracker.ui.common.DateFormats
@@ -94,7 +96,10 @@ fun TripsScreen(
             EmptyTrips(onImport, Modifier.padding(padding).padding(bottom = LocalBottomBarSpace.current))
             return@Scaffold
         }
+        val listState = rememberLazyListState()
+        ScrollToTopOnReselect(listState)
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,

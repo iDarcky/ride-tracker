@@ -33,6 +33,19 @@ import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +55,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -60,6 +75,7 @@ import app.ridetracker.R
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.ui.importing.ImportScreen
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.LocalTabReselects
 import app.ridetracker.ui.money.PlatformIncomeScreen
 import kotlinx.datetime.LocalDate
 import app.ridetracker.ui.common.LocalOpenMenu
@@ -103,6 +119,8 @@ fun AppNavigation() {
         if (shared.isNotEmpty() && backStack?.destination?.route != "import") nav.navigate("import")
     }
     val currentTab = Tab.entries.firstOrNull { it.route == backStack?.destination?.route }
+    val reselects = remember { mutableStateMapOf<Tab, Int>() }
+    val haze = rememberHazeState()
     val barSpace = if (currentTab != null) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + FloatingBarHeight
     } else {
@@ -116,20 +134,22 @@ fun AppNavigation() {
             NavHost(
                 navController = nav,
                 startDestination = Tab.HOME.route,
+                // The floating bar blurs whatever scrolls under it.
+                modifier = Modifier.hazeSource(haze),
                 enterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = true) },
                 exitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = true) },
                 popEnterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = false) },
                 popExitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = false) },
             ) {
-                composable(Tab.HOME.route) { OverviewScreen(
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0) { OverviewScreen(
                         onAddEntry = { nav.navigate("entry") },
                         onAddExpense = { nav.navigate("expense") },
                         onImport = { nav.navigate("import") },
-                    ) }
-                composable(Tab.TRIPS.route) {
+                    ) } }
+                composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
-                }
-                composable(Tab.MONEY.route) {
+                } }
+                composable(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0) {
                     MoneyScreen(
                         onAddIncome = { nav.navigate("entry") },
                         onEditIncome = { id -> nav.navigate("entry?id=$id") },
@@ -138,10 +158,10 @@ fun AppNavigation() {
                         onOpenRecurring = { nav.navigate("recurring") },
                         onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
                     )
-                }
-                composable(Tab.VEHICLE.route) {
+                } }
+                composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0) {
                     VehicleScreen(onEditVehicle = { nav.navigate("vehicle/edit") })
-                }
+                } }
                 composable("menu") {
                     MenuScreen(
                         onClose = { nav.popBackStack() },
@@ -200,7 +220,8 @@ fun AppNavigation() {
         if (currentTab != null) {
             FloatingNavBar(
                 current = currentTab,
-                onSelect = { nav.switchTab(it) },
+                haze = haze,
+                onSelect = { if (it == currentTab) reselects[it] = (reselects[it] ?: 0) + 1 else nav.switchTab(it) },
                 modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp),
             )
         }
@@ -226,6 +247,11 @@ private object SharedAxis {
             fadeOut(tween(DURATION / 4, easing = accelerate))
 }
 
+@Composable
+private fun ReselectScope(reselects: Int, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalTabReselects provides reselects, content = content)
+}
+
 private fun NavHostController.switchTab(tab: Tab) {
     navigate(tab.route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
@@ -237,16 +263,36 @@ private fun NavHostController.switchTab(tab: Tab) {
 /** Google Photos-style floating bar: the current tab shows icon + label, the others only an icon. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FloatingNavBar(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
+private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
+    // Frosted glass like Android's volume panel and power menu: the page shows through, blurred and tinted with
+    // the surface colour, with a hairline outline instead of a grey container.
+    val tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+    val glass = remember(tint) {
+        HazeBlurStyle {
+            blurRadius(24.dp)
+            noiseFactor(0.04f)
+            colorEffects(listOf(HazeColorEffect.tint(tint)))
+        }
+    }
     HorizontalFloatingToolbar(
         expanded = true,
-        modifier = modifier.animateContentSize(),
-        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
+        modifier = modifier
+            .animateContentSize()
+            .clip(CircleShape)
+            .hazeBlur(HazeInput.Sources(haze), glass)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = Color.Transparent),
     ) {
         Tab.entries.forEach { tab ->
             val label = stringResource(tab.label)
             if (tab == current) {
-                FilledTonalButton(onClick = { onSelect(tab) }) {
+                FilledTonalButton(
+                    onClick = { onSelect(tab) },
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                ) {
                     Icon(tab.selectedIcon, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(label, maxLines = 1)

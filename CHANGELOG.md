@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1
+- **No more swipe to delete.** Long press an entry, expense or odometer reading for a menu with Edit and Delete;
+  Delete asks first, then Undo is still offered. Tap still opens the entry.
+- **Tap the tab you're on to go back to the top** (Home, Money, Trips, Vehicle).
+- The floating navigation bar is **frosted glass**: the page shows through, blurred, with a thin outline instead
+  of a grey bar. The selected tab uses the app's blue.
+- The odometer's "Update" button is solid blue instead of grey.
+- Money's income card is now called **Breakdown** ("Defalcare"), the word Bolt uses.
+
 ## 0.6.0
 - **Income by platform**: in Money → Income, tap a platform to see its month: rides, bonuses and campaigns, tips,
   rider credits, cancellation and road fees, minus commission, adding up to what it paid you. A month with
