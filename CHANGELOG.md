@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.2
+- **Frosted glass everywhere things float**, like the navigation bar: the month list and every other menu,
+  dialogs (delete, choices, currency), date pickers and the import edit sheet. What's behind shows through,
+  blurred; dialogs are a little more opaque so text stays easy to read.
+
 ## 0.7.1
 - **New period header on Home**: the month is a large title ("October 2026 ▾"); tap it to pick another month or
   "Custom range…". Below it, Month · Week · Day · All as before. Arrows only for Week and Day; Month and All

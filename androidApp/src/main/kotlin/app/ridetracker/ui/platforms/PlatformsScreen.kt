@@ -1,5 +1,10 @@
 package app.ridetracker.ui.platforms
 
+import androidx.compose.material3.AlertDialogDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -141,6 +146,8 @@ private fun PlatformDialog(
     val selectedLabel = stringResource(R.string.colour_selected)
     val optionLabel = stringResource(R.string.colour_option)
     AlertDialog(
+        modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+        containerColor = glassContainer(),
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

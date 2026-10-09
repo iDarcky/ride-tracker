@@ -1,5 +1,7 @@
 package app.ridetracker.ui.common
 
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
@@ -27,6 +29,8 @@ fun <T> ChoiceDialog(
     description: (@Composable (T) -> String?)? = null,
 ) {
     AlertDialog(
+        modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+        containerColor = glassContainer(),
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -57,6 +61,8 @@ fun ConfirmDialog(
     destructive: Boolean = false,
 ) {
     AlertDialog(
+        modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+        containerColor = glassContainer(),
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(body) },

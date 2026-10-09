@@ -1,5 +1,11 @@
 package app.ridetracker.ui.vehicle
 
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.AlertDialogDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -362,6 +368,10 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
     var pickDate by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
+
+        modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+
+        containerColor = glassContainer(),
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.update_odometer)) },
         text = {
@@ -403,6 +413,8 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
     if (pickDate) {
         val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.toPickerMillis())
         DatePickerDialog(
+            modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+            colors = DatePickerDefaults.colors(containerColor = glassContainer()),
             onDismissRequest = { pickDate = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -411,6 +423,6 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
                 }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = { TextButton(onClick = { pickDate = false }) { Text(stringResource(R.string.cancel)) } },
-        ) { DatePicker(state = pickerState) }
+        ) { DatePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState) }
     }
 }

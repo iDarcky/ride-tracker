@@ -1,6 +1,5 @@
 package app.ridetracker.ui.common
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -35,7 +34,6 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -188,7 +186,7 @@ fun ActionRow(
             supportingContent = note?.let { { Text(it, maxLines = 2) } },
             trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular()) },
         )
-        DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {
+        GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {
             if (onEdit != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.edit)) },

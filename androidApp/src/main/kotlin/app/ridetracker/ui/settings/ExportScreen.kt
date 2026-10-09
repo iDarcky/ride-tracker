@@ -1,5 +1,10 @@
 package app.ridetracker.ui.settings
 
+import androidx.compose.material3.DatePickerDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -172,6 +177,8 @@ fun ExportScreen(
             initialSelectedEndDateMillis = today.toPickerMillis(),
         )
         DatePickerDialog(
+            modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+            colors = DatePickerDefaults.colors(containerColor = glassContainer()),
             onDismissRequest = { pickCustom = false },
             confirmButton = {
                 TextButton(
@@ -186,7 +193,7 @@ fun ExportScreen(
             },
             dismissButton = { TextButton(onClick = { pickCustom = false }) { Text(stringResource(R.string.cancel)) } },
         ) {
-            DateRangePicker(state = pickerState, modifier = Modifier.weight(1f))
+            DateRangePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState, modifier = Modifier.weight(1f))
         }
     }
 }

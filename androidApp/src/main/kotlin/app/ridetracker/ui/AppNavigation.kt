@@ -41,8 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -75,6 +73,8 @@ import app.ridetracker.R
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.ui.importing.ImportScreen
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.LocalHaze
+import app.ridetracker.ui.common.rememberGlassStyle
 import app.ridetracker.ui.common.LocalTabReselects
 import app.ridetracker.ui.money.PlatformIncomeScreen
 import kotlinx.datetime.LocalDate
@@ -128,7 +128,7 @@ fun AppNavigation() {
     }
 
     Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
+        CompositionLocalProvider(LocalHaze provides haze, LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
             // Tabs switch instantly; opening and closing a screen uses Material's shared axis X (as in Settings),
             // which the predictive back gesture follows under the finger.
             NavHost(
@@ -264,16 +264,8 @@ private fun NavHostController.switchTab(tab: Tab) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    // Frosted glass like Android's volume panel and power menu: the page shows through, blurred and tinted with
-    // the surface colour, with a hairline outline instead of a grey container.
-    val tint = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-    val glass = remember(tint) {
-        HazeBlurStyle {
-            blurRadius(24.dp)
-            noiseFactor(0.04f)
-            colorEffects(listOf(HazeColorEffect.tint(tint)))
-        }
-    }
+    // Frosted glass (see Glass.kt) with a hairline outline instead of a grey container.
+    val glass = rememberGlassStyle()
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier

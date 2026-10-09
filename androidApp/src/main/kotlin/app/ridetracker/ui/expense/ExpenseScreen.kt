@@ -1,5 +1,10 @@
 package app.ridetracker.ui.expense
 
+import androidx.compose.material3.DatePickerDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -192,6 +197,8 @@ fun ExpenseScreen(
     if (showDatePicker) {
         val pickerState = rememberDatePickerState(initialSelectedDateMillis = state.date.toPickerMillis())
         DatePickerDialog(
+            modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+            colors = DatePickerDefaults.colors(containerColor = glassContainer()),
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -201,7 +208,7 @@ fun ExpenseScreen(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) {
-            DatePicker(state = pickerState)
+            DatePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState)
         }
     }
     if (confirmDelete) {

@@ -1,5 +1,10 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.material3.DatePickerDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -528,6 +533,8 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         initialSelectedEndDateMillis = initial.endInclusive.toPickerMillis(),
     )
     DatePickerDialog(
+        modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+        colors = DatePickerDefaults.colors(containerColor = glassContainer()),
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
@@ -541,7 +548,7 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     ) {
-        DateRangePicker(state = pickerState, modifier = Modifier.weight(1f))
+        DateRangePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState, modifier = Modifier.weight(1f))
     }
 }
 

@@ -1,6 +1,5 @@
 package app.ridetracker.ui.trips
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -59,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.common.GlassDropdownMenu
 import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.data.TripWithPlatform
 import app.ridetracker.shared.domain.PaymentMethod
@@ -181,7 +180,7 @@ private fun FilterRow(
                 leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null, Modifier.size(18.dp)) },
                 trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
             )
-            DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
+            GlassDropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
                 state.months.forEach { month ->
                     DropdownMenuItem(
                         text = { Text(dates.period(month)) },
@@ -199,7 +198,7 @@ private fun FilterRow(
                 leadingIcon = { Icon(Icons.Outlined.FilterList, contentDescription = null, Modifier.size(18.dp)) },
                 trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
             )
-            DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = paymentMenu, onDismissRequest = { paymentMenu = false }) {
+            GlassDropdownMenu(expanded = paymentMenu, onDismissRequest = { paymentMenu = false }) {
                 PaymentFilter.entries.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(stringResource(if (option == PaymentFilter.ALL) R.string.trips_all_payments else paymentLabel(option))) },

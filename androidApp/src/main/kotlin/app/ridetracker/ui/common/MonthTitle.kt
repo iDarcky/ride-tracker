@@ -1,6 +1,5 @@
 package app.ridetracker.ui.common
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -8,7 +7,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,7 +48,7 @@ fun MonthTitle(
             Text(title, style = MaterialTheme.typography.headlineSmall)
             Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.choose_month))
         }
-        DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = open, onDismissRequest = { open = false }) {
+        GlassDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             months.forEach { m ->
                 DropdownMenuItem(
                     text = { Text(dates.period(m)) },

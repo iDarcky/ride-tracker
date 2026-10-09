@@ -1,5 +1,10 @@
 package app.ridetracker.ui.expense
 
+import androidx.compose.material3.DatePickerDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -153,6 +158,8 @@ fun DateField(label: String, date: LocalDate, onDate: (LocalDate) -> Unit) {
 private fun DatePickDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
     val state = rememberDatePickerState(initialSelectedDateMillis = initial.toPickerMillis())
     DatePickerDialog(
+        modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+        colors = DatePickerDefaults.colors(containerColor = glassContainer()),
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = { state.selectedDateMillis?.let { onPick(it.pickerMillisToLocalDate()) } ?: onDismiss() }) {
@@ -160,5 +167,5 @@ private fun DatePickDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (L
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    ) { DatePicker(state = state) }
+    ) { DatePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = state) }
 }

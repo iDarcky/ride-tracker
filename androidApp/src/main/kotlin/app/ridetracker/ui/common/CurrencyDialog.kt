@@ -1,5 +1,7 @@
 package app.ridetracker.ui.common
 
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -39,6 +41,8 @@ fun CurrencyDialog(selected: Currency?, onDismiss: () -> Unit, onSelect: (Curren
         }
     }
     AlertDialog(
+        modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+        containerColor = glassContainer(),
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.currency)) },
         text = {

@@ -1,5 +1,11 @@
 package app.ridetracker.ui.entry
 
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.AlertDialogDefaults
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -179,6 +185,8 @@ fun EntryScreen(
     if (showDatePicker) {
         val pickerState = rememberDatePickerState(initialSelectedDateMillis = state.date.toPickerMillis())
         DatePickerDialog(
+            modifier = Modifier.clip(DatePickerDefaults.shape).glass(GLASS_DIALOG),
+            colors = DatePickerDefaults.colors(containerColor = glassContainer()),
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -188,12 +196,14 @@ fun EntryScreen(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) } },
         ) {
-            DatePicker(state = pickerState)
+            DatePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState)
         }
     }
 
     if (confirmDelete) {
         AlertDialog(
+            modifier = Modifier.clip(AlertDialogDefaults.shape).glass(GLASS_DIALOG),
+            containerColor = glassContainer(),
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_entry_title)) },
             text = { Text(stringResource(R.string.delete_entry_body)) },

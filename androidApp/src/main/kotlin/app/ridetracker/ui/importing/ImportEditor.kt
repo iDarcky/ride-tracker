@@ -1,6 +1,10 @@
 package app.ridetracker.ui.importing
 
-import androidx.compose.foundation.BorderStroke
+import app.ridetracker.ui.common.GLASS_DIALOG
+import app.ridetracker.ui.common.glassContainer
+import app.ridetracker.ui.common.glass
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +24,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import app.ridetracker.R
+import app.ridetracker.ui.common.GlassDropdownMenu
 import app.ridetracker.importing.ReadReport
 import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.IncomeLineKind
@@ -85,8 +89,13 @@ private val addableLines: List<Pair<IncomeLineKind, Boolean>> = listOf(
 @Composable
 fun ImportEditSheet(report: ReadReport, currency: Currency, onSave: (ReadReport) -> Unit, onDismiss: () -> Unit) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    // Plain surface, not the default grey sheet colour.
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = MaterialTheme.colorScheme.surface) {
+    // Frosted glass like the menus, not the default grey sheet colour.
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheet,
+        modifier = Modifier.clip(BottomSheetDefaults.ExpandedShape).glass(GLASS_DIALOG),
+        containerColor = glassContainer(),
+    ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding()
                 .padding(horizontal = 16.dp).padding(bottom = 32.dp),
@@ -188,7 +197,7 @@ private fun DayEditor(day: ParsedDay, currency: Currency, onCancel: () -> Unit, 
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.edit_add_line))
         }
-        DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = adding, onDismissRequest = { adding = false }) {
+        GlassDropdownMenu(expanded = adding, onDismissRequest = { adding = false }) {
             addableLines.forEach { (kind, inCash) ->
                 val name = incomeKindLabel(kind)
                 DropdownMenuItem(
