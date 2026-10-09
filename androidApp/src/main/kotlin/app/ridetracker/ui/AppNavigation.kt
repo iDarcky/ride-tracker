@@ -1,5 +1,19 @@
 package app.ridetracker.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -33,7 +47,6 @@ import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -141,11 +154,7 @@ fun AppNavigation() {
                 popEnterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = false) },
                 popExitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = false) },
             ) {
-                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0) { OverviewScreen(
-                        onAddEntry = { nav.navigate("entry") },
-                        onAddExpense = { nav.navigate("expense") },
-                        onImport = { nav.navigate("import") },
-                    ) } }
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }) } }
                 composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
                 } }
@@ -218,11 +227,22 @@ fun AppNavigation() {
             }
         }
         if (currentTab != null) {
-            FloatingNavBar(
-                current = currentTab,
-                haze = haze,
-                onSelect = { if (it == currentTab) reselects[it] = (reselects[it] ?: 0) + 1 else nav.switchTab(it) },
-                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp),
+            BarWithAddButton(
+                bar = {
+                    FloatingNavBar(
+                        current = currentTab,
+                        haze = haze,
+                        onSelect = { if (it == currentTab) reselects[it] = (reselects[it] ?: 0) + 1 else nav.switchTab(it) },
+                    )
+                },
+                addButton = {
+                    AddMenu(
+                        onAddIncome = { nav.navigate("entry") },
+                        onAddExpense = { nav.navigate("expense") },
+                        onImport = { nav.navigate("import") },
+                    )
+                },
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
             )
         }
     }
@@ -264,15 +284,14 @@ private fun NavHostController.switchTab(tab: Tab) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    // Frosted glass (see Glass.kt) with a hairline outline instead of a grey container.
+    // Frosted glass (see Glass.kt) instead of a grey container, with no outline.
     val glass = rememberGlassStyle()
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier
             .animateContentSize()
             .clip(CircleShape)
-            .hazeBlur(HazeInput.Sources(haze), glass)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+            .hazeBlur(HazeInput.Sources(haze), glass),
         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = Color.Transparent),
     ) {
         Tab.entries.forEach { tab ->
@@ -295,5 +314,97 @@ private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Uni
                 }
             }
         }
+    }
+}
+
+/** Space between the bar and the + button, as in Google Photos' bar and search button. */
+private val BarButtonGap = 8.dp
+
+/** The size of the + button while closed: the bar's height (Material's floating toolbar is 64 dp). */
+private val AddButtonSize = 64.dp
+
+/** Material's FAB menu keeps this margin around its button, to the right and below. */
+private val FabMenuMargin = 16.dp
+
+/**
+ * The floating bar and the + button side by side, centred together. The + menu opens upwards from its button
+ * without moving the bar; the open menu's items may reach over the bar.
+ */
+@Composable
+private fun BarWithAddButton(bar: @Composable () -> Unit, addButton: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    Layout(contents = listOf(bar, addButton), modifier = modifier) { (barMeasurables, addMeasurables), constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val barPlaceable = barMeasurables.first().measure(loose)
+        val addPlaceable = addMeasurables.first().measure(loose)
+        val gap = BarButtonGap.roundToPx()
+        val button = AddButtonSize.roundToPx()
+        val margin = FabMenuMargin.roundToPx()
+        // The menu's bottom margin hangs below the bar's line, into the space under the bar.
+        val height = maxOf(barPlaceable.height, addPlaceable.height - margin)
+        layout(constraints.maxWidth, height) {
+            val barX = (constraints.maxWidth - (barPlaceable.width + gap + button)) / 2
+            val barY = height - barPlaceable.height
+            barPlaceable.place(barX, barY)
+            // The menu's button sits at its bottom right: line it up beside the bar, centred on the bar's height.
+            val buttonRight = barX + barPlaceable.width + gap + button
+            val buttonBottom = barY + barPlaceable.height - (barPlaceable.height - button) / 2
+            addPlaceable.place(buttonRight + margin - addPlaceable.width, buttonBottom + margin - addPlaceable.height)
+        }
+    }
+}
+
+/** M3 Expressive FAB menu next to the bar on every tab: one blue button, three actions (import, add expense, add income). */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport: () -> Unit, modifier: Modifier = Modifier) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = expanded) { expanded = false }
+    FloatingActionButtonMenu(
+        expanded = expanded,
+        modifier = modifier,
+        button = {
+            ToggleFloatingActionButton(
+                checked = expanded,
+                onCheckedChange = { expanded = it },
+                containerColor = ToggleFloatingActionButtonDefaults.containerColor(
+                    initialColor = MaterialTheme.colorScheme.primary,
+                    finalColor = MaterialTheme.colorScheme.primary,
+                ),
+                // A circle as tall as the bar, like the search button next to Google Photos' bar.
+                containerSize = ToggleFloatingActionButtonDefaults.containerSize(initialSize = AddButtonSize),
+                containerCornerRadius = ToggleFloatingActionButtonDefaults.containerCornerRadius(initialSize = AddButtonSize / 2),
+            ) {
+                Icon(
+                    if (expanded) Icons.Filled.Close else Icons.Filled.Add,
+                    contentDescription = stringResource(if (expanded) R.string.close else R.string.add_income),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        },
+    ) {
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onImport()
+            },
+            icon = { Icon(Icons.Outlined.UploadFile, contentDescription = null) },
+            text = { Text(stringResource(R.string.import_title)) },
+        )
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onAddExpense()
+            },
+            icon = { Icon(Icons.Filled.Remove, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_expense)) },
+        )
+        FloatingActionButtonMenuItem(
+            onClick = {
+                expanded = false
+                onAddIncome()
+            },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.add_income)) },
+        )
     }
 }

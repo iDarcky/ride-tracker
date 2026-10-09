@@ -25,14 +25,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonGroupDefaults
@@ -42,9 +39,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
-import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedCard
@@ -87,7 +81,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -136,8 +129,6 @@ import kotlin.math.abs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewScreen(
-    onAddEntry: () -> Unit,
-    onAddExpense: () -> Unit,
     onImport: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
@@ -179,11 +170,6 @@ fun OverviewScreen(
                 actions = { if (!editing) MenuButton() },
             )
         },
-        floatingActionButton = {
-            // The FAB menu brings its own spacing; sit 16 dp above the floating bar, not a whole button higher.
-            val fabSpace = (LocalBottomBarSpace.current - FabMenuOwnSpacing).coerceAtLeast(0.dp)
-            if (!editing) AddMenu(onAddIncome = onAddEntry, onAddExpense = onAddExpense, onImport = onImport, Modifier.padding(bottom = fabSpace))
-        },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
     ) { padding ->
         LazyColumn(
@@ -191,7 +177,7 @@ fun OverviewScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 96.dp,
+                bottom = padding.calculateBottomPadding() + LocalBottomBarSpace.current + 24.dp,
             ),
         ) {
             if (editing) {
@@ -549,52 +535,5 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     ) {
         DateRangePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState, modifier = Modifier.weight(1f))
-    }
-}
-
-private val FabMenuOwnSpacing = 24.dp
-
-/** M3 Expressive FAB menu: one button, three actions (import, add expense, add income). */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun AddMenu(onAddIncome: () -> Unit, onAddExpense: () -> Unit, onImport: () -> Unit, modifier: Modifier = Modifier) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = expanded) { expanded = false }
-    FloatingActionButtonMenu(
-        expanded = expanded,
-        modifier = modifier,
-        button = {
-            ToggleFloatingActionButton(checked = expanded, onCheckedChange = { expanded = it }) {
-                Icon(
-                    if (expanded) Icons.Filled.Close else Icons.Filled.Add,
-                    contentDescription = stringResource(if (expanded) R.string.close else R.string.add_income),
-                )
-            }
-        },
-    ) {
-        FloatingActionButtonMenuItem(
-            onClick = {
-                expanded = false
-                onImport()
-            },
-            icon = { Icon(Icons.Outlined.UploadFile, contentDescription = null) },
-            text = { Text(stringResource(R.string.import_title)) },
-        )
-        FloatingActionButtonMenuItem(
-            onClick = {
-                expanded = false
-                onAddExpense()
-            },
-            icon = { Icon(Icons.Filled.Remove, contentDescription = null) },
-            text = { Text(stringResource(R.string.add_expense)) },
-        )
-        FloatingActionButtonMenuItem(
-            onClick = {
-                expanded = false
-                onAddIncome()
-            },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text(stringResource(R.string.add_income)) },
-        )
     }
 }
