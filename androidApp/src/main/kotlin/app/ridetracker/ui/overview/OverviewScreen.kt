@@ -234,6 +234,29 @@ fun OverviewScreen(
             } else {
                 item { Spacer(Modifier.height(12.dp)) }
             }
+            // Things waiting for the driver, pinned above everything else; only when there are some.
+            if (!editing && !attention.isEmpty()) {
+                item(key = "attention") {
+                    NeedsAttention(
+                        attention, state, money, dates,
+                        onImport = onImport,
+                        onAcceptDue = { item ->
+                            viewModel.accept(item)
+                            scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
+                        },
+                        onSkipDue = viewModel::skip,
+                        onZReportDone = { day ->
+                            viewModel.zReportDone(day)
+                            ZReportReminderScheduler.cancelNotification(context)
+                        },
+                        onOpenZReport = onOpenZReport,
+                        onDismissZReport = viewModel::dismissZReportSuggestion,
+                        onOpenTarget = onOpenTarget,
+                        onDismissTarget = viewModel::dismissTargetSuggestion,
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp),
+                    )
+                }
+            }
             item {
                 TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp))
             }
@@ -246,20 +269,7 @@ fun OverviewScreen(
                                 WidgetBody(
                                     widget, state, attention, money, dates, percent,
                                     onOpenDay = viewModel::openDay,
-                                    onImport = onImport,
-                                    onAcceptDue = { item ->
-                                        viewModel.accept(item)
-                                        scope.launch { snackbar.showSnackbar(addedText, duration = SnackbarDuration.Short) }
-                                    },
-                                    onSkipDue = viewModel::skip,
-                                    onZReportDone = { day ->
-                                        viewModel.zReportDone(day)
-                                        ZReportReminderScheduler.cancelNotification(context)
-                                    },
-                                    onOpenZReport = onOpenZReport,
-                                    onDismissZReport = viewModel::dismissZReportSuggestion,
                                     onOpenTarget = onOpenTarget,
-                                    onDismissTarget = viewModel::dismissTargetSuggestion,
                                 )
                             } else {
                                 WidgetPlaceholder()
@@ -274,7 +284,7 @@ fun OverviewScreen(
                 }
             }
             if (editing) {
-                val hidden = HomeWidget.entries - order.toSet()
+                val hidden = HomeWidget.MOVABLE - order.toSet()
                 if (hidden.isNotEmpty()) {
                     item(key = "add-header") { SectionHeader(stringResource(R.string.widget_add_title)) }
                     items(hidden, key = { "add-${it.id}" }) { widget -> AddWidgetRow(widget) { order = order + widget } }
@@ -488,36 +498,6 @@ private fun comparisonLabel(comparison: Comparison): String = when (comparison) 
 }
 
 /** A due recurring expense: what, when, how much, and Add / Skip. */
-@Composable
-internal fun DueExpenseCard(
-    item: PendingExpense,
-    money: MoneyFormat,
-    dates: DateFormats,
-    onAdd: () -> Unit,
-    onSkip: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val category = ExpenseCategory.fromId(item.rule.category)
-    OutlinedCard(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        ListItem(
-            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-            leadingContent = { ExpenseBadge(category.icon) },
-            headlineContent = { Text(item.rule.note ?: stringResource(category.label)) },
-            supportingContent = {
-                Text(stringResource(R.string.due_on, dates.day(item.dueDate)) + " · " + frequencyName(Frequency.fromId(item.rule.frequency)))
-            },
-            trailingContent = { Text(money.format(-item.rule.amountMinor), style = MaterialTheme.typography.titleMedium.tabular()) },
-        )
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-        ) {
-            TextButton(onClick = onSkip) { Text(stringResource(R.string.skip)) }
-            FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.add)) }
-        }
-    }
-}
-
 @Composable
 private fun Figure(label: String, value: String) {
     Column {

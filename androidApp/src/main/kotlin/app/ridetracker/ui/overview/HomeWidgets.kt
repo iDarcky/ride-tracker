@@ -1,5 +1,15 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.shared.domain.ExpenseCategory
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.pluralStringResource
 import app.ridetracker.shared.domain.TargetProgress
@@ -83,7 +93,7 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
             stats.days.any { it.totalMinor > 0 || it.tripCount > 0 }
         HomeWidget.WHEN_YOU_EARN -> stats.tripCount >= MIN_TRIPS_FOR_HEAT
         HomeWidget.EXPENSE_GROUPS -> state.expenseGroups.isNotEmpty()
-        HomeWidget.NEEDS_ATTENTION -> !attention.isEmpty()
+        HomeWidget.NEEDS_ATTENTION -> false // pinned at the top instead (see NeedsAttention)
         HomeWidget.TARGET -> state.target != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
     }
@@ -99,14 +109,7 @@ fun WidgetBody(
     dates: DateFormats,
     percent: NumberFormat,
     onOpenDay: (LocalDate) -> Unit,
-    onImport: () -> Unit,
-    onAcceptDue: (PendingExpense) -> Unit,
-    onSkipDue: (PendingExpense) -> Unit,
-    onZReportDone: (LocalDate) -> Unit = {},
-    onOpenZReport: () -> Unit = {},
-    onDismissZReport: () -> Unit = {},
-    onOpenTarget: () -> Unit = {},
-    onDismissTarget: () -> Unit = {},
+    onOpenTarget: () -> Unit,
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -130,38 +133,130 @@ fun WidgetBody(
             }
         }
         HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
-        HomeWidget.NEEDS_ATTENTION -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.needs_attention), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            attention.zReportDay?.let { day -> ZReportCard(day, dates, onDone = { onZReportDone(day) }) }
-            if (attention.suggestZReport) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AssistChip(
-                        onClick = onOpenZReport,
-                        label = { Text(stringResource(R.string.z_suggest)) },
-                        leadingIcon = { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onDismissZReport) { Text(stringResource(R.string.z_not_now)) }
-                }
-            }
-            if (attention.suggestTarget) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AssistChip(
-                        onClick = onOpenTarget,
-                        label = { Text(stringResource(R.string.target_suggest)) },
-                        leadingIcon = { Icon(Icons.Outlined.Flag, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = onDismissTarget) { Text(stringResource(R.string.z_not_now)) }
-                }
-            }
-            attention.missingMonthly.forEach { missing ->
-                MissingMonthlyCard(missing, state.platforms.firstOrNull { it.id == missing.platformId }, dates, onImport)
-            }
-            attention.pending.forEach { item ->
-                DueExpenseCard(item = item, money = money, dates = dates, onAdd = { onAcceptDue(item) }, onSkip = { onSkipDue(item) })
+        HomeWidget.NEEDS_ATTENTION -> Unit
+    }
+}
+
+/**
+ * "Needs attention", pinned at the top of Home (not a movable card): one compact row per thing waiting, each with
+ * its button; the first three, then "N more". Setup suggestions (Raportul Z, target) come last as chips.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun NeedsAttention(
+    attention: Attention,
+    state: OverviewUiState,
+    money: MoneyFormat,
+    dates: DateFormats,
+    onImport: () -> Unit,
+    onAcceptDue: (PendingExpense) -> Unit,
+    onSkipDue: (PendingExpense) -> Unit,
+    onZReportDone: (LocalDate) -> Unit,
+    onOpenZReport: () -> Unit,
+    onDismissZReport: () -> Unit,
+    onOpenTarget: () -> Unit,
+    onDismissTarget: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rows = buildList<@Composable () -> Unit> {
+        attention.zReportDay?.let { day ->
+            add {
+                AttentionRow(
+                    leading = { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    title = stringResource(R.string.z_notification_title),
+                    detail = stringResource(R.string.z_waiting, dates.day(day)),
+                ) { FilledTonalButton(onClick = { onZReportDone(day) }) { Text(stringResource(R.string.z_done)) } }
             }
         }
+        attention.pending.forEach { item ->
+            add {
+                val category = ExpenseCategory.fromId(item.rule.category)
+                AttentionRow(
+                    leading = { ExpenseBadge(category.icon, size = 32.dp) },
+                    title = item.rule.note ?: stringResource(category.label),
+                    detail = money.format(-item.rule.amountMinor) + " · " + stringResource(R.string.due_on, dates.day(item.dueDate)),
+                ) {
+                    TextButton(onClick = { onSkipDue(item) }) { Text(stringResource(R.string.skip)) }
+                    FilledTonalButton(onClick = { onAcceptDue(item) }) { Text(stringResource(R.string.add)) }
+                }
+            }
+        }
+        attention.missingMonthly.forEach { missing ->
+            add {
+                val platform = state.platforms.firstOrNull { it.id == missing.platformId }
+                AttentionRow(
+                    leading = { if (platform != null) PlatformBadge(platform.name, platform.colorArgb, size = 32.dp) },
+                    title = stringResource(R.string.missing_monthly_title, platform?.name.orEmpty(), dates.period(missing.month)),
+                    detail = stringResource(R.string.missing_monthly_short),
+                ) { FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.import_title)) } }
+            }
+        }
+    }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    OutlinedCard(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 8.dp).animateContentSize()) {
+            Text(
+                stringResource(R.string.needs_attention),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            (if (expanded) rows else rows.take(VISIBLE_ATTENTION_ROWS)).forEach { it() }
+            if (rows.size > VISIBLE_ATTENTION_ROWS) {
+                val more = rows.size - VISIBLE_ATTENTION_ROWS
+                TextButton(onClick = { expanded = !expanded }, modifier = Modifier.padding(start = 8.dp)) {
+                    Text(if (expanded) stringResource(R.string.show_less) else pluralStringResource(R.plurals.attention_more, more, more))
+                }
+            }
+            if (attention.suggestZReport || attention.suggestTarget) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    if (attention.suggestTarget) {
+                        Suggestion(Icons.Outlined.Flag, stringResource(R.string.target_suggest), onOpenTarget, onDismissTarget)
+                    }
+                    if (attention.suggestZReport) {
+                        Suggestion(Icons.AutoMirrored.Outlined.ReceiptLong, stringResource(R.string.z_suggest), onOpenZReport, onDismissZReport)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private const val VISIBLE_ATTENTION_ROWS = 3
+
+@Composable
+private fun AttentionRow(
+    leading: @Composable () -> Unit,
+    title: String,
+    detail: String?,
+    actions: @Composable RowScope.() -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        leading()
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
+            detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+        Spacer(Modifier.width(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
+    }
+}
+
+/** A setup suggestion: the chip opens its settings, "Not now" hides it for good. */
+@Composable
+private fun Suggestion(icon: ImageVector, label: String, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        AssistChip(
+            onClick = onOpen,
+            label = { Text(label) },
+            leadingIcon = { Icon(icon, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+        )
+        TextButton(onClick = onDismiss) { Text(stringResource(R.string.z_not_now)) }
     }
 }
 
@@ -214,39 +309,6 @@ private fun TargetCard(p: TargetProgress, money: MoneyFormat, dates: DateFormats
                     )
                 }
             }
-        }
-    }
-}
-
-/** Raportul Z for [day] isn't marked done yet. */
-@Composable
-private fun ZReportCard(day: LocalDate, dates: DateFormats, onDone: () -> Unit) {
-    OutlinedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        ListItem(
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            leadingContent = { Icon(Icons.AutoMirrored.Outlined.ReceiptLong, contentDescription = null) },
-            headlineContent = { Text(stringResource(R.string.z_notification_title)) },
-            supportingContent = { Text(stringResource(R.string.z_waiting, dates.day(day))) },
-        )
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
-            FilledTonalButton(onClick = onDone) { Text(stringResource(R.string.z_done)) }
-        }
-    }
-}
-
-/** A finished month estimated without the platform's monthly total: ask for that screenshot. */
-@Composable
-private fun MissingMonthlyCard(missing: MissingMonthlyTotal, platform: PlatformEntity?, dates: DateFormats, onImport: () -> Unit) {
-    val name = platform?.name.orEmpty()
-    OutlinedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        ListItem(
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            leadingContent = { if (platform != null) PlatformBadge(platform.name, platform.colorArgb) },
-            headlineContent = { Text(stringResource(R.string.missing_monthly_title, name, dates.period(missing.month))) },
-            supportingContent = { Text(stringResource(R.string.missing_monthly_body, name)) },
-        )
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End) {
-            FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.import_title)) }
         }
     }
 }

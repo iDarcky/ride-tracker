@@ -276,7 +276,6 @@
     <string name="done">Done</string>
     <string name="import_title">Import</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
-    <string name="missing_monthly_body">Estimated from the PDF or trips, without bonuses. Import %1$s’s Monthly earnings screenshot (Earnings breakdown → Monthly) for the exact total.</string>
     <string name="import_menu_summary">Bolt and Uber screenshots and reports</string>
     <string name="import_empty_title">Import from Bolt and Uber</string>
     <string name="import_empty_body">Choose screenshots of Bolt’s daily earnings breakdown, Bolt’s monthly summary PDF or rider invoices CSV, or Uber’s reports (CSV). Everything is read on this phone.</string>
@@ -623,4 +622,10 @@
     <string name="target_notification_title">Monthly target reached</string>
     <string name="target_notification_body">%1$s in %2$s: your target of %3$s is done.</string>
     <string name="widget_target">Target</string>
+    <string name="missing_monthly_short">Monthly total missing: bonuses aren’t counted yet</string>
+    <string name="show_less">Show less</string>
+    <plurals name="attention_more">
+        <item quantity="one">%d more</item>
+        <item quantity="other">%d more</item>
+    </plurals>
 </resources>

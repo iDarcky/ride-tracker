@@ -169,6 +169,20 @@ Product:
 - [ ] Bolt "Rides" (acceptance) and "Cancels" tabs; Bolt's personal data export (ZIP with CSV/JSON) as a
       one-off history import; Bolt Driver Portal reports (invoices, payouts, balance).
 - [ ] Identity: final name, icon, darker cockpit look.
+Widget ideas (owner, 9 Oct 2026: a growing list to go over later; nothing decided):
+- Money: **this week's payout** (earned, cash in hand, coming to the bank, payout day); **real profit per hour/km**
+  after commission and fuel; **which app pays better** (Bolt vs Uber RON/hour, RON/km); **effective commission** per
+  platform vs last month; **bonuses and quests** this month and their share; **cash in pocket** (cash not deposited,
+  Bolt cash commission owed).
+- Taxes and paperwork (Romania): **set aside for taxes** (PFA: CAS, CASS, income tax estimate); **car documents
+  countdown** (RCA, ITP, rovinietă, CASCO, licence, Uber/Bolt documents); **year so far** vs PFA thresholds (VAT limit).
+- Car: **maintenance due** (oil, tyres, service from the odometer); **fuel this month** (litres, RON, % of income,
+  real L/100 km).
+- Driving smarter: **best time to drive tomorrow** (own history by weekday and hour); **today, live** (earned, hours,
+  what's left of today's share of the target); **streak and rest days**; **data freshness** (imported up to which day,
+  per platform).
+- Later / outside the box: **weather and events** (needs internet, would be opt-in: breaks "nothing leaves the
+  phone"); **savings goal** ("new car: 18,400 of 40,000").
 Launch:
 - [ ] Play closed test: 12+ testers for 14 days (needed for new personal developer accounts), privacy policy,
       Data safety form.

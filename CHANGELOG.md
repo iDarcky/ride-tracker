@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+- **"Needs attention" is pinned at the top of Home**, above the total, and only shows when something is waiting. It's
+  compact now: one line per item with its button (Raportul Z „Gata", a recurring expense's Add/Skip, a month's missing
+  Bolt total → Import), the first three and then "N more". The setup chips (monthly target, Raportul Z) sit at its
+  bottom. It's no longer a card you can move or remove in Customise; the other cards still are.
+
 ## 0.10.1
 - **Monthly target page has a Save button.** Change the amount, what it counts and your driving days, then Save;
   leaving with Back keeps the target as it was. The keyboard's ✓ closes the keyboard.

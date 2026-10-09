@@ -276,7 +276,6 @@
     <string name="done">Gata</string>
     <string name="import_title">Importă</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
-    <string name="missing_monthly_body">Estimat din PDF sau din curse, fără bonusuri. Importă captura lunară din %1$s (Defalcarea câștigurilor → Lunar) pentru totalul exact.</string>
     <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt și Uber</string>
     <string name="import_empty_title">Importă din Bolt și Uber</string>
     <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar Bolt (PDF) sau facturile către pasageri (CSV), ori rapoartele Uber (CSV). Totul se citește pe acest telefon.</string>
@@ -640,4 +639,11 @@
     <string name="target_notification_title">Țintă lunară atinsă</string>
     <string name="target_notification_body">%1$s în %2$s: ținta de %3$s e atinsă.</string>
     <string name="widget_target">Țintă</string>
+    <string name="missing_monthly_short">Lipsește totalul lunar: bonusurile nu sunt încă numărate</string>
+    <string name="show_less">Arată mai puțin</string>
+    <plurals name="attention_more">
+        <item quantity="one">Încă %d</item>
+        <item quantity="few">Încă %d</item>
+        <item quantity="other">Încă %d</item>
+    </plurals>
 </resources>
