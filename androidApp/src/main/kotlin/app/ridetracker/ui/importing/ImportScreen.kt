@@ -79,6 +79,31 @@ import app.ridetracker.ui.common.tabular
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val BOLT_COLOR = 0xFF34D186
+private const val UBER_COLOR = 0xFF000000
+
+/**
+ * What the edit sheet shows ([report]) and how the corrected one goes back into the item: an Uber day is edited
+ * with the day editor, then put back among the file's days.
+ */
+private class EditTarget(val uri: Uri, val report: ReadReport, val apply: (ReadReport) -> ReadReport = { it })
+
+/** The sheet for an Uber report reuses Bolt's editors: a day, a period's totals, or hours. */
+private fun uberEditTarget(uri: Uri, report: ReadReport, dayIndex: Int? = null): EditTarget? = when (report) {
+    is ReadReport.UberDays -> dayIndex?.let { i ->
+        EditTarget(uri, ReadReport.BoltDay(report.fileHash, report.payments.days[i])) { edited ->
+            val day = (edited as ReadReport.BoltDay).day
+            val days = report.payments.days.toMutableList().also { it[i] = day }.sortedBy { it.date }
+            report.copy(payments = report.payments.copy(days = days))
+        }
+    }
+    is ReadReport.UberTotals -> EditTarget(uri, ReadReport.BoltPeriod(report.fileHash, report.summary, monthly = true, addsUp = true)) {
+        report.copy(summary = (it as ReadReport.BoltPeriod).summary)
+    }
+    is ReadReport.UberHours -> EditTarget(uri, ReadReport.BoltActivity(report.fileHash, listOf(OnlineTime(report.time.period, report.time.onlineMinutes)))) {
+        report.copy(time = report.time.copy(onlineMinutes = (it as ReadReport.BoltActivity).times.single().minutes))
+    }
+    else -> null
+}
 
 /**
  * Import Bolt screenshots and reports: pick or share files, check what was read, save.
@@ -110,12 +135,12 @@ fun ImportScreen(
     val locale = currentLocale()
     val money = remember(state.currency, locale) { MoneyFormat(state.currency, locale) }
     val dates = remember(locale) { DateFormats(locale) }
-    var editing by remember { mutableStateOf<Pair<Uri, ReadReport>?>(null) }
-    editing?.let { (uri, report) ->
+    var editing by remember { mutableStateOf<EditTarget?>(null) }
+    editing?.let { target ->
         ImportEditSheet(
-            report = report,
+            report = target.report,
             currency = state.currency,
-            onSave = { viewModel.edit(uri, it); editing = null },
+            onSave = { viewModel.edit(target.uri, target.apply(it)); editing = null },
             onDismiss = { editing = null },
         )
     }
@@ -155,18 +180,21 @@ fun ImportScreen(
             state.items.isEmpty() && state.savedCount != null ->
                 DoneState(state.savedCount!!, onMore = viewModel::startOver, onDone = onDone, modifier = Modifier.padding(padding))
             state.items.isEmpty() ->
-                EmptyState(state.checklists, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, modifier = Modifier.padding(padding))
+                EmptyState(state.checklists, state.uberChecklists, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, modifier = Modifier.padding(padding))
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(state.items, key = { it.uri.toString() }) { item ->
+                // Files that aren't needed go last, so what will be saved comes first.
+                val hasUberTotals = state.items.any { it.report is ReadReport.UberTotals && it.selected }
+                items(state.items.sortedBy { it.report is ReadReport.UberNotNeeded }, key = { it.uri.toString() }) { item ->
                     ItemCard(
-                        item, money, dates,
+                        item, money, dates, hasUberTotals,
                         onToggle = { viewModel.toggle(item.uri) },
                         onRemove = { viewModel.remove(item.uri) },
-                        onEdit = { editing = item.uri to it },
+                        onEdit = { editing = uberEditTarget(item.uri, it) ?: EditTarget(item.uri, it) },
+                        onEditDay = { report, i -> editing = uberEditTarget(item.uri, report, i) },
                     )
                 }
                 item {
@@ -183,6 +211,7 @@ fun ImportScreen(
 @Composable
 private fun EmptyState(
     checklists: List<ImportChecklist>,
+    uberChecklists: List<ImportChecklist>,
     dates: DateFormats,
     onScreenshots: () -> Unit,
     onFiles: () -> Unit,
@@ -230,6 +259,22 @@ private fun EmptyState(
             )
             checklists.forEach { ImportChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
         }
+        if (uberChecklists.isNotEmpty()) {
+            Spacer(Modifier.height(32.dp))
+            Text(
+                stringResource(R.string.import_whats_missing_uber),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.checklist_uber_intro),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            uberChecklists.forEach { UberChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
+        }
     }
 }
 
@@ -255,9 +300,12 @@ private fun ItemCard(
     item: ImportItem,
     money: MoneyFormat,
     dates: DateFormats,
+    /** Uber's totals file is being imported too, so its fee needn't be asked for. */
+    hasUberTotals: Boolean,
     onToggle: () -> Unit,
     onRemove: () -> Unit,
     onEdit: (ReadReport) -> Unit,
+    onEditDay: (ReadReport.UberDays, Int) -> Unit,
 ) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -265,8 +313,12 @@ private fun ItemCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val isBolt = report is ReadReport.BoltDay || report is ReadReport.BoltTrips || report is ReadReport.BoltMonth ||
                     report is ReadReport.BoltPeriod || report is ReadReport.BoltActivity
+                val isUber = report is ReadReport.UberDays || report is ReadReport.UberTrips || report is ReadReport.UberTotals ||
+                    report is ReadReport.UberHours || report is ReadReport.UberNotNeeded
                 if (isBolt) {
                     PlatformBadge("Bolt", BOLT_COLOR, size = 32.dp)
+                } else if (isUber) {
+                    PlatformBadge("Uber", UBER_COLOR, size = 32.dp)
                 } else {
                     Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -287,7 +339,7 @@ private fun ItemCard(
                 item.failed -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_failed), warning = true)
                 report == null -> LinearProgressIndicator(Modifier.fillMaxWidth())
                 item.alreadyImported -> Note(Icons.Outlined.Info, stringResource(R.string.import_already))
-                else -> Details(report, item.replaces, money, dates)
+                else -> Details(report, item.replaces, money, dates, hasUberTotals, onEditDay)
             }
             if (item.edited) Note(Icons.Outlined.Edit, stringResource(R.string.import_edited))
             if (report != null && !item.alreadyImported) EditActions(report, onEdit)
@@ -301,7 +353,8 @@ private fun EditActions(report: ReadReport, onEdit: (ReadReport) -> Unit) {
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
         when (report) {
-            is ReadReport.BoltDay, is ReadReport.BoltPeriod, is ReadReport.BoltMonth, is ReadReport.BoltActivity ->
+            is ReadReport.BoltDay, is ReadReport.BoltPeriod, is ReadReport.BoltMonth, is ReadReport.BoltActivity,
+            is ReadReport.UberTotals, is ReadReport.UberHours ->
                 TextButton(onClick = { onEdit(report) }) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -315,7 +368,8 @@ private fun EditActions(report: ReadReport, onEdit: (ReadReport) -> Unit) {
                     onEdit(ReadReport.BoltActivity(report.fileHash, listOf(OnlineTime(DateRange(today, today), 0))))
                 }) { Text(stringResource(R.string.import_type_hours)) }
             }
-            is ReadReport.BoltTrips -> Unit
+            // Uber's days are edited one by one in the list of days.
+            is ReadReport.BoltTrips, is ReadReport.UberDays, is ReadReport.UberTrips, is ReadReport.UberNotNeeded -> Unit
         }
     }
 }
@@ -329,6 +383,11 @@ private fun title(report: ReadReport?, failed: Boolean): String = when {
     report is ReadReport.BoltDay -> stringResource(R.string.import_bolt_day)
     report is ReadReport.BoltTrips -> stringResource(R.string.import_bolt_invoices)
     report is ReadReport.BoltMonth -> stringResource(R.string.import_bolt_month)
+    report is ReadReport.UberDays -> stringResource(R.string.import_uber_days)
+    report is ReadReport.UberTrips -> stringResource(R.string.import_uber_trips)
+    report is ReadReport.UberTotals -> stringResource(R.string.import_uber_totals)
+    report is ReadReport.UberHours -> stringResource(R.string.import_uber_hours)
+    report is ReadReport.UberNotNeeded -> stringResource(R.string.import_uber_not_needed)
     else -> stringResource(R.string.import_unknown_file)
 }
 
@@ -338,11 +397,23 @@ private fun subtitle(report: ReadReport?, dates: DateFormats): String? = when (r
     is ReadReport.BoltMonth -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
     is ReadReport.BoltPeriod -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
     is ReadReport.BoltActivity -> null
+    is ReadReport.UberDays -> dates.range(report.payments.period)
+    is ReadReport.UberTrips -> dates.range(DateRange(report.trips.minOf { it.date }, report.trips.maxOf { it.date }))
+    is ReadReport.UberTotals -> dates.range(DateRange(report.summary.periodStart, report.summary.periodEnd))
+    is ReadReport.UberHours -> dates.range(report.time.period)
+    is ReadReport.UberNotNeeded -> report.report.key
     else -> null
 }
 
 @Composable
-private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat, dates: DateFormats) {
+private fun Details(
+    report: ReadReport,
+    replaces: Int,
+    money: MoneyFormat,
+    dates: DateFormats,
+    hasUberTotals: Boolean,
+    onEditDay: (ReadReport.UberDays, Int) -> Unit,
+) {
     when (report) {
         is ReadReport.BoltDay -> {
             val day = report.day
@@ -400,7 +471,89 @@ private fun Details(report: ReadReport, replaces: Int, money: MoneyFormat, dates
             }
             Note(Icons.Outlined.Info, stringResource(R.string.import_period_not_income))
         }
+        is ReadReport.UberDays -> UberDaysDetails(report, replaces, money, dates, hasUberTotals, onEditDay)
+        is ReadReport.UberTrips -> {
+            val trips = report.trips
+            val cash = trips.count { it.paymentMethod == PaymentMethod.CASH }
+            Figure(pluralStringResource(R.plurals.import_rides, trips.size, trips.size), pluralStringResource(R.plurals.import_cash_trips, cash, cash), big = true)
+            trips.sumOf { it.distanceMeters ?: 0 }.takeIf { it > 0 }?.let {
+                Figure(stringResource(R.string.import_distance), stringResource(R.string.km_value, "%.1f".format(currentLocale(), it / 1000.0)))
+            }
+            Note(Icons.Outlined.Info, stringResource(R.string.import_no_personal_data))
+            Note(Icons.Outlined.Info, stringResource(R.string.import_uber_trips_note))
+        }
+        is ReadReport.UberTotals -> {
+            val s = report.summary
+            s.earningsMinor?.let { Figure(stringResource(R.string.import_your_earnings), money.format(it), big = true) }
+            HorizontalDivider()
+            s.grossFareMinor?.let { Figure(stringResource(R.string.import_gross_fares), money.format(it)) }
+            s.bonusMinor?.let { Figure(stringResource(R.string.line_bonus), money.format(it)) }
+            s.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
+            s.cancellationMinor?.let { Figure(stringResource(R.string.line_cancellation_fee), money.format(it)) }
+            s.platformFeeMinor?.let { Figure(stringResource(R.string.import_service_fee), money.format(it)) }
+            Note(Icons.Outlined.Info, stringResource(R.string.import_uber_totals_note))
+        }
+        is ReadReport.UberHours -> {
+            val t = report.time
+            Figure(stringResource(R.string.import_online), stringResource(R.string.hours_minutes, t.onlineMinutes / 60, t.onlineMinutes % 60), big = true)
+            if (t.distanceMeters > 0) {
+                Figure(stringResource(R.string.import_distance_driven), stringResource(R.string.km_value, "%.1f".format(currentLocale(), t.distanceMeters / 1000.0)))
+            }
+            Note(Icons.Outlined.Info, stringResource(R.string.import_uber_hours_note))
+        }
+        is ReadReport.UberNotNeeded -> Note(Icons.Outlined.Info, stringResource(R.string.import_uber_not_needed_note))
         is ReadReport.Unknown -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_not_recognised), warning = true)
+    }
+}
+
+/** Uber's payments: the period's earnings and what they're made of, then each day (tap one to correct it). */
+@Composable
+private fun UberDaysDetails(
+    report: ReadReport.UberDays,
+    replaces: Int,
+    money: MoneyFormat,
+    dates: DateFormats,
+    hasUberTotals: Boolean,
+    onEditDay: (ReadReport.UberDays, Int) -> Unit,
+) {
+    val days = report.payments.days
+    val lines = days.flatMap { it.lines }
+    Figure(stringResource(R.string.import_your_earnings), money.format(days.sumOf { it.earningsMinor }), big = true)
+    HorizontalDivider()
+    lines.groupBy { Triple(it.kind, it.inCash, if (it.kind == IncomeLineKind.OTHER) it.label else "") }
+        .forEach { (_, group) -> Figure(lineLabel(group.first()), money.format(group.sumOf { it.amountMinor })) }
+    Figure(stringResource(R.string.import_cash_in_hand), money.format(days.sumOf { it.cashCollectedMinor ?: 0 }))
+    if (days.all { it.addsUp }) {
+        Note(Icons.Outlined.CheckCircle, stringResource(R.string.import_adds_up))
+    } else {
+        Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_does_not_add_up), warning = true)
+    }
+    Note(Icons.Outlined.Info, stringResource(R.string.import_uber_days_note))
+    if (!hasUberTotals && lines.none { it.kind == IncomeLineKind.COMMISSION }) Note(Icons.Outlined.Info, stringResource(R.string.import_uber_days_fee_note))
+    if (replaces > 0) Note(Icons.Outlined.Info, pluralStringResource(R.plurals.import_replaces, replaces, replaces))
+
+    var open by remember { mutableStateOf(false) }
+    TextButton(onClick = { open = !open }) {
+        Text(
+            if (open) stringResource(R.string.import_hide_days)
+            else stringResource(R.string.import_show_days) + " · " + pluralStringResource(R.plurals.import_days, days.size, days.size),
+        )
+    }
+    if (open) {
+        days.forEachIndexed { i, day ->
+            val label = dates.day(day.date)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                if (!day.addsUp) {
+                    Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(money.format(day.earningsMinor), style = MaterialTheme.typography.bodyMedium.tabular())
+                IconButton(onClick = { onEditDay(report, i) }) {
+                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.import_edit_day, label), Modifier.size(18.dp))
+                }
+            }
+        }
     }
 }
 

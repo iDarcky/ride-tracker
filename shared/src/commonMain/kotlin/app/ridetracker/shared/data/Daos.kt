@@ -343,6 +343,15 @@ interface ImportDao {
     @Query("SELECT externalId FROM trip WHERE platformId = :platformId AND externalId IN (:externalIds)")
     suspend fun existingTripIds(platformId: Long, externalIds: List<String>): List<String>
 
+    @Query("SELECT * FROM trip WHERE platformId = :platformId AND externalId IN (:externalIds)")
+    suspend fun getTripsByExternalId(platformId: Long, externalIds: List<String>): List<TripEntity>
+
+    @Update
+    suspend fun updateTrips(trips: List<TripEntity>)
+
+    @Query("SELECT * FROM import_batch WHERE platformId = :platformId AND kind = :kind")
+    suspend fun getBatchesOfKind(platformId: Long, kind: String): List<ImportBatchEntity>
+
     @Insert
     suspend fun insertTrips(trips: List<TripEntity>)
 

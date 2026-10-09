@@ -66,7 +66,13 @@ enum class ImportKind(val id: String) {
     BOLT_RIDER_INVOICES_CSV("bolt_rider_invoices_csv"),
     UBER_DAILY_SCREENSHOT("uber_daily_screenshot"),
     UBER_WEEKLY_SCREENSHOT("uber_weekly_screenshot"),
+    /** Uber's payments per transaction ("payments_order"): days of income. */
     UBER_PAYMENTS_CSV("uber_payments_csv"),
+    /** Uber's totals with the service fee ("payments_organization"). */
+    UBER_TOTALS_CSV("uber_totals_csv"),
+    UBER_TRIPS_CSV("uber_trips_csv"),
+    /** Uber's online time and km ("driver_time_and_distance"). */
+    UBER_TIME_DISTANCE_CSV("uber_time_distance_csv"),
     OTHER("other"),
     ;
 

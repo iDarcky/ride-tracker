@@ -16,6 +16,7 @@ import app.ridetracker.shared.domain.ImportOutcome
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.IncomeSource
+import app.ridetracker.shared.domain.importing.OnlineTime
 import app.ridetracker.ui.common.resolveCurrency
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -47,7 +48,8 @@ data class ImportItem(
     val canSave: Boolean
         get() = !alreadyImported && when (report) {
             is ReadReport.BoltDay, is ReadReport.BoltTrips, is ReadReport.BoltMonth, is ReadReport.BoltPeriod,
-            is ReadReport.BoltActivity -> true
+            is ReadReport.BoltActivity, is ReadReport.UberDays, is ReadReport.UberTrips, is ReadReport.UberTotals,
+            is ReadReport.UberHours -> true
             else -> false
         }
 }
@@ -60,6 +62,8 @@ data class ImportUiState(
     val savedCount: Int? = null,
     /** What last month and this month have from Bolt, newest first. */
     val checklists: List<ImportChecklist> = emptyList(),
+    /** The same for Uber. */
+    val uberChecklists: List<ImportChecklist> = emptyList(),
 ) {
     val reading: Boolean get() = items.any { it.report == null && !it.failed }
     val toSave: List<ImportItem> get() = items.filter { it.canSave && it.selected }
@@ -92,9 +96,12 @@ class ImportViewModel(
                 importRepository.observeTrips(range),
                 importRepository.observeSummaries(range),
             ) { platforms, entries, trips, summaries ->
-                val bolt = platforms.firstOrNull { it.name.trim().equals("Bolt", ignoreCase = true) }?.id ?: -1L
-                months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) }
-            }.collect { lists -> _state.update { it.copy(checklists = lists) } }
+                fun id(name: String) = platforms.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.id ?: -1L
+                val bolt = id(BOLT)
+                val uber = id(UBER)
+                months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) } to
+                    months.map { ImportChecklists.compute(it, uber, entries, trips, summaries, today) }
+            }.collect { (bolt, uber) -> _state.update { it.copy(checklists = bolt, uberChecklists = uber) } }
         }
     }
 
@@ -111,11 +118,7 @@ class ImportViewModel(
                 }
                 val duplicateInList = _state.value.items.any { it.uri != uri && it.report?.fileHash == report.fileHash }
                 val already = duplicateInList || importRepository.isImported(report.fileHash)
-                val replaces = if (report is ReadReport.BoltDay && !already) {
-                    importRepository.existingEntries(boltPlatformId(), report.day)
-                } else {
-                    0
-                }
+                val replaces = if (already) 0 else replaces(report)
                 replace(uri) { it.copy(report = report, alreadyImported = already, replaces = replaces) }
             }
         }
@@ -129,12 +132,19 @@ class ImportViewModel(
     /** Keeps the driver's corrections (or a screenshot typed in by hand) in place of what was read. */
     fun edit(uri: Uri, report: ReadReport) {
         replace(uri) { it.copy(report = report, edited = true, selected = true) }
-        if (report is ReadReport.BoltDay) {
+        if (report is ReadReport.BoltDay || report is ReadReport.UberDays) {
             viewModelScope.launch {
-                val replaces = importRepository.existingEntries(boltPlatformId(), report.day)
+                val replaces = replaces(report)
                 replace(uri) { it.copy(replaces = replaces) }
             }
         }
+    }
+
+    /** Entries already in the app that saving [report] replaces (same app and day). */
+    private suspend fun replaces(report: ReadReport): Int = when (report) {
+        is ReadReport.BoltDay -> importRepository.existingEntries(platformId(BOLT, BOLT_COLOR), report.day)
+        is ReadReport.UberDays -> platformId(UBER, UBER_COLOR).let { uber -> report.payments.days.sumOf { importRepository.existingEntries(uber, it) } }
+        else -> 0
     }
 
     fun remove(uri: Uri) = _state.update { s -> s.copy(items = s.items.filterNot { it.uri == uri }) }
@@ -144,7 +154,8 @@ class ImportViewModel(
         if (items.isEmpty() || _state.value.saving) return
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
-            val platformId = boltPlatformId()
+            val platformId = platformId(BOLT, BOLT_COLOR)
+            val uber = platformId(UBER, UBER_COLOR)
             var saved = 0
             // Oldest days first, so a later screenshot of the same day wins.
             for (item in items.sortedBy { (it.report as? ReadReport.BoltDay)?.day?.date }) {
@@ -163,6 +174,16 @@ class ImportViewModel(
                         r.summary,
                         now,
                     )
+                    is ReadReport.UberDays -> importRepository.saveDays(
+                        uber, ImportKind.UBER_PAYMENTS_CSV, IncomeSource.CSV, r.fileHash, r.payments.period, r.payments.days,
+                        r.payments.tripFares, now,
+                    )
+                    is ReadReport.UberTrips -> importRepository.mergeTrips(uber, ImportKind.UBER_TRIPS_CSV, r.fileHash, r.trips, now)
+                    is ReadReport.UberTotals -> importRepository.saveSummary(uber, ImportKind.UBER_TOTALS_CSV, r.fileHash, r.summary, now)
+                    is ReadReport.UberHours -> importRepository.saveOnlineTimes(
+                        uber, ImportKind.UBER_TIME_DISTANCE_CSV, r.fileHash,
+                        listOf(OnlineTime(r.time.period, r.time.onlineMinutes)), now, distanceMeters = r.time.distanceMeters,
+                    )
                     else -> null
                 }
                 if (outcome is ImportOutcome.Saved) saved++
@@ -173,12 +194,19 @@ class ImportViewModel(
         }
     }
 
-    /** The user's Bolt app, created if they removed or renamed it. */
-    private suspend fun boltPlatformId(): Long = platformLock.withLock {
+    /** The user's Bolt or Uber app, created if they removed or renamed it. */
+    private suspend fun platformId(name: String, color: Long): Long = platformLock.withLock {
         val platforms = incomeRepository.observePlatforms().first()
-        val bolt = platforms.firstOrNull { it.name.trim().equals("Bolt", ignoreCase = true) && !it.archived }
-            ?: platforms.firstOrNull { it.name.trim().equals("Bolt", ignoreCase = true) }
-        bolt?.id ?: incomeRepository.addPlatform("Bolt", 0xFF34D186)
+        val found = platforms.firstOrNull { it.name.trim().equals(name, ignoreCase = true) && !it.archived }
+            ?: platforms.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }
+        found?.id ?: incomeRepository.addPlatform(name, color)
+    }
+
+    private companion object {
+        const val BOLT = "Bolt"
+        const val UBER = "Uber"
+        const val BOLT_COLOR = 0xFF34D186
+        const val UBER_COLOR = 0xFF000000
     }
 
     private fun replace(uri: Uri, change: (ImportItem) -> ImportItem) =

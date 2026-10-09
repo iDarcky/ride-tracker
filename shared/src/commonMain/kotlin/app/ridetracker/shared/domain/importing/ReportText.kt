@@ -97,10 +97,11 @@ object ReportText {
         return LocalDate(m.groupValues[2].toInt(), month.number, 1)
     }
 
-    /** "8 Oct", "8 oct.", "08 octombrie", "Oct 8" -> day and month. */
+    /** "8 Oct", "8 oct.", "08 octombrie", "Oct 8", "1oct." (OCR can drop the space) -> day and month. */
     fun dayAndMonth(text: String): Pair<Int, Month>? {
         val t = plain(text)
-        val dayFirst = Regex("""^(\d{1,2}|[li])\s+([a-z0][a-z]{2,})\.?$""").find(t)
+        val dayFirst = Regex("""^(\d{1,2})\s*([a-z0][a-z]{2,})\.?$""").find(t)
+            ?: Regex("""^([li])\s+([a-z0][a-z]{2,})\.?$""").find(t)
         val monthFirst = Regex("""^([a-z0][a-z]{2,})\.?\s+(\d{1,2}|[li])$""").find(t)
         val (day, name) = when {
             dayFirst != null -> dayFirst.groupValues[1] to dayFirst.groupValues[2]

@@ -96,10 +96,12 @@ fun TripDetailsScreen(
                 )
             }
 
+            // Uber's reports give what the driver earned on a trip (after Uber's fee), Bolt's what the rider paid.
+            val afterFee = trip.importKind in uberTripKinds
             Card(stringResource(R.string.trip_breakdown)) {
-                Field(stringResource(R.string.trip_fare), money.format(trip.fareMinor))
+                Field(stringResource(R.string.trip_fare), if (afterFee) DASH else money.format(trip.fareMinor))
                 Field(stringResource(R.string.trip_platform_fee), DASH)
-                Field(stringResource(R.string.trip_driver_earnings), DASH)
+                Field(stringResource(R.string.trip_driver_earnings), if (afterFee) money.format(trip.fareMinor) else DASH)
                 Field(stringResource(R.string.line_tip), DASH)
                 Field(stringResource(R.string.line_bonus), DASH)
                 Text(
@@ -125,8 +127,12 @@ fun TripDetailsScreen(
     }
 }
 
+private val uberTripKinds = setOf(ImportKind.UBER_PAYMENTS_CSV.id, ImportKind.UBER_TRIPS_CSV.id)
+
 private fun sourceName(kind: String): Int = when (ImportKind.fromId(kind)) {
     ImportKind.BOLT_RIDER_INVOICES_CSV -> R.string.import_bolt_invoices
+    ImportKind.UBER_PAYMENTS_CSV -> R.string.import_uber_days
+    ImportKind.UBER_TRIPS_CSV -> R.string.import_uber_trips
     else -> R.string.import_title
 }
 

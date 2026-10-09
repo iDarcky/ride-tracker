@@ -101,6 +101,54 @@ fun ImportChecklistCard(c: ImportChecklist, dates: DateFormats, modifier: Modifi
     }
 }
 
+/** The same for Uber: the four Supplier portal files it needs, each saying which file it is. */
+@Composable
+fun UberChecklistCard(c: ImportChecklist, dates: DateFormats, modifier: Modifier = Modifier) {
+    OutlinedCard(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 12.dp)) {
+            Text(
+                stringResource(R.string.checklist_uber_title, dates.period(c.month)),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            ChecklistRow(
+                stringResource(R.string.checklist_uber_payments),
+                if (c.exactDays > 0) pluralStringResource(R.plurals.checklist_uber_days, c.exactDays, c.exactDays)
+                else stringResource(R.string.checklist_uber_payments_missing),
+                if (c.exactDays > 0) Status.DONE else Status.MISSING,
+                stringResource(R.string.checklist_uber_payments_how),
+            )
+            ChecklistRow(
+                stringResource(R.string.checklist_uber_totals),
+                when {
+                    c.hasMonthlyTotal -> stringResource(R.string.checklist_done)
+                    !c.monthOver -> stringResource(R.string.checklist_uber_totals_later)
+                    else -> stringResource(R.string.checklist_uber_totals_missing)
+                },
+                when {
+                    c.hasMonthlyTotal -> Status.DONE
+                    !c.monthOver -> Status.LATER
+                    else -> Status.MISSING
+                },
+                stringResource(R.string.checklist_uber_totals_how),
+            )
+            ChecklistRow(
+                stringResource(R.string.checklist_uber_trips),
+                stringResource(if (c.hasTrips) R.string.checklist_done else R.string.checklist_uber_trips_missing),
+                if (c.hasTrips) Status.DONE else Status.MISSING,
+                stringResource(R.string.checklist_uber_trips_how),
+            )
+            ChecklistRow(
+                stringResource(R.string.checklist_uber_hours),
+                stringResource(if (c.hasHours) R.string.checklist_done else R.string.checklist_uber_hours_missing),
+                if (c.hasHours) Status.DONE else Status.MISSING,
+                stringResource(R.string.checklist_uber_hours_how),
+            )
+        }
+    }
+}
+
 @Composable
 private fun ChecklistRow(title: String, status: String, state: Status, how: String) {
     var open by rememberSaveable(title) { mutableStateOf(false) }

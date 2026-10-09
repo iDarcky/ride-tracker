@@ -148,7 +148,10 @@ See the README for build, versioning and signing rules.
    0.7.0: edit imports before saving (and type in unrecognised screenshots), "Your Bolt data" checklist on Import.
    0.7.1: period header (month title with month list and "Custom range…"; arrows only for Week and Day), same
    title on Money; plain outlined menus.
-   **Next:** **Uber** (new chat, owner sends the files); then the list below.
+   0.8.0: **Uber CSV import** (Supplier portal: payments_order, payments_organization, trip_activity,
+   driver_time_and_distance; the other files are flagged "not needed"), "Your Uber data" checklist.
+   **Next:** Uber screenshots (daily/weekly, English and Romanian; owner sends them), English Uber CSV columns
+   (owner exports one in English to confirm); then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:

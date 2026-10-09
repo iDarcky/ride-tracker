@@ -63,6 +63,8 @@ data class ParsedTrip(
     val startMinute: Int,
     val fareMinor: Long,
     val paymentMethod: PaymentMethod,
+    val distanceMeters: Long? = null,
+    val durationSeconds: Long? = null,
 )
 
 /**

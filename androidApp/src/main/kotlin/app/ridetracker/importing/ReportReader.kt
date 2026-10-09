@@ -18,6 +18,12 @@ import app.ridetracker.shared.domain.importing.DailyParseResult
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
+import app.ridetracker.shared.domain.importing.Csv
+import app.ridetracker.shared.domain.importing.UberFileName
+import app.ridetracker.shared.domain.importing.UberPayments
+import app.ridetracker.shared.domain.importing.UberReport
+import app.ridetracker.shared.domain.importing.UberReports
+import app.ridetracker.shared.domain.importing.UberTimeAndDistance
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -49,6 +55,16 @@ sealed interface ReadReport {
 
     /** A Bolt breakdown on the Weekly or Monthly tab: Bolt's totals for that period. */
     data class BoltPeriod(override val fileHash: String, val summary: ParsedSummary, val monthly: Boolean, val addsUp: Boolean) : ReadReport
+    /** Uber's payments per transaction: days of income. */
+    data class UberDays(override val fileHash: String, val payments: UberPayments) : ReadReport
+    data class UberTrips(override val fileHash: String, val trips: List<ParsedTrip>) : ReadReport
+
+    /** Uber's totals for the period, with its service fee. */
+    data class UberTotals(override val fileHash: String, val summary: ParsedSummary) : ReadReport
+    data class UberHours(override val fileHash: String, val time: UberTimeAndDistance) : ReadReport
+
+    /** One of Uber's other reports: not read (it repeats the needed ones or holds personal data). */
+    data class UberNotNeeded(override val fileHash: String, val report: UberReport) : ReadReport
     data class Unknown(override val fileHash: String) : ReadReport
 }
 
@@ -72,7 +88,7 @@ class ReportReader(private val context: Context) {
         when {
             bytes.startsWith("%PDF") || type == "application/pdf" || name.endsWith(".pdf") -> readPdf(bytes, hash)
             type.startsWith("image/") || bytes.looksLikeImage() -> readScreenshot(uri, hash)
-            else -> readCsv(bytes, hash)
+            else -> readCsv(bytes, hash, displayName(uri).orEmpty())
         }
     }
 
@@ -131,8 +147,22 @@ class ReportReader(private val context: Context) {
         return BoltMonthlySummaryParser.parse(rows)?.let { ReadReport.BoltMonth(hash, it) } ?: ReadReport.Unknown(hash)
     }
 
-    private fun readCsv(bytes: ByteArray, hash: String): ReadReport {
-        val trips = BoltRiderInvoicesParser.parse(decodeText(bytes))
+    /** Uber's reports are told apart by the names Uber gives them; the ones not needed are never read. */
+    private fun readCsv(bytes: ByteArray, hash: String, fileName: String): ReadReport {
+        UberFileName.report(fileName)?.takeIf { !it.needed }?.let { return ReadReport.UberNotNeeded(hash, it) }
+        val text = decodeText(bytes)
+        val header = Csv.parse(text.substringBefore('\n')).firstOrNull().orEmpty()
+        val period = UberFileName.period(fileName)
+        val uber = when (UberReports.detect(fileName, header)) {
+            UberReport.PAYMENTS_ORDER -> UberReports.parsePayments(text, period)?.let { ReadReport.UberDays(hash, it) }
+            UberReport.TRIP_ACTIVITY -> UberReports.parseTrips(text)?.let { ReadReport.UberTrips(hash, it) }
+            // These two have no dates inside: the period is only in the file name Uber gave them.
+            UberReport.PAYMENTS_ORGANIZATION -> period?.let { UberReports.parseTotals(text, it) }?.let { ReadReport.UberTotals(hash, it) }
+            UberReport.DRIVER_TIME_AND_DISTANCE -> period?.let { UberReports.parseTimeAndDistance(text, it) }?.let { ReadReport.UberHours(hash, it) }
+            else -> null
+        }
+        if (uber != null) return uber
+        val trips = BoltRiderInvoicesParser.parse(text)
         return trips?.let { ReadReport.BoltTrips(hash, it) } ?: ReadReport.Unknown(hash)
     }
 

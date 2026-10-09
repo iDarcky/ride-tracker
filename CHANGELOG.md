@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.0
+- **Uber import (CSV).** From supplier.uber.com → Reports, Uber gives a dozen files; Ride Tracker reads the four it
+  needs and says so for the rest ("Uber · not needed": they repeat the others or hold your phone and email, and
+  are never read):
+  - **payments_order**: your income for each day after Uber's fee, with fares, bonuses (Quest, promotions,
+    rewards), cancellation fees, airport fees refunded and cash. Each day replaces what Uber had on that day, so a
+    later export that overlaps an earlier one counts nothing twice. Tap "Show days" to correct any day before saving.
+  - **payments_organization**: the month's totals with **Uber's fee** and the fares before it (Money's breakdown
+    and Home's fees). Editable before saving.
+  - **trip_activity**: each trip's time, km, length and how it was paid (addresses are not saved); its earnings
+    come from payments_order, in whichever order the two are imported.
+  - **driver_time_and_distance**: hours online (money per hour) and km driven.
+- Romanian or English columns; the files are recognised by the names Uber gives them.
+- **Your Uber data** on the Import screen: for this month and last, which of the four files are imported, and where
+  to find each.
+- Days covered by Uber's payments are never estimated from trips.
+- An Uber trip shows what you earned on it (Uber's reports don't have the rider's price).
+- **Fix:** Bolt daily screenshots at full size (straight from the phone) weren't recognised: text recognition read
+  the date as "1oct." without a space.
+
 ## 0.7.2
 - **Frosted glass everywhere things float**, like the navigation bar: the month list and every other menu,
   dialogs (delete, choices, currency), date pickers and the import edit sheet. What's behind shows through,

@@ -70,6 +70,16 @@ class BoltParsersTest {
     }
 
     @Test
+    fun readsADateWhoseSpaceWasLost() {
+        // Full-size screenshots from the phone came out of text recognition as "1oct." (0.7.2 didn't recognise them).
+        assertEquals(1 to kotlinx.datetime.Month.OCTOBER, ReportText.dayAndMonth("1oct."))
+        assertEquals(10 to kotlinx.datetime.Month.OCTOBER, ReportText.dayAndMonth("10oct"))
+        assertEquals(1 to kotlinx.datetime.Month.OCTOBER, ReportText.dayAndMonth("l oct."))
+        val rows = dailyRows.map { if (it == "5 Oct") "5oct." else it }
+        assertEquals(LocalDate(2026, 10, 5), assertIs<DailyParseResult.Day>(BoltDailyParser.parse(rows, today)).day.date)
+    }
+
+    @Test
     fun flagsABreakdownThatDoesNotAddUp() {
         val misread = dailyRows.map { if (it.startsWith("Toll")) "Toll road +lei 8.00" else it }
         val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(misread, today)).day

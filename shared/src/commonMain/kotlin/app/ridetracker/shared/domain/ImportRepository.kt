@@ -14,6 +14,7 @@ import app.ridetracker.shared.domain.importing.OnlineTime
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
 import app.ridetracker.shared.domain.importing.ParsedTrip
+import app.ridetracker.shared.domain.importing.UberTripFare
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -109,6 +110,107 @@ class ImportRepository(private val database: AppDatabase) {
         ImportOutcome.Saved(batchId, saved = 1, skipped = 0)
     }
 
+    /**
+     * Saves a report's days for one app in one import (Uber's payments CSV). Like [saveDay], each day replaces
+     * what that app and day had, so a later export that overlaps an earlier one counts nothing twice.
+     * [period] is what the report covers, days without income included. Trip earnings in [tripFares] go on the
+     * trips (added if the trips report isn't imported yet).
+     */
+    suspend fun saveDays(
+        platformId: Long,
+        kind: ImportKind,
+        source: IncomeSource,
+        fileHash: String,
+        period: DateRange,
+        days: List<ParsedDay>,
+        tripFares: List<UberTripFare>,
+        nowEpochMillis: Long,
+    ): ImportOutcome = transaction {
+        if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
+        val batchId = imports.insertBatch(
+            ImportBatchEntity(
+                platformId = platformId, kind = kind.id, fileHash = fileHash,
+                periodStart = minOf(period.start, days.minOfOrNull { it.date } ?: period.start).toEpochDays(),
+                periodEnd = maxOf(period.endInclusive, days.maxOfOrNull { it.date } ?: period.endInclusive).toEpochDays(),
+                itemCount = days.size, importedAt = nowEpochMillis,
+            ),
+        )
+        for (day in days) {
+            val epochDay = day.date.toEpochDays()
+            val existing = entries.getForDay(platformId, epochDay)
+            existing.forEach { entries.deleteById(it.id) }
+            val entryId = entries.insert(
+                IncomeEntryEntity(
+                    platformId = platformId,
+                    amountMinor = day.earningsMinor,
+                    date = epochDay,
+                    note = existing.mapNotNull { it.note }.distinct().joinToString(" · ").ifEmpty { null },
+                    createdAt = existing.minOfOrNull { it.createdAt } ?: nowEpochMillis,
+                    source = source.id,
+                    importBatchId = batchId,
+                    cashCollectedMinor = day.cashCollectedMinor,
+                    onlineMinutes = existing.firstNotNullOfOrNull { it.onlineMinutes },
+                    tripCount = existing.firstNotNullOfOrNull { it.tripCount },
+                ),
+            )
+            imports.insertLines(day.lines.map { IncomeLineEntity(entryId = entryId, kind = it.kind.id, amountMinor = it.amountMinor, inCash = it.inCash, label = it.label) })
+        }
+        val fares = tripFares.distinctBy { it.tripId }
+        val known = fares.map { it.tripId }.chunked(500).flatMap { imports.getTripsByExternalId(platformId, it) }.associateBy { it.externalId }
+        imports.updateTrips(fares.mapNotNull { f -> known[f.tripId]?.copy(fareMinor = f.fareMinor) })
+        imports.insertTrips(
+            fares.filter { it.tripId !in known }.map {
+                TripEntity(
+                    platformId = platformId, importBatchId = batchId, externalId = it.tripId, date = it.date.toEpochDays(),
+                    startMinute = it.minute, fareMinor = it.fareMinor,
+                    paymentMethod = (if (it.inCash) PaymentMethod.CASH else PaymentMethod.IN_APP).id,
+                )
+            },
+        )
+        ImportOutcome.Saved(batchId, saved = days.size, skipped = 0)
+    }
+
+    /**
+     * Saves trips from a report without fares (Uber's trip activity): trips already in the app (from the payments
+     * report) get the report's time, km and payment and keep their fare; the others are added.
+     */
+    suspend fun mergeTrips(
+        platformId: Long,
+        kind: ImportKind,
+        fileHash: String,
+        trips: List<ParsedTrip>,
+        nowEpochMillis: Long,
+    ): ImportOutcome = transaction {
+        if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
+        val unique = trips.distinctBy { it.externalId }
+        val known = unique.map { it.externalId }.chunked(500).flatMap { imports.getTripsByExternalId(platformId, it) }.associateBy { it.externalId }
+        val batchId = imports.insertBatch(
+            ImportBatchEntity(
+                platformId = platformId, kind = kind.id, fileHash = fileHash,
+                periodStart = trips.minOf { it.date }.toEpochDays(), periodEnd = trips.maxOf { it.date }.toEpochDays(),
+                itemCount = unique.size, importedAt = nowEpochMillis,
+            ),
+        )
+        imports.updateTrips(
+            unique.mapNotNull { t ->
+                known[t.externalId]?.copy(
+                    date = t.date.toEpochDays(), startMinute = t.startMinute, paymentMethod = t.paymentMethod.id,
+                    distanceMeters = t.distanceMeters, durationSeconds = t.durationSeconds,
+                )
+            },
+        )
+        imports.insertTrips(
+            unique.filter { it.externalId !in known }.map {
+                TripEntity(
+                    platformId = platformId, importBatchId = batchId, externalId = it.externalId, date = it.date.toEpochDays(),
+                    startMinute = it.startMinute, fareMinor = it.fareMinor, paymentMethod = it.paymentMethod.id,
+                    distanceMeters = it.distanceMeters, durationSeconds = it.durationSeconds,
+                )
+            },
+        )
+        ImportOutcome.Saved(batchId, saved = unique.size, skipped = 0)
+    }
+
     /** Adds trips not already in the app (matched by the platform's own id). */
     suspend fun saveTrips(
         platformId: Long,
@@ -145,6 +247,8 @@ class ImportRepository(private val database: AppDatabase) {
         fileHash: String,
         times: List<OnlineTime>,
         nowEpochMillis: Long,
+        /** Km for the same period (Uber's time and distance report), saved with the time. */
+        distanceMeters: Long? = null,
     ): ImportOutcome = transaction {
         if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
         val batchId = imports.insertBatch(
@@ -159,7 +263,12 @@ class ImportRepository(private val database: AppDatabase) {
             val end = t.range.endInclusive.toEpochDays()
             imports.deleteOnlineTime(platformId, start, end)
             imports.insertSummaries(
-                listOf(PeriodSummaryEntity(platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = t.minutes)),
+                listOf(
+                    PeriodSummaryEntity(
+                        platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = t.minutes,
+                        distanceMeters = distanceMeters?.takeIf { times.size == 1 },
+                    ),
+                ),
             )
         }
         ImportOutcome.Saved(batchId, saved = times.size, skipped = 0)
@@ -215,7 +324,12 @@ class ImportRepository(private val database: AppDatabase) {
         val exact = imports.getEntries(platformId, start, end)
             .groupBy { LocalDate.fromEpochDays(it.date) }
             .mapValues { (_, list) -> list.sumOf { it.amountMinor } }
-        val fares = imports.getTripFaresByDay(platformId, start, end).associate { LocalDate.fromEpochDays(it.date) to it.totalMinor }
+        // A payments report (Uber) is the whole record of the days it covers: a day in it without income had none,
+        // and its trip earnings are already after the fee, so its trips never make an estimate.
+        val covered = imports.getBatchesOfKind(platformId, ImportKind.UBER_PAYMENTS_CSV.id).map { it.periodStart..it.periodEnd }
+        val fares = imports.getTripFaresByDay(platformId, start, end)
+            .filter { day -> covered.none { day.date in it } }
+            .associate { LocalDate.fromEpochDays(it.date) to it.totalMinor }
         val summaries = imports.getSummaries(platformId, start, end)
         val monthly = summaries.firstOrNull { it.earningsMinor != null }
         val pdf = summaries.firstOrNull { it.earningsMinor == null && it.grossFareMinor != null }

@@ -277,9 +277,9 @@
     <string name="import_title">Importă</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="missing_monthly_body">Estimat din PDF sau din curse, fără bonusuri. Importă captura lunară din %1$s (Defalcarea câștigurilor → Lunar) pentru totalul exact.</string>
-    <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt</string>
-    <string name="import_empty_title">Importă din Bolt</string>
-    <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar (PDF) sau facturile către pasageri (CSV). Totul se citește pe acest telefon.</string>
+    <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt și Uber</string>
+    <string name="import_empty_title">Importă din Bolt și Uber</string>
+    <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar Bolt (PDF) sau facturile către pasageri (CSV), ori rapoartele Uber (CSV). Totul se citește pe acest telefon.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Importat</string>
     <string name="checklist_monthly">Captura lunară</string>
@@ -324,7 +324,7 @@
     <string name="import_bolt_week">Bolt · totaluri pe săptămână</string>
     <string name="import_bolt_month_screen">Bolt · totaluri pe lună</string>
     <string name="import_period_not_income">Totalurile Bolt pentru această perioadă. Folosite ca să-ți verifici zilele, nu se adaugă la venit. Pentru venit, importă fila Zilnic.</string>
-    <string name="import_not_recognised">Deocamdată se pot citi defalcarea câștigurilor, ecranul Activitate (ore), rezumatul lunar (PDF) și facturile către pasageri (CSV) din Bolt. Pentru orele unei luni, atinge întâi bara lunii ca Bolt să le afișeze.</string>
+    <string name="import_not_recognised">Deocamdată se pot citi defalcarea câștigurilor, ecranul Activitate (ore), rezumatul lunar (PDF) și facturile către pasageri (CSV) din Bolt, plus rapoartele CSV Uber cu numele date de Uber. Pentru orele unei luni în Bolt, atinge întâi bara lunii ca Bolt să le afișeze.</string>
     <string name="import_your_earnings">Câștigurile tale</string>
     <string name="import_cash_in_hand">Numerar încasat</string>
     <string name="import_edit">Editează</string>
@@ -527,4 +527,53 @@
     <string name="welcome_vehicle_body">Folosită pentru costul combustibilului și cât câștigi pe km. O poți adăuga sau schimba oricând la Mașină.</string>
     <string name="welcome_vehicle_save">Salvează și începe</string>
     <string name="welcome_vehicle_skip">Mai târziu</string>
+    <!-- Import Uber -->
+    <string name="import_uber_days">Uber · plăți</string>
+    <string name="import_uber_trips">Uber · curse</string>
+    <string name="import_uber_totals">Uber · totaluri și comision</string>
+    <string name="import_uber_hours">Uber · timp și km</string>
+    <string name="import_uber_not_needed">Uber · nu e necesar</string>
+    <string name="import_uber_not_needed_note">Ride Tracker nu folosește acest fișier, așa că nu îl citește. De la Uber ai nevoie doar de payments_order, payments_organization, trip_activity și driver_time_and_distance.</string>
+    <string name="import_uber_days_note">Venitul tău pe fiecare zi, după comisionul Uber. Fiecare zi înlocuiește ce avea Uber în aplicație în ziua respectivă.</string>
+    <string name="import_uber_days_fee_note">Comisionul Uber nu e în acest fișier: adaugă payments_organization pentru el.</string>
+    <string name="import_uber_trips_note">Câștigul fiecărei curse vine din fișierul de plăți (payments_order).</string>
+    <string name="import_uber_totals_note">Totalurile Uber pentru perioadă: din ce se compun banii și comisionul Uber. Nu se adaugă la venit.</string>
+    <string name="import_uber_hours_note">Folosite pentru orele online și cât câștigi pe oră. Kilometrii rămân salvați pentru calculul combustibilului.</string>
+    <string name="import_show_days">Arată zilele</string>
+    <string name="import_hide_days">Ascunde zilele</string>
+    <string name="import_edit_day">Editează %1$s</string>
+    <string name="import_online">Online</string>
+    <string name="import_distance_driven">Distanță parcursă</string>
+    <string name="import_service_fee">Comisionul Uber</string>
+    <plurals name="import_days">
+        <item quantity="one">%d zi</item>
+        <item quantity="few">%d zile</item>
+        <item quantity="other">%d de zile</item>
+    </plurals>
+    <plurals name="import_cash_trips">
+        <item quantity="one">%d plătită cash</item>
+        <item quantity="few">%d plătite cash</item>
+        <item quantity="other">%d plătite cash</item>
+    </plurals>
+    <string name="import_whats_missing_uber">Datele tale din Uber</string>
+    <string name="checklist_uber_intro">Pe supplier.uber.com → Rapoarte, descarcă aceste fișiere pentru toată luna. Uber îți dă mai multe; ai nevoie doar de aceste patru.</string>
+    <string name="checklist_uber_title">Uber · %1$s</string>
+    <string name="checklist_uber_payments">Plăți (payments_order)</string>
+    <string name="checklist_uber_payments_missing">Lipsește: venitul pe zile</string>
+    <string name="checklist_uber_payments_how">Pe supplier.uber.com → Rapoarte, alege luna și descarcă raportul de plăți: numele fișierului conține payments_order. Are venitul fiecărei zile, bonusurile și numerarul.</string>
+    <string name="checklist_uber_totals">Totaluri cu comisionul Uber (payments_organization)</string>
+    <string name="checklist_uber_totals_later">Descarcă-l după ce se termină luna</string>
+    <string name="checklist_uber_totals_missing">Lipsește: comisionul Uber</string>
+    <string name="checklist_uber_totals_how">Tot acolo, fișierul care are payments_organization în nume. Doar el are comisionul Uber și tarifele înainte de comision.</string>
+    <string name="checklist_uber_trips">Curse (trip_activity)</string>
+    <string name="checklist_uber_trips_missing">Lipsește: ora, km și plata fiecărei curse</string>
+    <string name="checklist_uber_trips_how">Fișierul care are trip_activity în nume. Adresele din el nu se salvează.</string>
+    <string name="checklist_uber_hours">Timp și km (driver_time_and_distance)</string>
+    <string name="checklist_uber_hours_missing">Lipsește: câștigul pe oră și km</string>
+    <string name="checklist_uber_hours_how">Fișierul care are driver_time_and_distance în nume: orele online și km parcurși.</string>
+    <plurals name="checklist_uber_days">
+        <item quantity="one">%d zi cu venit</item>
+        <item quantity="few">%d zile cu venit</item>
+        <item quantity="other">%d de zile cu venit</item>
+    </plurals>
 </resources>

@@ -277,9 +277,9 @@
     <string name="import_title">Import</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="missing_monthly_body">Estimated from the PDF or trips, without bonuses. Import %1$s’s Monthly earnings screenshot (Earnings breakdown → Monthly) for the exact total.</string>
-    <string name="import_menu_summary">Bolt screenshots and reports</string>
-    <string name="import_empty_title">Import from Bolt</string>
-    <string name="import_empty_body">Choose screenshots of Bolt’s daily earnings breakdown, the monthly summary PDF or the rider invoices CSV. Everything is read on this phone.</string>
+    <string name="import_menu_summary">Bolt and Uber screenshots and reports</string>
+    <string name="import_empty_title">Import from Bolt and Uber</string>
+    <string name="import_empty_body">Choose screenshots of Bolt’s daily earnings breakdown, Bolt’s monthly summary PDF or rider invoices CSV, or Uber’s reports (CSV). Everything is read on this phone.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Imported</string>
     <string name="checklist_monthly">Monthly screenshot</string>
@@ -322,7 +322,7 @@
     <string name="import_bolt_week">Bolt · weekly totals</string>
     <string name="import_bolt_month_screen">Bolt · monthly totals</string>
     <string name="import_period_not_income">Bolt’s own totals for this period. Used to check your days, not added as income. For income, import the Daily tab.</string>
-    <string name="import_not_recognised">Bolt’s earnings breakdown, the Activity screen (hours), the monthly summary (PDF) and rider invoices (CSV) can be read for now. For a month’s hours, tap its bar first so Bolt shows them.</string>
+    <string name="import_not_recognised">Bolt’s earnings breakdown, the Activity screen (hours), the monthly summary (PDF) and rider invoices (CSV) can be read, and Uber’s CSV reports with the names Uber gave them. For a month’s hours in Bolt, tap its bar first so Bolt shows them.</string>
     <string name="import_your_earnings">Your earnings</string>
     <string name="import_cash_in_hand">Cash in hand</string>
     <string name="import_edit">Edit</string>
@@ -514,4 +514,50 @@
     <string name="welcome_vehicle_body">Used for fuel costs and what you make per km. You can add or change it later under Vehicle.</string>
     <string name="welcome_vehicle_save">Save and start</string>
     <string name="welcome_vehicle_skip">Skip for now</string>
+    <!-- Uber import -->
+    <string name="import_uber_days">Uber · payments</string>
+    <string name="import_uber_trips">Uber · trips</string>
+    <string name="import_uber_totals">Uber · totals and fee</string>
+    <string name="import_uber_hours">Uber · time and km</string>
+    <string name="import_uber_not_needed">Uber · not needed</string>
+    <string name="import_uber_not_needed_note">Ride Tracker doesn’t use this file, so it isn’t read. From Uber you only need payments_order, payments_organization, trip_activity and driver_time_and_distance.</string>
+    <string name="import_uber_days_note">Your income for each day, after Uber’s fee. Each day replaces what Uber had on that day in the app.</string>
+    <string name="import_uber_days_fee_note">Uber’s fee isn’t in this file: add payments_organization for it.</string>
+    <string name="import_uber_trips_note">Each trip’s earnings come from the payments file (payments_order).</string>
+    <string name="import_uber_totals_note">Uber’s totals for the period: what the money is made of and Uber’s fee. Not added as income.</string>
+    <string name="import_uber_hours_note">Used for hours online and how much you make per hour. The km are kept for working out fuel later.</string>
+    <string name="import_show_days">Show days</string>
+    <string name="import_hide_days">Hide days</string>
+    <string name="import_edit_day">Edit %1$s</string>
+    <string name="import_online">Online</string>
+    <string name="import_distance_driven">Distance driven</string>
+    <string name="import_service_fee">Uber’s fee</string>
+    <plurals name="import_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="import_cash_trips">
+        <item quantity="one">%d paid in cash</item>
+        <item quantity="other">%d paid in cash</item>
+    </plurals>
+    <string name="import_whats_missing_uber">Your Uber data</string>
+    <string name="checklist_uber_intro">On supplier.uber.com → Reports, download these for the whole month. Uber gives you more files; you only need these four.</string>
+    <string name="checklist_uber_title">Uber · %1$s</string>
+    <string name="checklist_uber_payments">Payments (payments_order)</string>
+    <string name="checklist_uber_payments_missing">Missing: your income per day</string>
+    <string name="checklist_uber_payments_how">On supplier.uber.com → Reports, choose the month and download the payments report: its file name contains payments_order. It has each day’s income, bonuses and cash.</string>
+    <string name="checklist_uber_totals">Totals with Uber’s fee (payments_organization)</string>
+    <string name="checklist_uber_totals_later">Download it once the month is over</string>
+    <string name="checklist_uber_totals_missing">Missing: Uber’s fee</string>
+    <string name="checklist_uber_totals_how">Same place, the file whose name contains payments_organization. It’s the only one with Uber’s fee and the fares before it.</string>
+    <string name="checklist_uber_trips">Trips (trip_activity)</string>
+    <string name="checklist_uber_trips_missing">Missing: each trip’s time, km and payment</string>
+    <string name="checklist_uber_trips_how">The file whose name contains trip_activity. The addresses in it are not saved.</string>
+    <string name="checklist_uber_hours">Time and km (driver_time_and_distance)</string>
+    <string name="checklist_uber_hours_missing">Missing: money per hour and km</string>
+    <string name="checklist_uber_hours_how">The file whose name contains driver_time_and_distance: hours online and km driven.</string>
+    <plurals name="checklist_uber_days">
+        <item quantity="one">%d day with income</item>
+        <item quantity="other">%d days with income</item>
+    </plurals>
 </resources>
