@@ -607,4 +607,37 @@
     <string name="z_exact_title">Memento la ora exactă</string>
     <string name="z_exact_body">Fără „Alarme și mementouri”, Android îl poate afișa cu până la o oră întârziere.</string>
     <string name="z_exact_allow">Permite</string>
+    <!-- Ținta lunară -->
+    <string name="target_setting">Ținta lunară</string>
+    <string name="target_intro">Cât vrei să faci luna aceasta. Acasă vezi cât ai făcut, cât mai trebuie în fiecare zi de condus și dacă ești în ritm.</string>
+    <string name="target_for_month">Ținta pentru %1$s</string>
+    <string name="target_each_month">Fiecare lună își păstrează ținta; o lună nouă pornește cu ținta lunii trecute.</string>
+    <string name="target_counts">Ce numără</string>
+    <string name="target_basis_income">Venit după comisioane</string>
+    <string name="target_basis_income_detail">Ce îți plătesc Bolt, Uber și celelalte aplicații</string>
+    <string name="target_basis_kept">Bani rămași</string>
+    <string name="target_basis_kept_detail">Venitul minus cheltuielile (carburant, mașină, telefon…)</string>
+    <string name="target_driving_days">Zilele în care conduci</string>
+    <string name="target_driving_days_detail">„Pe zi” și ritmul numără doar aceste zile.</string>
+    <string name="target_title">Ținta · %1$s</string>
+    <string name="target_of">%1$s din %2$s</string>
+    <string name="target_to_go">%1$s · mai ai %2$s</string>
+    <string name="target_per_day">%1$s pe zi în zilele de condus rămase</string>
+    <plurals name="target_days_left">
+        <item quantity="one">%d zi de condus rămasă</item>
+        <item quantity="few">%d zile de condus rămase</item>
+        <item quantity="other">%d de zile de condus rămase</item>
+    </plurals>
+    <string name="target_ahead">Peste ritm cu %1$s</string>
+    <string name="target_behind">Sub ritm cu %1$s</string>
+    <string name="target_on_pace">Exact în ritm</string>
+    <string name="target_reached">Țintă atinsă · cu %1$s peste</string>
+    <string name="target_reached_exact">Țintă atinsă</string>
+    <string name="target_missed">Ratată cu %1$s</string>
+    <string name="target_suggest">Setează o țintă lunară</string>
+    <string name="target_channel">Ținte</string>
+    <string name="target_channel_description">Când îți atingi ținta lunară</string>
+    <string name="target_notification_title">Țintă lunară atinsă</string>
+    <string name="target_notification_body">%1$s în %2$s: ținta de %3$s e atinsă.</string>
+    <string name="widget_target">Țintă</string>
 </resources>

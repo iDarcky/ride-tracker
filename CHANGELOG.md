@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0
+- **Monthly target.** Settings → Monthly target (or the "Set a monthly target" chip on Home): how much you want to make
+  this month, counted as income after platform fees or as money kept after expenses, your choice. Each month keeps its
+  own target; a new month starts with last month's.
+- **Target card on Home**: how far you are (wavy progress bar), what's left, what each driving day still needs and
+  whether you're ahead of or behind pace. Driving days are Mon–Sat unless you change them. Tap the card to change the
+  target. If you customised Home before, the card is added at the top when you set a target.
+- **"Monthly target reached"** notification, once a month, when an import or entry takes you over it.
+
 ## 0.9.1
 - **Ride Tracker Beta**: a second app with an orange icon, installed next to Ride Tracker, with its own data. New
   versions go to Beta first for testing (real imports, deleting, anything) and to Ride Tracker once they're good.

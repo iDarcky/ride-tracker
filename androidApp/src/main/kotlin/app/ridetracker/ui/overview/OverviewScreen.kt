@@ -133,6 +133,7 @@ import kotlin.math.abs
 fun OverviewScreen(
     onImport: () -> Unit,
     onOpenZReport: () -> Unit,
+    onOpenTarget: () -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
             container.incomeRepository,
@@ -143,7 +144,9 @@ fun OverviewScreen(
         )
     },
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val baseState by viewModel.uiState.collectAsStateWithLifecycle()
+    val target by viewModel.target.collectAsStateWithLifecycle()
+    val state = baseState.copy(target = target)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
@@ -255,6 +258,8 @@ fun OverviewScreen(
                                     },
                                     onOpenZReport = onOpenZReport,
                                     onDismissZReport = viewModel::dismissZReportSuggestion,
+                                    onOpenTarget = onOpenTarget,
+                                    onDismissTarget = viewModel::dismissTargetSuggestion,
                                 )
                             } else {
                                 WidgetPlaceholder()

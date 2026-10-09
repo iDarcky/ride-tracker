@@ -161,7 +161,7 @@ Product:
 - [ ] Fleet drivers: check the fleet's weekly payout against Bolt/Uber's numbers (fleet cut, what was paid).
 - [ ] The week first: this week's payout prominent on Home (Bolt pays weekly).
 - [ ] Real profit per hour: after fuel (km × consumption × fuel price from the car) and commission.
-- [ ] Daily/weekly targets ("400 RON today: 120 to go").
+- [x] Monthly target (0.10.0): income or money kept, per driving day, pace, notification when reached.
 - [ ] Import reminders (e.g. Monday: "import last week's Bolt screenshots"; month end: the Monthly tab).
 - [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
 - [ ] "This didn't import" → send the screenshot (with the driver's OK) so new screen variants get supported.

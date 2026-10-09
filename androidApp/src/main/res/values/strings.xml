@@ -591,4 +591,36 @@
     <string name="z_exact_title">Remind me on time</string>
     <string name="z_exact_body">Without “Alarms &amp; reminders”, Android may show it up to an hour late.</string>
     <string name="z_exact_allow">Allow</string>
+    <!-- Monthly target -->
+    <string name="target_setting">Monthly target</string>
+    <string name="target_intro">What you want to make this month. Home shows how far you are, what each driving day still needs and whether you’re on pace.</string>
+    <string name="target_for_month">Target for %1$s</string>
+    <string name="target_each_month">Each month keeps its own target; a new month starts with last month’s.</string>
+    <string name="target_counts">What it counts</string>
+    <string name="target_basis_income">Income after platform fees</string>
+    <string name="target_basis_income_detail">What Bolt, Uber and the other apps pay you</string>
+    <string name="target_basis_kept">Money kept</string>
+    <string name="target_basis_kept_detail">Income minus your expenses (fuel, car, phone…)</string>
+    <string name="target_driving_days">Days you drive</string>
+    <string name="target_driving_days_detail">“Per day” and the pace count only these days.</string>
+    <string name="target_title">Target · %1$s</string>
+    <string name="target_of">%1$s of %2$s</string>
+    <string name="target_to_go">%1$s · %2$s to go</string>
+    <string name="target_per_day">%1$s a day on the driving days left</string>
+    <plurals name="target_days_left">
+        <item quantity="one">%d driving day left</item>
+        <item quantity="other">%d driving days left</item>
+    </plurals>
+    <string name="target_ahead">Ahead of pace by %1$s</string>
+    <string name="target_behind">Behind pace by %1$s</string>
+    <string name="target_on_pace">Right on pace</string>
+    <string name="target_reached">Target reached · %1$s over</string>
+    <string name="target_reached_exact">Target reached</string>
+    <string name="target_missed">Missed by %1$s</string>
+    <string name="target_suggest">Set a monthly target</string>
+    <string name="target_channel">Targets</string>
+    <string name="target_channel_description">When you reach your monthly target</string>
+    <string name="target_notification_title">Monthly target reached</string>
+    <string name="target_notification_body">%1$s in %2$s: your target of %3$s is done.</string>
+    <string name="widget_target">Target</string>
 </resources>

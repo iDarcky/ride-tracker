@@ -7,6 +7,7 @@ import app.ridetracker.importing.ReportReader
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
 import app.ridetracker.notifications.ZReportReminderScheduler
+import app.ridetracker.notifications.TargetNotifier
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -56,6 +57,9 @@ class RideTrackerApplication : Application() {
         DueExpenseNotifier.createChannel(this)
         DueExpensesWorker.schedule(this)
         ZReportReminderScheduler.createChannel(this)
+        TargetNotifier.createChannel(this)
+        @OptIn(DelicateCoroutinesApi::class)
+        TargetNotifier.watch(this, container, GlobalScope)
         // The Raportul Z alarm follows its settings (on/off, time) and the country, whatever changes them.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {

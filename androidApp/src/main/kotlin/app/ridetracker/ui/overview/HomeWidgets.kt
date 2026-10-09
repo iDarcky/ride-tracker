@@ -1,5 +1,11 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.pluralStringResource
+import app.ridetracker.shared.domain.TargetProgress
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
@@ -55,6 +61,7 @@ const val MIN_TRIPS_FOR_HEAT = 20
 /** Name shown in Customise. */
 val HomeWidget.title: Int
     get() = when (this) {
+        HomeWidget.TARGET -> R.string.widget_target
         HomeWidget.BREAKDOWN -> R.string.widget_breakdown
         HomeWidget.METRICS -> R.string.widget_metrics
         HomeWidget.SPLIT -> R.string.split_by_app
@@ -77,6 +84,7 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.WHEN_YOU_EARN -> stats.tripCount >= MIN_TRIPS_FOR_HEAT
         HomeWidget.EXPENSE_GROUPS -> state.expenseGroups.isNotEmpty()
         HomeWidget.NEEDS_ATTENTION -> !attention.isEmpty()
+        HomeWidget.TARGET -> state.target != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
     }
 }
@@ -97,6 +105,8 @@ fun WidgetBody(
     onZReportDone: (LocalDate) -> Unit = {},
     onOpenZReport: () -> Unit = {},
     onDismissZReport: () -> Unit = {},
+    onOpenTarget: () -> Unit = {},
+    onDismissTarget: () -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -119,6 +129,7 @@ fun WidgetBody(
                 }
             }
         }
+        HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
         HomeWidget.NEEDS_ATTENTION -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.needs_attention), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             attention.zReportDay?.let { day -> ZReportCard(day, dates, onDone = { onZReportDone(day) }) }
@@ -133,11 +144,75 @@ fun WidgetBody(
                     TextButton(onClick = onDismissZReport) { Text(stringResource(R.string.z_not_now)) }
                 }
             }
+            if (attention.suggestTarget) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AssistChip(
+                        onClick = onOpenTarget,
+                        label = { Text(stringResource(R.string.target_suggest)) },
+                        leadingIcon = { Icon(Icons.Outlined.Flag, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = onDismissTarget) { Text(stringResource(R.string.z_not_now)) }
+                }
+            }
             attention.missingMonthly.forEach { missing ->
                 MissingMonthlyCard(missing, state.platforms.firstOrNull { it.id == missing.platformId }, dates, onImport)
             }
             attention.pending.forEach { item ->
                 DueExpenseCard(item = item, money = money, dates = dates, onAdd = { onAcceptDue(item) }, onSkip = { onSkipDue(item) })
+            }
+        }
+    }
+}
+
+/**
+ * The month's target: how far, what's left per driving day, and the pace (where the driver should be by today).
+ * Tapping it opens the target's settings.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun TargetCard(p: TargetProgress, money: MoneyFormat, dates: DateFormats, onOpen: () -> Unit) {
+    val percent = remember { NumberFormat.getPercentInstance() }
+    OutlinedCard(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.target_title, dates.period(p.month)),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                stringResource(R.string.target_of, money.format(p.achievedMinor), money.format(p.targetMinor)),
+                style = MaterialTheme.typography.titleLarge.tabular(),
+            )
+            LinearWavyProgressIndicator(progress = { p.fraction }, modifier = Modifier.fillMaxWidth())
+            val status = when {
+                p.reached && p.achievedMinor > p.targetMinor ->
+                    stringResource(R.string.target_reached, money.format(p.achievedMinor - p.targetMinor))
+                p.reached -> stringResource(R.string.target_reached_exact)
+                p.finished -> stringResource(R.string.target_missed, money.format(p.remainingMinor))
+                else -> stringResource(R.string.target_to_go, percent.format(p.fraction.toDouble()), money.format(p.remainingMinor))
+            }
+            Text(status, style = MaterialTheme.typography.bodyLarge)
+            p.perDayMinor?.let {
+                Text(
+                    stringResource(R.string.target_per_day, money.format(it)) + " · " +
+                        pluralStringResource(R.plurals.target_days_left, p.drivingDaysLeft, p.drivingDaysLeft),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (!p.reached) {
+                p.paceMinor?.let { pace ->
+                    Text(
+                        when {
+                            pace > 0 -> stringResource(R.string.target_ahead, money.format(pace))
+                            pace < 0 -> stringResource(R.string.target_behind, money.format(-pace))
+                            else -> stringResource(R.string.target_on_pace)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (pace < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }

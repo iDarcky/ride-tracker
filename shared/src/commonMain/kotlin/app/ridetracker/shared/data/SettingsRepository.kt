@@ -13,6 +13,9 @@ import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ThemeMode
 import app.ridetracker.shared.domain.ZReportReminder
+import app.ridetracker.shared.domain.Period
+import app.ridetracker.shared.domain.TargetBasis
+import app.ridetracker.shared.domain.TargetSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -58,6 +61,49 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             enabledFrom = prefs[Z_ENABLED_FROM],
             suggestionDismissed = prefs[Z_SUGGESTION_DISMISSED] ?: false,
         )
+    }
+
+    /** Monthly targets. Like the Raportul Z reminder, kept out of [AppSettings] and through a restore. */
+    val target: Flow<TargetSettings> = dataStore.data.map { prefs ->
+        TargetSettings(
+            amounts = TargetSettings.parseAmounts(prefs[TARGET_AMOUNTS]),
+            basis = TargetBasis.fromId(prefs[TARGET_BASIS]),
+            drivingDays = TargetSettings.parseDays(prefs[TARGET_DAYS]),
+            notifiedMonth = prefs[TARGET_NOTIFIED],
+            suggestionDismissed = prefs[TARGET_SUGGESTION_DISMISSED] ?: false,
+        )
+    }
+
+    /** The target for [month]; 0 or less removes it. */
+    suspend fun setTarget(month: Period.Month, amountMinor: Long) {
+        dataStore.edit { prefs ->
+            val amounts = TargetSettings.parseAmounts(prefs[TARGET_AMOUNTS]).toMutableMap()
+            amounts[TargetSettings.key(month)] = amountMinor.coerceAtLeast(0)
+            prefs[TARGET_AMOUNTS] = TargetSettings.formatAmounts(amounts)
+            // The month's target can be reached again with a new amount.
+            if (prefs[TARGET_NOTIFIED] == TargetSettings.key(month)) prefs.remove(TARGET_NOTIFIED)
+            // A Home customised before targets existed doesn't have the card yet: it goes first.
+            prefs[HOME_WIDGETS]?.let { stored ->
+                val widgets = HomeWidget.parse(stored)
+                if (amountMinor > 0 && HomeWidget.TARGET !in widgets) prefs[HOME_WIDGETS] = HomeWidget.format(listOf(HomeWidget.TARGET) + widgets)
+            }
+        }
+    }
+
+    suspend fun setTargetBasis(basis: TargetBasis) {
+        dataStore.edit { it[TARGET_BASIS] = basis.id }
+    }
+
+    suspend fun setDrivingDays(days: Set<DayOfWeek>) {
+        dataStore.edit { it[TARGET_DAYS] = TargetSettings.formatDays(days) }
+    }
+
+    suspend fun markTargetNotified(month: Period.Month) {
+        dataStore.edit { it[TARGET_NOTIFIED] = TargetSettings.key(month) }
+    }
+
+    suspend fun dismissTargetSuggestion() {
+        dataStore.edit { it[TARGET_SUGGESTION_DISMISSED] = true }
     }
 
     /** Turns the reminder on or off; turning it on starts from [todayEpochDay] (earlier days never wait). */
@@ -114,7 +160,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             val zKeys = listOf(Z_ENABLED, Z_SUGGESTION_DISMISSED).associateWith { prefs[it] }
             val zLongs = listOf(Z_DONE_THROUGH, Z_ENABLED_FROM).associateWith { prefs[it] }
             val zMinute = prefs[Z_MINUTE]
+            val targetStrings = listOf(TARGET_AMOUNTS, TARGET_BASIS, TARGET_DAYS, TARGET_NOTIFIED).associateWith { prefs[it] }
+            val targetDismissed = prefs[TARGET_SUGGESTION_DISMISSED]
             prefs.clear()
+            targetStrings.forEach { (key, value) -> if (value != null) prefs[key] = value }
+            if (targetDismissed != null) prefs[TARGET_SUGGESTION_DISMISSED] = targetDismissed
             zKeys.forEach { (key, value) -> if (value != null) prefs[key] = value }
             zLongs.forEach { (key, value) -> if (value != null) prefs[key] = value }
             if (zMinute != null) prefs[Z_MINUTE] = zMinute
@@ -145,6 +195,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val Z_DONE_THROUGH = longPreferencesKey("z_report_done_through")
         private val Z_ENABLED_FROM = longPreferencesKey("z_report_enabled_from")
         private val Z_SUGGESTION_DISMISSED = booleanPreferencesKey("z_report_suggestion_dismissed")
+        private val TARGET_AMOUNTS = stringPreferencesKey("target_amounts")
+        private val TARGET_BASIS = stringPreferencesKey("target_basis")
+        private val TARGET_DAYS = stringPreferencesKey("target_driving_days")
+        private val TARGET_NOTIFIED = stringPreferencesKey("target_notified_month")
+        private val TARGET_SUGGESTION_DISMISSED = booleanPreferencesKey("target_suggestion_dismissed")
 
         fun create(absolutePath: String): SettingsRepository =
             SettingsRepository(PreferenceDataStoreFactory.createWithPath(produceFile = { absolutePath.toPath() }))

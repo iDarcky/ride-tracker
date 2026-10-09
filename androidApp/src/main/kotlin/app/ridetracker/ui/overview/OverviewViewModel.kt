@@ -1,5 +1,8 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.shared.domain.TargetBasis
+import app.ridetracker.shared.domain.TargetCalculator
+import app.ridetracker.shared.domain.TargetProgress
 import app.ridetracker.shared.domain.Country
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
@@ -73,6 +76,8 @@ data class OverviewUiState(
     val platforms: List<PlatformEntity> = emptyList(),
     /** Cards shown below money kept, in the driver's order. */
     val widgets: List<HomeWidget> = HomeWidget.DEFAULT,
+    /** The month's target and where it stands (the month of the period shown); null without a target. */
+    val target: TargetProgress? = null,
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
 
@@ -89,8 +94,10 @@ data class Attention(
     val zReportDay: LocalDate? = null,
     /** Offer to set up the Raportul Z reminder (Romania, not set up, not dismissed). */
     val suggestZReport: Boolean = false,
+    /** Offer to set a monthly target (none set, not dismissed). */
+    val suggestTarget: Boolean = false,
 ) {
-    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport
+    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget
 }
 
 data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
@@ -199,20 +206,38 @@ class OverviewViewModel(
     val attention: StateFlow<Attention> = combine(
         recurringRepository.observePending(today()),
         importRepository.observeMissingMonthlyTotals(today()),
-        settingsRepository.zReport,
+        combine(settingsRepository.zReport, settingsRepository.target) { z, target -> z to target },
         settingsRepository.settings,
         // The Raportul Z day waits from the reminder's time on: look again every minute.
         flow { while (true) { emit(Unit); delay(60_000) } },
-    ) { pending, missing, z, settings, _ ->
+    ) { pending, missing, (z, target), settings, _ ->
         val romania = settings.country == Country.ROMANIA
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         Attention(
             pending, missing,
             zReportDay = if (romania) z.waitingDay(now) else null,
             suggestZReport = romania && !z.enabled && !z.suggestionDismissed,
+            suggestTarget = !target.hasAny && !target.suggestionDismissed,
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Attention())
+
+    /** The target of the month shown (the month the period starts in; this month for "All"). */
+    val target: StateFlow<TargetProgress?> = combine(selected, settingsRepository.target) { period, settings ->
+        val month = if (period is Period.All) Period.Month.containing(today()) else Period.Month.containing(period.range.start)
+        month to settings
+    }.flatMapLatest { (month, settings) ->
+        val amount = settings.targetFor(month) ?: return@flatMapLatest flowOf(null)
+        combine(incomeRepository.observeTotals(month.range), expenseRepository.observeInRange(month.range)) { totals, expenses ->
+            val income = totals.sumOf { it.totalMinor }
+            val achieved = if (settings.basis == TargetBasis.KEPT) income - expenses.sumOf { it.amountMinor } else income
+            TargetCalculator.progress(month, amount, achieved, settings.drivingDays, today())
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun dismissTargetSuggestion() {
+        viewModelScope.launch { settingsRepository.dismissTargetSuggestion() }
+    }
 
     fun zReportDone(day: LocalDate) {
         viewModelScope.launch { settingsRepository.markZReportDone(day.toEpochDays()) }

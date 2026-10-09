@@ -158,7 +158,9 @@ fun AppNavigation() {
                 popEnterTransition = { if (betweenTabs()) EnterTransition.None else SharedAxis.enter(forward = false) },
                 popExitTransition = { if (betweenTabs()) ExitTransition.None else SharedAxis.exit(forward = false) },
             ) {
-                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) }) } }
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
+                        onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
+                    ) } }
                 composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
                 } }

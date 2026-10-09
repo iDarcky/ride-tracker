@@ -1,5 +1,20 @@
 package app.ridetracker.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material3.FilterChip
+import androidx.compose.ui.text.input.KeyboardType
+import app.ridetracker.shared.domain.Money
+import app.ridetracker.shared.domain.Period
+import app.ridetracker.shared.domain.TargetBasis
+import app.ridetracker.ui.common.DateFormats
+import app.ridetracker.ui.common.MoneyFormat
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 import android.content.Intent
 import androidx.core.net.toUri
 import android.provider.Settings
@@ -110,6 +125,7 @@ enum class SettingsPage(val route: String) {
     THEME("settings/theme"),
     WEEK_START("settings/week"),
     Z_REPORT("settings/z-report"),
+    TARGET("settings/target"),
 }
 
 private val weekStartOptions = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
@@ -191,6 +207,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
                     if (z.enabled) stringResource(R.string.z_setting_on, timeText(z.hour, z.minute)) else stringResource(R.string.z_setting_off),
                 ) { onOpen(SettingsPage.Z_REPORT) }
             }
+        }
+        item {
+            val target by viewModel.target.collectAsStateWithLifecycle()
+            val month = Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault()))
+            val money = MoneyFormat(currency, locale)
+            Row(
+                Icons.Outlined.Flag,
+                stringResource(R.string.target_setting),
+                target.targetFor(month)?.let { "${money.format(it)} · ${targetBasisName(target.basis)}" } ?: stringResource(R.string.not_set),
+            ) { onOpen(SettingsPage.TARGET) }
         }
         item { Row(Icons.Outlined.Language, stringResource(R.string.language), languageName(languageTag)) { onOpen(SettingsPage.LANGUAGE) } }
         item {
@@ -290,6 +316,7 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             onBack = onBack,
         )
         SettingsPage.Z_REPORT -> ZReportPage(viewModel, onBack)
+        SettingsPage.TARGET -> TargetPage(viewModel, resolveCurrency(settings?.currencyCode), onBack)
         SettingsPage.WEEK_START -> ChoicePage(
             title = stringResource(R.string.first_day_of_week),
             options = weekStartOptions,
@@ -298,6 +325,94 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             onSelect = viewModel::setFirstDayOfWeek,
             onBack = onBack,
         )
+    }
+}
+
+@Composable
+fun targetBasisName(basis: TargetBasis): String = stringResource(
+    when (basis) {
+        TargetBasis.INCOME -> R.string.target_basis_income
+        TargetBasis.KEPT -> R.string.target_basis_kept
+    },
+)
+
+/**
+ * The monthly target: this month's amount (each month keeps its own; a new month starts with the last one), what it
+ * counts, and the days the driver drives (for "per day" and the pace).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TargetPage(viewModel: SettingsViewModel, currency: java.util.Currency, onBack: () -> Unit) {
+    val target by viewModel.target.collectAsStateWithLifecycle()
+    val locale = currentLocale()
+    val digits = currency.defaultFractionDigits.coerceAtLeast(0)
+    val month = remember { Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault())) }
+    val dates = remember(locale) { DateFormats(locale) }
+    var amount by rememberSaveable { mutableStateOf<String?>(null) }
+    // Filled from the saved target once it has loaded; then the field is the driver's.
+    val shown = amount ?: target.targetFor(month)?.let { Money.toPlainString(it, digits) }.orEmpty()
+    SettingsFrame(stringResource(R.string.target_setting), onBack) {
+        item {
+            Text(
+                stringResource(R.string.target_intro),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = shown,
+                onValueChange = { text ->
+                    amount = text
+                    val minor = if (text.isBlank()) 0L else Money.parseToMinor(text, digits)
+                    if (minor != null) viewModel.setTarget(month, minor)
+                },
+                label = { Text(stringResource(R.string.target_for_month, dates.period(month))) },
+                suffix = { Text(currency.getSymbol(locale)) },
+                isError = shown.isNotBlank() && Money.parseToMinor(shown, digits) == null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                supportingText = { Text(stringResource(R.string.target_each_month)) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            )
+        }
+        item { Section(stringResource(R.string.target_counts)) }
+        TargetBasis.entries.forEach { basis ->
+            item {
+                ListItem(
+                    modifier = Modifier.selectable(selected = target.basis == basis, role = Role.RadioButton) { viewModel.setTargetBasis(basis) },
+                    headlineContent = { Text(targetBasisName(basis), style = MaterialTheme.typography.titleLarge) },
+                    supportingContent = {
+                        Text(stringResource(if (basis == TargetBasis.INCOME) R.string.target_basis_income_detail else R.string.target_basis_kept_detail))
+                    },
+                    trailingContent = { RadioButton(selected = target.basis == basis, onClick = null) },
+                )
+            }
+        }
+        item { Section(stringResource(R.string.target_driving_days)) }
+        item {
+            Text(
+                stringResource(R.string.target_driving_days_detail),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                DayOfWeek.entries.forEach { day ->
+                    val on = day in target.drivingDays
+                    FilterChip(
+                        selected = on,
+                        onClick = {
+                            val days = if (on) target.drivingDays - day else target.drivingDays + day
+                            if (days.isNotEmpty()) viewModel.setDrivingDays(days)
+                        },
+                        label = { Text(day.toJavaDayOfWeek().getDisplayName(TextStyle.SHORT, locale)) },
+                    )
+                }
+            }
+        }
     }
 }
 
