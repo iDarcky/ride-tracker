@@ -22,16 +22,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -65,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
+import app.ridetracker.ui.common.MonthTitle
 import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.Period
@@ -161,7 +159,16 @@ private fun IncomeTab(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
     ) {
-        item { MonthChip(state.months, state.month, dates, viewModel::selectMonth) }
+        item {
+            MonthTitle(
+                title = state.month?.let { dates.period(it) }.orEmpty(),
+                months = state.months,
+                selected = state.month,
+                dates = dates,
+                onMonth = viewModel::selectMonth,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
         item {
             TotalCard(
                 label = stringResource(R.string.total_income),
@@ -255,7 +262,16 @@ private fun ExpenseTab(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
     ) {
-        item { MonthChip(state.months, state.month, dates, viewModel::selectMonth) }
+        item {
+            MonthTitle(
+                title = state.month?.let { dates.period(it) }.orEmpty(),
+                months = state.months,
+                selected = state.month,
+                dates = dates,
+                onMonth = viewModel::selectMonth,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
         item {
             TotalCard(
                 label = stringResource(R.string.total_expenses),
@@ -362,29 +378,6 @@ private fun LazyListScope.seeAll(count: Int, showAll: Boolean, onToggle: () -> U
     item(key = "see-all") {
         TextButton(onClick = onToggle, modifier = Modifier.padding(horizontal = 8.dp)) {
             Text(if (showAll) stringResource(R.string.show_fewer) else pluralStringResource(R.plurals.see_all, count, count))
-        }
-    }
-}
-
-@Composable
-private fun MonthChip(months: List<Period.Month>, month: Period.Month?, dates: DateFormats, onSelect: (Period.Month) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box(Modifier.padding(horizontal = 16.dp)) {
-        FilterChip(
-            selected = false,
-            onClick = { open = true },
-            label = { Text(month?.let { dates.period(it) }.orEmpty()) },
-            leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null, Modifier.size(18.dp)) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-        )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            months.forEach { m ->
-                DropdownMenuItem(
-                    text = { Text(dates.period(m)) },
-                    onClick = { open = false; onSelect(m) },
-                    trailingIcon = if (m == month) { { Icon(Icons.Filled.Check, contentDescription = null) } } else null,
-                )
-            }
         }
     }
 }

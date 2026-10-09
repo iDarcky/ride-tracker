@@ -1,5 +1,6 @@
 package app.ridetracker.ui.importing
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,7 +188,7 @@ private fun DayEditor(day: ParsedDay, currency: Currency, onCancel: () -> Unit, 
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.edit_add_line))
         }
-        DropdownMenu(expanded = adding, onDismissRequest = { adding = false }) {
+        DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = adding, onDismissRequest = { adding = false }) {
             addableLines.forEach { (kind, inCash) ->
                 val name = incomeKindLabel(kind)
                 DropdownMenuItem(

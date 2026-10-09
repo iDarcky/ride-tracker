@@ -100,6 +100,28 @@ class OverviewViewModel(
 
     private val selected = MutableStateFlow<Period>(Period.Month.containing(today()))
 
+    private val _months = MutableStateFlow(listOf(Period.Month.containing(today())))
+
+    /** Months the title's list offers: from the first month with data to this one, newest first. */
+    val months: StateFlow<List<Period.Month>> = _months
+
+    init {
+        refreshMonths()
+    }
+
+    /** Re-reads the first month with data (imports can add older months). */
+    fun refreshMonths() {
+        viewModelScope.launch {
+            val current = Period.Month.containing(today())
+            val first = incomeRepository.firstDay()?.let { Period.Month.containing(it) } ?: current
+            _months.value = generateSequence(current) { (it.previous() as Period.Month).takeIf { m -> m.range.start >= first.range.start } }.toList()
+        }
+    }
+
+    fun selectMonth(month: Period.Month) {
+        selected.value = month
+    }
+
     val uiState: StateFlow<OverviewUiState> = combine(selected, settingsRepository.settings) { period, settings ->
         // Re-align weeks when the first-day-of-week setting changes.
         val aligned = if (period is Period.Week) Period.Week.containing(period.start, settings.firstDayOfWeek) else period

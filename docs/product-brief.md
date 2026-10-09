@@ -146,10 +146,9 @@ See the README for build, versioning and signing rules.
    0.6.1: long press (Edit/Delete) instead of swipe to delete, tap the current tab to scroll up, frosted-glass
    nav bar (Haze blur), "Breakdown"/"Defalcare".
    0.7.0: edit imports before saving (and type in unrecognised screenshots), "Your Bolt data" checklist on Import.
-   **Next:** Home/Money period header (mock approved 9 Oct 2026, with changes): the month as a title on top
-   ("October 2026 ▾") opening a month list whose last item is "Custom range…" (no calendar icon); below it keep
-   the current connected Month · Week · Day · All buttons, unchanged in look; arrows only for Week and Day
-   ("‹ 5–11 Oct ›"); Month and All have no arrows. Same header on Money. Then **Uber** (new chat, owner sends the files);
+   0.7.1: period header (month title with month list and "Custom range…"; arrows only for Week and Day), same
+   title on Money; plain outlined menus.
+   **Next:** **Uber** (new chat, owner sends the files); then the list below. Then **Uber** (new chat, owner sends the files);
    then the list below.
 
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")

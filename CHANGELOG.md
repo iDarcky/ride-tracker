@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1
+- **New period header on Home**: the month is a large title ("October 2026 ▾"); tap it to pick another month or
+  "Custom range…". Below it, Month · Week · Day · All as before. Arrows only for Week and Day; Month and All
+  don't need them.
+- Money uses the same month title.
+- Menus have the plain background with an outline instead of grey.
+
 ## 0.7.0
 - **Correct an import before saving.** Each read screenshot or PDF has an Edit button: change the date, any amount,
   remove a line or add one Bolt shows but wasn't read, fix hours. A live check says whether the lines add up to

@@ -39,7 +39,7 @@
     <string name="period_week">Week</string>
     <string name="period_month">Month</string>
     <string name="period_all">All</string>
-    <string name="period_custom">Custom</string>
+    <string name="choose_month">Choose month</string>
     <string name="previous_period">Previous period</string>
     <string name="next_period">Next period</string>
     <string name="back_to_today">Back to today</string>

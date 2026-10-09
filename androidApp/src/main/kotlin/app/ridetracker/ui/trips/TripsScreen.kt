@@ -1,5 +1,6 @@
 package app.ridetracker.ui.trips
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +181,7 @@ private fun FilterRow(
                 leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null, Modifier.size(18.dp)) },
                 trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
             )
-            DropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
+            DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
                 state.months.forEach { month ->
                     DropdownMenuItem(
                         text = { Text(dates.period(month)) },
@@ -198,7 +199,7 @@ private fun FilterRow(
                 leadingIcon = { Icon(Icons.Outlined.FilterList, contentDescription = null, Modifier.size(18.dp)) },
                 trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
             )
-            DropdownMenu(expanded = paymentMenu, onDismissRequest = { paymentMenu = false }) {
+            DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = paymentMenu, onDismissRequest = { paymentMenu = false }) {
                 PaymentFilter.entries.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(stringResource(if (option == PaymentFilter.ALL) R.string.trips_all_payments else paymentLabel(option))) },

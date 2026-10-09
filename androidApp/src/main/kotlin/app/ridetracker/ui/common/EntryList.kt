@@ -1,5 +1,6 @@
 package app.ridetracker.ui.common
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -187,7 +188,7 @@ fun ActionRow(
             supportingContent = note?.let { { Text(it, maxLines = 2) } },
             trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular()) },
         )
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {
+        DropdownMenu(containerColor = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {
             if (onEdit != null) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.edit)) },

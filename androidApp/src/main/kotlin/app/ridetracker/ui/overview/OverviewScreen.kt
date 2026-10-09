@@ -106,6 +106,7 @@ import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.PeriodType
 import app.ridetracker.shared.domain.type
 import app.ridetracker.ui.common.LocalBottomBarSpace
+import app.ridetracker.ui.common.MonthTitle
 import app.ridetracker.ui.common.MenuButton
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.SectionHeader
@@ -145,6 +146,7 @@ fun OverviewScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val attention by viewModel.attention.collectAsStateWithLifecycle()
+    val months by viewModel.months.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val addedText = stringResource(R.string.expense_added)
@@ -198,26 +200,41 @@ fun OverviewScreen(
                 }
             }
             item {
-                PeriodTypeSelector(
-                    selected = state.period.type,
-                    onSelect = { type ->
-                        viewModel.selectType(type)
-                        if (type == PeriodType.CUSTOM && state.period.type != PeriodType.CUSTOM) showRangePicker = true
+                val period = state.period
+                MonthTitle(
+                    title = when (period) {
+                        is Period.All -> stringResource(R.string.all_time)
+                        is Period.Custom -> dates.range(period.range)
+                        else -> dates.period(Period.Month.containing(period.range.start))
                     },
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    months = months,
+                    selected = (period as? Period.Month),
+                    dates = dates,
+                    onMonth = viewModel::selectMonth,
+                    onCustom = { showRangePicker = true },
+                    onOpen = viewModel::refreshMonths,
+                    modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }
             item {
-                PeriodNavigator(
-                    label = dates.period(state.period),
-                    period = state.period,
-                    showToday = state.period !is Period.Custom &&
-                        state.today !in state.period.range.start..state.period.range.endInclusive,
-                    onPrevious = viewModel::previous,
-                    onNext = viewModel::next,
-                    onToday = viewModel::goToToday,
-                    onPickRange = { showRangePicker = true },
+                PeriodTypeSelector(
+                    selected = state.period.type,
+                    onSelect = viewModel::selectType,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
+            }
+            if (state.period is Period.Week || state.period is Period.Day) {
+                item {
+                    PeriodNavigator(
+                        label = dates.period(state.period),
+                        showToday = state.today !in state.period.range.start..state.period.range.endInclusive,
+                        onPrevious = viewModel::previous,
+                        onNext = viewModel::next,
+                        onToday = viewModel::goToToday,
+                    )
+                }
+            } else {
+                item { Spacer(Modifier.height(12.dp)) }
             }
             item {
                 TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp))
@@ -307,13 +324,12 @@ fun OverviewScreen(
     }
 }
 
-// Order follows the design system: Month first.
+// Order follows the design system: Month first. Custom lives in the title's month list.
 private val periodLabels = listOf(
     PeriodType.MONTH to R.string.period_month,
     PeriodType.WEEK to R.string.period_week,
     PeriodType.DAY to R.string.period_day,
     PeriodType.ALL to R.string.period_all,
-    PeriodType.CUSTOM to R.string.period_custom,
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -340,47 +356,30 @@ private fun PeriodTypeSelector(selected: PeriodType, onSelect: (PeriodType) -> U
     }
 }
 
+/** Week and Day only: previous / next and "Back to today". */
 @Composable
 private fun PeriodNavigator(
     label: String,
-    period: Period,
     showToday: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onToday: () -> Unit,
-    onPickRange: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // "All" has nothing before or after it.
-        val arrows = period !is Period.All
-        if (arrows) {
-            IconButton(onClick = onPrevious) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_period))
+        IconButton(onClick = onPrevious) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.previous_period))
+        }
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(label, style = MaterialTheme.typography.titleMedium)
+            if (showToday) {
+                TextButton(onClick = onToday) { Text(stringResource(R.string.back_to_today)) }
             }
         }
-        Box(Modifier.weight(1f).padding(vertical = if (arrows) 0.dp else 12.dp), contentAlignment = Alignment.Center) {
-            if (period is Period.Custom) {
-                TextButton(onClick = onPickRange) {
-                    Icon(Icons.Filled.DateRange, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(label, style = MaterialTheme.typography.titleMedium)
-                }
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(label, style = MaterialTheme.typography.titleMedium)
-                    if (showToday) {
-                        TextButton(onClick = onToday) { Text(stringResource(R.string.back_to_today)) }
-                    }
-                }
-            }
-        }
-        if (arrows) {
-            IconButton(onClick = onNext) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_period))
-            }
+        IconButton(onClick = onNext) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_period))
         }
     }
 }

@@ -37,7 +37,7 @@
     <string name="period_week">Săpt.</string>
     <string name="period_month">Lună</string>
     <string name="period_all">Toate</string>
-    <string name="period_custom">Interval</string>
+    <string name="choose_month">Alege luna</string>
     <string name="previous_period">Perioada anterioară</string>
     <string name="next_period">Perioada următoare</string>
     <string name="back_to_today">Înapoi la azi</string>
