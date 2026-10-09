@@ -89,28 +89,33 @@ private val addableLines: List<Pair<IncomeLineKind, Boolean>> = listOf(
 @Composable
 fun ImportEditSheet(report: ReadReport, currency: Currency, onSave: (ReadReport) -> Unit, onDismiss: () -> Unit) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    // Frosted glass like the menus, not the default grey sheet colour.
+    // Frosted glass like the menus, not the default grey sheet colour. The glass goes on the content, which slides
+    // up with the sheet: on the sheet's own modifier it stayed where the sheet starts, blurring the space above the
+    // sheet and cutting off its lower part (0.7.2). So the drag handle is drawn inside the glass too.
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheet,
-        modifier = Modifier.clip(BottomSheetDefaults.ExpandedShape).glass(GLASS_DIALOG),
         containerColor = glassContainer(),
+        dragHandle = null,
     ) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding()
-                .padding(horizontal = 16.dp).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            when (report) {
-                is ReadReport.BoltDay -> DayEditor(report.day, currency, onDismiss) { onSave(report.copy(day = it)) }
-                is ReadReport.BoltPeriod -> PeriodEditor(report.summary, withEarnings = true, currency, onDismiss) {
-                    onSave(report.copy(summary = it))
+        Column(Modifier.fillMaxWidth().clip(BottomSheetDefaults.ExpandedShape).glass(GLASS_DIALOG)) {
+            BottomSheetDefaults.DragHandle(Modifier.align(Alignment.CenterHorizontally))
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding()
+                    .padding(horizontal = 16.dp).padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                when (report) {
+                    is ReadReport.BoltDay -> DayEditor(report.day, currency, onDismiss) { onSave(report.copy(day = it)) }
+                    is ReadReport.BoltPeriod -> PeriodEditor(report.summary, withEarnings = true, currency, onDismiss) {
+                        onSave(report.copy(summary = it))
+                    }
+                    is ReadReport.BoltMonth -> PeriodEditor(report.summary, withEarnings = false, currency, onDismiss) {
+                        onSave(report.copy(summary = it))
+                    }
+                    is ReadReport.BoltActivity -> HoursEditor(report.times, onDismiss) { onSave(report.copy(times = it)) }
+                    else -> Unit
                 }
-                is ReadReport.BoltMonth -> PeriodEditor(report.summary, withEarnings = false, currency, onDismiss) {
-                    onSave(report.copy(summary = it))
-                }
-                is ReadReport.BoltActivity -> HoursEditor(report.times, onDismiss) { onSave(report.copy(times = it)) }
-                else -> Unit
             }
         }
     }

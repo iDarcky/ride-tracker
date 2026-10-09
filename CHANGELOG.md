@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+- **Fix:** the sheet for correcting an import was cut off about two-thirds of the way down (no Cash in hand, no
+  Save), with blurred glass above it. The glass now follows the sheet as it slides up.
+
 ## 0.8.0
 - **Uber import (CSV).** From supplier.uber.com → Reports, Uber gives a dozen files; Ride Tracker reads the four it
   needs and says so for the rest ("Uber · not needed": they repeat the others or hold your phone and email, and
