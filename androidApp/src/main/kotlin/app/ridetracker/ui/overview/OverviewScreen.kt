@@ -151,7 +151,8 @@ fun OverviewScreen(
 ) {
     val baseState by viewModel.uiState.collectAsStateWithLifecycle()
     val target by viewModel.target.collectAsStateWithLifecycle()
-    val state = baseState.copy(target = target)
+    val comparisonCard by viewModel.comparisonCard.collectAsStateWithLifecycle()
+    val state = baseState.copy(target = target, comparisonCard = comparisonCard)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
@@ -324,6 +325,7 @@ fun OverviewScreen(
                                     widget, state, attention, money, dates, percent,
                                     onOpenDay = viewModel::openDay,
                                     onOpenTarget = onOpenTarget,
+                                    onCompareWhole = viewModel::setCompareWhole,
                                 )
                             } else {
                                 WidgetPlaceholder()

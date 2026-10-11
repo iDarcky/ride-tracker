@@ -637,4 +637,14 @@
     <string name="import_again_note">Replaces what this file saved the first time.</string>
     <string name="tax_deductible">Tax deductible</string>
     <string name="back_to_top">Back to the top</string>
+    <!-- Comparison card -->
+    <string name="widget_comparison">Comparison</string>
+    <string name="comparison_title">Compared with %1$s</string>
+    <string name="comparison_same_days">Same days</string>
+    <string name="comparison_whole_month">Whole month</string>
+    <string name="comparison_whole_week">Whole week</string>
+    <string name="comparison_income">Income</string>
+    <string name="comparison_hours">Hours online</string>
+    <string name="comparison_per_hour">Per hour</string>
+    <string name="comparison_was">was %1$s</string>
 </resources>

@@ -1,5 +1,8 @@
 package app.ridetracker.ui.overview
 
+import kotlinx.coroutines.flow.distinctUntilChanged
+import app.ridetracker.shared.domain.PeriodComparisons
+import app.ridetracker.shared.domain.ComparisonRow
 import app.ridetracker.shared.domain.TargetBasis
 import app.ridetracker.shared.domain.TargetCalculator
 import app.ridetracker.shared.domain.TargetProgress
@@ -78,6 +81,8 @@ data class OverviewUiState(
     val widgets: List<HomeWidget> = HomeWidget.DEFAULT,
     /** The month's target and where it stands (the month of the period shown); null without a target. */
     val target: TargetProgress? = null,
+    /** This period against the previous one; null when there's nothing to compare with. */
+    val comparisonCard: ComparisonCard? = null,
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
 
@@ -99,6 +104,18 @@ data class Attention(
 ) {
     fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget
 }
+
+/** Home's comparison card: what it's compared with, the rows, and the "same days / whole month" choice. */
+data class ComparisonCard(
+    val comparison: Comparison,
+    val rows: List<ComparisonRow>,
+    /** The period is still running, so the driver can compare with the same days or the whole previous one. */
+    val canCompareWhole: Boolean,
+    val whole: Boolean,
+)
+
+/** The earlier period's figures, read once per period (not on every change to the current one). */
+private data class PreviousStats(val comparison: Comparison, val stats: HomeStats, val expensesMinor: Long, val byPlatform: Map<Long, Long>)
 
 data class PreviousTotals(val incomeMinor: Long, val expenseMinor: Long)
 
@@ -234,6 +251,50 @@ class OverviewViewModel(
             TargetCalculator.progress(month, amount, achieved, settings.drivingDays, today())
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private val wholePrevious = MutableStateFlow(false)
+
+    /** Compare a running month or week with the whole previous one instead of the same days. */
+    fun setCompareWhole(whole: Boolean) {
+        wholePrevious.value = whole
+    }
+
+    val comparisonCard: StateFlow<ComparisonCard?> = run {
+        val previous: Flow<PreviousStats?> = combine(uiState, wholePrevious) { state, whole ->
+            Triple(state.period, state.comparison, whole)
+        }.distinctUntilChanged().flatMapLatest { (period, base, whole) ->
+            if (base == null) return@flatMapLatest flowOf(null)
+            val comparison = if (whole && base is Comparison.SameDaysPrevious) Comparison.WholePrevious(period.previous().range, base.type) else base
+            val range = comparison.range
+            combine(
+                incomeRepository.observeEntryDetails(range),
+                incomeRepository.observeLines(range),
+                importRepository.observeTrips(range),
+                importRepository.observeSummaries(range),
+                expenseRepository.observeInRange(range),
+            ) { details, lines, trips, summaries, expenses ->
+                PreviousStats(
+                    comparison,
+                    HomeStatsCalculator.compute(range, details, lines, trips, summaries),
+                    expenses.sumOf { it.amountMinor },
+                    details.groupBy { it.platformId }.mapValues { (_, list) -> list.sumOf { it.amountMinor } },
+                )
+            }
+        }
+        combine(uiState, previous, wholePrevious) { state, prev, whole ->
+            val stats = state.stats ?: return@combine null
+            if (prev == null || !PeriodComparisons.hasPrevious(prev.stats, prev.expensesMinor)) return@combine null
+            ComparisonCard(
+                comparison = prev.comparison,
+                rows = PeriodComparisons.rows(
+                    stats, state.expenseMinor, prev.stats, prev.expensesMinor, state.tracksExpenses,
+                    state.totals.associate { it.platformId to it.totalMinor }, prev.byPlatform,
+                ),
+                canCompareWhole = state.comparison is Comparison.SameDaysPrevious,
+                whole = whole && state.comparison is Comparison.SameDaysPrevious,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }
 
     fun dismissTargetSuggestion() {
         viewModelScope.launch { settingsRepository.dismissTargetSuggestion() }

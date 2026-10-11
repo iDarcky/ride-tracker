@@ -1,5 +1,10 @@
 package app.ridetracker.ui
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.mutableIntStateOf
+import app.ridetracker.ui.money.IncomeExpenseSwitch
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
@@ -141,6 +146,8 @@ fun AppNavigation() {
     val haze = rememberHazeState()
     // The bar fades out with its tab rather than vanishing, so it keeps showing that tab while it goes.
     var lastTab by remember { mutableStateOf(Tab.HOME) }
+    // Money's Income | Expenses: the switch floats with the bar, the screen shows the chosen side.
+    var moneyTab by rememberSaveable { mutableIntStateOf(0) }
     if (currentTab != null) lastTab = currentTab
 
     Box(Modifier.fillMaxSize()) {
@@ -150,9 +157,12 @@ fun AppNavigation() {
                 startDestination = Tab.HOME.route,
                 // The floating bar blurs whatever scrolls under it.
                 modifier = Modifier.hazeSource(haze),
-                // Material's fade through (the back gesture follows it under the finger); tabs switch instantly.
-                enterTransition = { if (betweenTabs()) EnterTransition.None else FadeThrough.enter },
-                exitTransition = { if (betweenTabs()) ExitTransition.None else FadeThrough.exit },
+                // Opening fades the new screen in over the old one; going back is Android's predictive back: the screen
+                // shrinks and slides away over the one behind, following the finger. Tabs switch instantly.
+                enterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
+                exitTransition = { if (betweenTabs()) ExitTransition.None else ExitTransition.KeepUntilTransitionsFinished },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.back },
             ) {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
@@ -162,6 +172,7 @@ fun AppNavigation() {
                 } }
                 composable(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0, entries[Tab.MONEY] ?: 0) {
                     MoneyScreen(
+                        tab = moneyTab,
                         onAddIncome = { nav.navigate("entry") },
                         onEditIncome = { id -> nav.navigate("entry?id=$id") },
                         onAddExpense = { nav.navigate("expense") },
@@ -237,33 +248,38 @@ fun AppNavigation() {
             // The + is a circle exactly as tall as the bar.
             val density = LocalDensity.current
             var barHeight by remember { mutableStateOf(48.dp) }
-            BarWithAddButton(
-                buttonSize = barHeight,
-                bar = {
-                    FloatingNavBar(
-                        current = lastTab,
-                        haze = haze,
-                        onSelect = {
-                            if (it == lastTab) {
-                                reselects[it] = (reselects[it] ?: 0) + 1
-                            } else {
-                                entries[it] = (entries[it] ?: 0) + 1
-                                nav.switchTab(it)
-                            }
-                        },
-                        modifier = Modifier.onSizeChanged { barHeight = with(density) { it.height.toDp() } },
-                    )
-                },
-                addButton = {
-                    AddMenu(
-                        size = barHeight,
-                        onAddIncome = { nav.navigate("entry") },
-                        onAddExpense = { nav.navigate("expense") },
-                        onImport = { nav.navigate("import") },
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AnimatedVisibility(visible = lastTab == Tab.MONEY, enter = fadeIn(), exit = fadeOut()) {
+                    IncomeExpenseSwitch(tab = moneyTab, haze = haze, onSelect = { moneyTab = it }, modifier = Modifier.padding(bottom = 8.dp))
+                }
+                BarWithAddButton(
+                    buttonSize = barHeight,
+                    bar = {
+                        FloatingNavBar(
+                            current = lastTab,
+                            haze = haze,
+                            onSelect = {
+                                if (it == lastTab) {
+                                    reselects[it] = (reselects[it] ?: 0) + 1
+                                } else {
+                                    entries[it] = (entries[it] ?: 0) + 1
+                                    nav.switchTab(it)
+                                }
+                            },
+                            modifier = Modifier.onSizeChanged { barHeight = with(density) { it.height.toDp() } },
+                        )
+                    },
+                    addButton = {
+                        AddMenu(
+                            size = barHeight,
+                            onAddIncome = { nav.navigate("entry") },
+                            onAddExpense = { nav.navigate("expense") },
+                            onImport = { nav.navigate("import") },
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
+                )
+            }
         }
     }
 }
@@ -283,10 +299,17 @@ private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () 
     )
 }
 
-/** Material's fade through: the old screen fades out quickly, the new one fades in while growing slightly. */
-private object FadeThrough {
-    val enter: EnterTransition = fadeIn(tween(210, delayMillis = 90)) + scaleIn(tween(210, delayMillis = 90), initialScale = 0.92f)
-    val exit: ExitTransition = fadeOut(tween(90))
+/**
+ * Screen motion. [back] is the predictive back animation from Android's guide (navigation-event, "Handle back
+ * gestures"): the screen scales down to 90 % and shifts sideways while the previous one stays still behind it;
+ * Navigation plays it under the finger during the back gesture, and to the end when back is released or pressed.
+ */
+private object ScreenMotion {
+    private const val DURATION = 300
+    val open: EnterTransition = fadeIn(tween(DURATION)) + scaleIn(tween(DURATION), initialScale = 0.94f)
+    val back: ExitTransition = scaleOut(tween(DURATION), targetScale = 0.9f) +
+        slideOutHorizontally(tween(DURATION)) { width -> width / 20 } +
+        fadeOut(tween(DURATION, easing = { t -> (t - 0.6f).coerceAtLeast(0f) / 0.4f }))
 }
 
 private fun NavHostController.switchTab(tab: Tab) {

@@ -48,7 +48,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             firstDayOfWeek = DayOfWeek(prefs[FIRST_DAY_OF_WEEK] ?: DayOfWeek.MONDAY.isoDayNumber),
             themeMode = ThemeMode.fromId(prefs[THEME]),
             drivingType = DrivingType.fromId(prefs[DRIVING_TYPE]),
-            homeWidgets = HomeWidget.parse(prefs[HOME_WIDGETS]),
+            homeWidgets = prefs[HOME_WIDGETS]?.let { stored ->
+                HomeWidget.withNew(HomeWidget.parse(stored), prefs[HOME_WIDGETS_SEEN]?.split(',')?.toSet())
+            } ?: HomeWidget.DEFAULT,
         )
     }
 
@@ -127,8 +129,12 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[Z_SUGGESTION_DISMISSED] = true }
     }
 
+    /** Saves the layout; every card that exists now counts as seen, so one the driver removed stays removed. */
     suspend fun setHomeWidgets(widgets: List<HomeWidget>) {
-        dataStore.edit { it[HOME_WIDGETS] = HomeWidget.format(widgets) }
+        dataStore.edit {
+            it[HOME_WIDGETS] = HomeWidget.format(widgets)
+            it[HOME_WIDGETS_SEEN] = HomeWidget.entries.joinToString(",") { w -> w.id }
+        }
     }
 
     /** Saves the country; [otherCurrencyCode] is only kept for [Country.OTHER]. */
@@ -190,6 +196,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val THEME = stringPreferencesKey("theme_mode")
         private val DRIVING_TYPE = stringPreferencesKey("driving_type")
         private val HOME_WIDGETS = stringPreferencesKey("home_widgets")
+        private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")
         private val Z_ENABLED = booleanPreferencesKey("z_report_enabled")
         private val Z_MINUTE = intPreferencesKey("z_report_minute")
         private val Z_DONE_THROUGH = longPreferencesKey("z_report_done_through")

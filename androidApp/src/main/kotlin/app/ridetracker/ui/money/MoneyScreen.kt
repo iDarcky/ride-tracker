@@ -1,9 +1,12 @@
 package app.ridetracker.ui.money
 
+import app.ridetracker.ui.common.rememberGlassStyle
+import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeState
 import app.ridetracker.ui.theme.onPositiveContainerColor
 import app.ridetracker.ui.theme.positiveContainerColor
 import app.ridetracker.ui.theme.positiveColor
-import app.ridetracker.ui.common.glass
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
@@ -109,6 +112,8 @@ private const val RECENT = 5
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoneyScreen(
+    /** 0 = income, 1 = expenses: chosen with the Income | Expenses switch, which floats with the navigation bar. */
+    tab: Int,
     onAddIncome: () -> Unit,
     onEditIncome: (Long) -> Unit,
     onAddExpense: () -> Unit,
@@ -122,7 +127,6 @@ fun MoneyScreen(
         ExpenseListViewModel(container.expenseRepository, container.recurringRepository, container.settingsRepository)
     },
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
     val bottomSpace = LocalBottomBarSpace.current
 
@@ -131,29 +135,25 @@ fun MoneyScreen(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_money)) }, actions = { MenuButton() }) },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = bottomSpace + SwitchSpace)) },
     ) { padding ->
-        Box(Modifier.fillMaxSize()) {
-            val modifier = Modifier.padding(top = padding.calculateTopPadding())
-            when (tab) {
-                0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
-                else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
-            }
-            // Income | Expenses at the bottom, where the thumb reaches, floating above the navigation bar.
-            IncomeExpenseSwitch(
-                tab = tab,
-                onSelect = { tab = it },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomSpace),
-            )
+        val modifier = Modifier.padding(top = padding.calculateTopPadding())
+        when (tab) {
+            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
+            else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
         }
     }
 }
 
 /** Room the floating Income | Expenses switch takes above the navigation bar. */
-private val SwitchSpace = 64.dp
+internal val SwitchSpace = 64.dp
 
-/** Green for income, red for expenses: Material's connected toggle buttons on frosted glass, like the bar. */
+/**
+ * Money's Income | Expenses, at the bottom where the thumb reaches: green for income, red for expenses, Material's
+ * connected toggle buttons on the same frosted glass as the bar. Drawn with the bar (outside the screens) so it can
+ * blur what scrolls under it.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun IncomeExpenseSwitch(tab: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+internal fun IncomeExpenseSwitch(tab: Int, haze: HazeState, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val options = listOf(
         Triple(stringResource(R.string.income), positiveContainerColor(), onPositiveContainerColor()),
         Triple(stringResource(R.string.nav_expenses), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer),
@@ -161,7 +161,7 @@ private fun IncomeExpenseSwitch(tab: Int, onSelect: (Int) -> Unit, modifier: Mod
     Row(
         modifier
             .clip(CircleShape)
-            .glass()
+            .hazeBlur(HazeInput.Sources(haze), rememberGlassStyle())
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),

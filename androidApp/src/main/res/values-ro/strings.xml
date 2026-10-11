@@ -655,4 +655,14 @@
     <string name="import_again_note">Înlocuiește ce a salvat acest fișier prima dată.</string>
     <string name="tax_deductible">Deductibilă</string>
     <string name="back_to_top">Înapoi sus</string>
+    <!-- Comparație -->
+    <string name="widget_comparison">Comparație</string>
+    <string name="comparison_title">Comparat cu %1$s</string>
+    <string name="comparison_same_days">Aceleași zile</string>
+    <string name="comparison_whole_month">Toată luna</string>
+    <string name="comparison_whole_week">Toată săptămâna</string>
+    <string name="comparison_income">Venit</string>
+    <string name="comparison_hours">Ore online</string>
+    <string name="comparison_per_hour">Pe oră</string>
+    <string name="comparison_was">înainte %1$s</string>
 </resources>

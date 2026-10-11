@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.0
+- **Android's predictive back**: while you swipe back, the screen shrinks a little and slides toward the edge, with the
+  previous screen behind it, following your finger (as in Android's guide and system apps). Opening a screen fades it in.
+- **Comparison card on Home**: this month against last month, this week against last week, a day against the same
+  weekday last week: income, money kept, expenses, hours, per hour, trips and each platform, with the change (green
+  when better, red when worse). For a month or week still running: the same days, or the whole previous one. It shows
+  up by itself in a customised Home (new cards do, once).
+- Money's Income | Expenses switch now blurs what's behind it like the navigation bar (it floats with the bar).
+
 ## 0.12.2
 - **The period stays in sight on Home**: once the month title scrolls away, the top bar shows the period you're
   looking at ("October 2026", "5 Oct – 11 Oct 2026", "All time"). Tap it to go back to the top.

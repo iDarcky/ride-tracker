@@ -1,5 +1,8 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.ui.theme.positiveColor
+import androidx.compose.material3.FilterChip
+import app.ridetracker.shared.domain.ComparisonMetric
 import app.ridetracker.shared.domain.ExpenseCategory
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.setValue
@@ -72,6 +75,7 @@ const val MIN_TRIPS_FOR_HEAT = 20
 val HomeWidget.title: Int
     get() = when (this) {
         HomeWidget.TARGET -> R.string.widget_target
+        HomeWidget.COMPARISON -> R.string.widget_comparison
         HomeWidget.BREAKDOWN -> R.string.widget_breakdown
         HomeWidget.METRICS -> R.string.widget_metrics
         HomeWidget.SPLIT -> R.string.split_by_app
@@ -95,6 +99,7 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.EXPENSE_GROUPS -> state.expenseGroups.isNotEmpty()
         HomeWidget.NEEDS_ATTENTION -> false // pinned at the top instead (see NeedsAttention)
         HomeWidget.TARGET -> state.target != null
+        HomeWidget.COMPARISON -> state.comparisonCard != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
     }
 }
@@ -110,6 +115,7 @@ fun WidgetBody(
     percent: NumberFormat,
     onOpenDay: (LocalDate) -> Unit,
     onOpenTarget: () -> Unit,
+    onCompareWhole: (Boolean) -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -133,7 +139,81 @@ fun WidgetBody(
             }
         }
         HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
+        HomeWidget.COMPARISON -> state.comparisonCard?.let { ComparisonCardView(it, state, money, dates, percent, onCompareWhole) }
         HomeWidget.NEEDS_ATTENTION -> Unit
+    }
+}
+
+/**
+ * This period against the previous one (the same days while it's running, or the whole one): each figure now, before
+ * and the change, green when it's better and red when it's worse.
+ */
+@Composable
+private fun ComparisonCardView(
+    card: ComparisonCard,
+    state: OverviewUiState,
+    money: MoneyFormat,
+    dates: DateFormats,
+    percent: NumberFormat,
+    onCompareWhole: (Boolean) -> Unit,
+) {
+    val previousLabel = card.comparison.range.let { if (it.start == it.endInclusive) dates.day(it.start) else dates.range(it) }
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 12.dp)) {
+            Text(
+                stringResource(R.string.comparison_title, previousLabel),
+                modifier = Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (card.canCompareWhole) {
+                val whole = stringResource(if (state.period is Period.Week) R.string.comparison_whole_week else R.string.comparison_whole_month)
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !card.whole, onClick = { onCompareWhole(false) }, label = { Text(stringResource(R.string.comparison_same_days)) })
+                    FilterChip(selected = card.whole, onClick = { onCompareWhole(true) }, label = { Text(whole) })
+                }
+            }
+            card.rows.forEach { row ->
+                val label = when (row.metric) {
+                    ComparisonMetric.INCOME -> stringResource(R.string.comparison_income)
+                    ComparisonMetric.KEPT -> stringResource(R.string.money_kept)
+                    ComparisonMetric.EXPENSES -> stringResource(R.string.nav_expenses)
+                    ComparisonMetric.HOURS -> stringResource(R.string.comparison_hours)
+                    ComparisonMetric.PER_HOUR -> stringResource(R.string.comparison_per_hour)
+                    ComparisonMetric.TRIPS -> stringResource(R.string.nav_trips)
+                    ComparisonMetric.PLATFORM -> state.platforms.firstOrNull { it.id == row.platformId }?.name.orEmpty()
+                }
+                @Composable
+                fun value(v: Long?): String = when {
+                    v == null -> "—"
+                    row.metric == ComparisonMetric.HOURS -> stringResource(R.string.hours_minutes, (v / 60).toInt(), (v % 60).toInt())
+                    row.metric == ComparisonMetric.TRIPS -> v.toString()
+                    else -> money.format(v)
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(value(row.current), style = MaterialTheme.typography.titleMedium.tabular())
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        val change = row.change
+                        if (change != null && change != 0.0) {
+                            val better = (change > 0) == row.higherIsBetter
+                            Text(
+                                (if (change > 0) "▲ " else "▼ ") + percent.format(kotlin.math.abs(change)),
+                                style = MaterialTheme.typography.labelLarge.tabular(),
+                                color = if (better) positiveColor() else MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.comparison_was, value(row.previous)),
+                            style = MaterialTheme.typography.bodySmall.tabular(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
