@@ -103,7 +103,8 @@ internal object UberWeekLabel {
         val parts = row.split('-', '–', '—').map { it.trim() }
         if (parts.size != 2) return null
         val (startDay, startMonth) = ReportText.dayAndMonth(parts[0]) ?: return null
-        ReportText.dayAndMonth(parts[1]) ?: return null
+        // The week picker's arrow can come through after the second date ("Oct 12 v"): only its first two words count.
+        ReportText.dayAndMonth(parts[1].split(Regex("""\s+""")).take(2).joinToString(" ")) ?: return null
         // The second date may be after the screenshot (the week is still running), so the year comes from the first.
         val start = ReportText.inferYear(startDay, startMonth, reference) ?: return null
         return DateRange(start, start.plus(DatePeriod(days = 6)))
@@ -112,7 +113,10 @@ internal object UberWeekLabel {
 
 object UberEarningsParser {
 
-    private val duration = Regex("""^(?:(\d+)\s*h\s*)?(\d+)\s*m(?:in)?\b""")
+    /** "2 h 20 m", "45 m"; text recognition can read a 1 as "l" or "i" ("lh 33 m"). */
+    private val duration = Regex("""^(?:([\dli]+)\s*h\s*)?([\dli]+)\s*m(?:in)?\b""")
+
+    private fun number(text: String): Int? = text.replace('l', '1').replace('i', '1').toIntOrNull()
 
     /** Earnings screen, English (Romanian labels to be checked against real screenshots). */
     fun recognises(rows: List<String>): Boolean {
@@ -141,7 +145,7 @@ object UberEarningsParser {
             for (v in values) {
                 val m = duration.find(v)
                 if (m != null && online == null) {
-                    online = (m.groupValues[1].toIntOrNull() ?: 0) * 60 + m.groupValues[2].toInt()
+                    online = (number(m.groupValues[1]) ?: 0) * 60 + (number(m.groupValues[2]) ?: 0)
                     trips = trips ?: v.substring(m.range.last + 1).trim().split(' ').firstOrNull()?.toIntOrNull()
                 } else if (trips == null) {
                     trips = v.trim().toIntOrNull()

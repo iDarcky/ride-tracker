@@ -174,7 +174,21 @@ fun OverviewScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(if (editing) R.string.widget_customise else R.string.nav_home)) },
-                actions = { if (!editing) MenuButton() },
+                actions = {
+                    if (editing) {
+                        // Always in reach while the cards are being moved, however long the list.
+                        TextButton(onClick = { order = HomeWidget.DEFAULT }) { Text(stringResource(R.string.widget_reset)) }
+                        Button(
+                            onClick = {
+                                viewModel.setWidgets(order)
+                                editing = false
+                            },
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) { Text(stringResource(R.string.done)) }
+                    } else {
+                        MenuButton()
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = LocalBottomBarSpace.current)) },
@@ -288,16 +302,6 @@ fun OverviewScreen(
                 if (hidden.isNotEmpty()) {
                     item(key = "add-header") { SectionHeader(stringResource(R.string.widget_add_title)) }
                     items(hidden, key = { "add-${it.id}" }) { widget -> AddWidgetRow(widget) { order = order + widget } }
-                }
-                item(key = "done") {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { order = HomeWidget.DEFAULT }) { Text(stringResource(R.string.widget_reset)) }
-                        Spacer(Modifier.weight(1f))
-                        Button(onClick = {
-                            viewModel.setWidgets(order)
-                            editing = false
-                        }) { Text(stringResource(R.string.done)) }
-                    }
                 }
             }
             if (!editing && !state.loading && state.entryCount == 0 && state.expenseMinor == 0L) {

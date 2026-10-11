@@ -349,6 +349,16 @@ interface ImportDao {
     @Update
     suspend fun updateTrips(trips: List<TripEntity>)
 
+    @Query("SELECT * FROM import_batch WHERE fileHash = :fileHash")
+    suspend fun getBatchByHash(fileHash: String): ImportBatchEntity?
+
+    @Query("DELETE FROM income_entry WHERE importBatchId = :batchId")
+    suspend fun deleteEntriesOfBatch(batchId: Long)
+
+    /** Its trips and totals go with it (cascade). */
+    @Query("DELETE FROM import_batch WHERE id = :batchId")
+    suspend fun deleteBatch(batchId: Long)
+
     @Query("SELECT * FROM import_batch WHERE platformId = :platformId AND kind = :kind")
     suspend fun getBatchesOfKind(platformId: Long, kind: String): List<ImportBatchEntity>
 

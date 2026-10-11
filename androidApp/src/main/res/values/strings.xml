@@ -628,4 +628,13 @@
         <item quantity="one">%d more</item>
         <item quantity="other">%d more</item>
     </plurals>
+    <string name="erase_income">Erase income and imports</string>
+    <string name="erase_income_summary">Keeps expenses, platforms, car and settings</string>
+    <string name="erase_income_confirm_title">Erase income and imports?</string>
+    <string name="erase_income_confirm_body">All income (imported and typed in), trips, hours and the platforms’ totals will be deleted, so you can import everything again. Expenses, platforms, your car and settings stay. This can’t be undone, so make a backup first if you might need the data.</string>
+    <string name="erase_income_done">Income and imports erased</string>
+    <string name="import_again">Import again</string>
+    <string name="import_again_note">Replaces what this file saved the first time.</string>
+    <string name="tax_deductible">Tax deductible</string>
+    <string name="tax_deductible_detail">A business expense you can deduct as a PFA (fuel, car, phone…)</string>
 </resources>

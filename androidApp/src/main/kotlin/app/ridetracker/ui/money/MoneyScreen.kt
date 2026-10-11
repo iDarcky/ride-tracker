@@ -1,5 +1,21 @@
 package app.ridetracker.ui.money
 
+import app.ridetracker.ui.theme.onPositiveContainerColor
+import app.ridetracker.ui.theme.positiveContainerColor
+import app.ridetracker.ui.theme.positiveColor
+import app.ridetracker.ui.common.glass
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,13 +51,11 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -114,21 +128,56 @@ fun MoneyScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = {
-            Column {
-                TopAppBar(title = { Text(stringResource(R.string.nav_money)) }, actions = { MenuButton() })
-                PrimaryTabRow(selectedTabIndex = tab) {
-                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.income)) })
-                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.nav_expenses)) })
-                }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = bottomSpace)) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_money)) }, actions = { MenuButton() }) },
+        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = bottomSpace + SwitchSpace)) },
     ) { padding ->
-        val modifier = Modifier.padding(top = padding.calculateTopPadding())
-        when (tab) {
-            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
-            else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
+        Box(Modifier.fillMaxSize()) {
+            val modifier = Modifier.padding(top = padding.calculateTopPadding())
+            when (tab) {
+                0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
+                else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
+            }
+            // Income | Expenses at the bottom, where the thumb reaches, floating above the navigation bar.
+            IncomeExpenseSwitch(
+                tab = tab,
+                onSelect = { tab = it },
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomSpace),
+            )
+        }
+    }
+}
+
+/** Room the floating Income | Expenses switch takes above the navigation bar. */
+private val SwitchSpace = 64.dp
+
+/** Green for income, red for expenses: Material's connected toggle buttons on frosted glass, like the bar. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun IncomeExpenseSwitch(tab: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val options = listOf(
+        Triple(stringResource(R.string.income), positiveContainerColor(), onPositiveContainerColor()),
+        Triple(stringResource(R.string.nav_expenses), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer),
+    )
+    Row(
+        modifier
+            .clip(CircleShape)
+            .glass()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+    ) {
+        options.forEachIndexed { index, (label, container, content) ->
+            ToggleButton(
+                checked = tab == index,
+                onCheckedChange = { onSelect(index) },
+                shapes = if (index == 0) ButtonGroupDefaults.connectedLeadingButtonShapes() else ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                colors = ToggleButtonDefaults.colors(
+                    containerColor = Color.Transparent,
+                    checkedContainerColor = container,
+                    checkedContentColor = content,
+                ),
+                modifier = Modifier.semantics { role = Role.Tab },
+            ) { Text(label, modifier = Modifier.padding(horizontal = 8.dp)) }
         }
     }
 }
@@ -157,7 +206,7 @@ private fun IncomeTab(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + SwitchSpace + 24.dp),
     ) {
         item {
             MonthTitle(
@@ -172,6 +221,9 @@ private fun IncomeTab(
         item {
             TotalCard(
                 label = stringResource(R.string.total_income),
+                accent = positiveColor(),
+                accentContainer = positiveContainerColor(),
+                onAccentContainer = onPositiveContainerColor(),
                 totalMinor = state.totalMinor,
                 previousMinor = state.previousMinor,
                 previousMonth = state.month?.previous() as? Period.Month,
@@ -260,7 +312,7 @@ private fun ExpenseTab(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + 24.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = LocalBottomBarSpace.current + SwitchSpace + 24.dp),
     ) {
         item {
             MonthTitle(
@@ -275,6 +327,9 @@ private fun ExpenseTab(
         item {
             TotalCard(
                 label = stringResource(R.string.total_expenses),
+                accent = MaterialTheme.colorScheme.error,
+                accentContainer = MaterialTheme.colorScheme.errorContainer,
+                onAccentContainer = MaterialTheme.colorScheme.onErrorContainer,
                 totalMinor = state.totalMinor,
                 previousMinor = state.previousMinor,
                 previousMonth = state.month?.previous() as? Period.Month,
@@ -386,6 +441,10 @@ private fun LazyListScope.seeAll(count: Int, showAll: Boolean, onToggle: () -> U
 @Composable
 private fun TotalCard(
     label: String,
+    /** Green for income, red for expenses: the total and the Add button. */
+    accent: Color,
+    accentContainer: Color,
+    onAccentContainer: Color,
     totalMinor: Long,
     previousMinor: Long?,
     previousMonth: Period.Month?,
@@ -398,7 +457,7 @@ private fun TotalCard(
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(money.format(totalMinor), style = MaterialTheme.typography.headlineMedium.tabular())
+                Text(money.format(totalMinor), style = MaterialTheme.typography.headlineMedium.tabular(), color = accent)
                 if (previousMinor != null && previousMonth != null) {
                     val diff = totalMinor - previousMinor
                     val change = Comparisons.percentChange(totalMinor, previousMinor)
@@ -420,7 +479,10 @@ private fun TotalCard(
                     }
                 }
             }
-            FilledTonalButton(onClick = onAdd) {
+            FilledTonalButton(
+                onClick = onAdd,
+                colors = ButtonDefaults.filledTonalButtonColors(containerColor = accentContainer, contentColor = onAccentContainer),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(addLabel)

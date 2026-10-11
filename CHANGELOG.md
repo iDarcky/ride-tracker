@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0
+- **Tabs open at the top** when you switch to them; coming back from a trip or an entry keeps your place.
+- **Uber Earnings screenshots read more reliably**: the week picker's arrow ("Oct 12 ⌄") and a "1" read as "l" in the
+  online time ("1h 33 m") no longer stop the import.
+- **Erase income and imports** (Your data): deletes all income, trips, hours and platform totals so you can import
+  everything again; expenses, platforms, car and settings stay.
+- **Import again**: a file already imported can be saved again, replacing what it saved the first time (e.g. after a
+  misread).
+- **Tax deductible** checkbox on expenses, for PFA drivers in Romania (database 7, backup format 7).
+- Screens open and close with Android's standard animation.
+- **Customise Home**: Reset and Done are in the top bar, always in reach.
+- **Money**: Income | Expenses moved to the bottom, above the navigation bar, within reach of your thumb. Income is green,
+  expenses red (the switch, the total and the Add button).
+
 ## 0.11.0
 - **"Needs attention" is pinned at the top of Home**, above the total, and only shows when something is waiting. It's
   compact now: one line per item with its button (Raportul Z „Gata", a recurring expense's Add/Skip, a month's missing

@@ -62,6 +62,7 @@ import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Contrast
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Restore
@@ -585,6 +586,7 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var confirmErase by rememberSaveable { mutableStateOf(false) }
+    var confirmEraseIncome by rememberSaveable { mutableStateOf(false) }
 
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -615,6 +617,7 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
                 SettingsMessage.RESTORE_DONE -> R.string.restore_done
                 SettingsMessage.RESTORE_INVALID -> R.string.restore_invalid
                 SettingsMessage.RESTORE_NEWER -> R.string.restore_newer
+                SettingsMessage.INCOME_ERASED -> R.string.erase_income_done
             },
         )
     }
@@ -641,6 +644,14 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
         }
         item {
             Row(
+                Icons.Outlined.DeleteSweep,
+                stringResource(R.string.erase_income),
+                stringResource(R.string.erase_income_summary),
+                tint = MaterialTheme.colorScheme.error,
+            ) { confirmEraseIncome = true }
+        }
+        item {
+            Row(
                 Icons.Outlined.DeleteForever,
                 stringResource(R.string.erase),
                 stringResource(R.string.erase_summary),
@@ -658,6 +669,19 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
             confirmLabel = stringResource(R.string.restore_action),
             onDismiss = viewModel::cancelRestore,
             onConfirm = viewModel::confirmRestore,
+        )
+    }
+    if (confirmEraseIncome) {
+        ConfirmDialog(
+            title = stringResource(R.string.erase_income_confirm_title),
+            body = stringResource(R.string.erase_income_confirm_body),
+            confirmLabel = stringResource(R.string.erase_action),
+            destructive = true,
+            onDismiss = { confirmEraseIncome = false },
+            onConfirm = {
+                confirmEraseIncome = false
+                viewModel.eraseIncome()
+            },
         )
     }
     if (confirmErase) {

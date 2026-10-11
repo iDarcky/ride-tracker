@@ -46,7 +46,8 @@ data class BackupFile(
 
         /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9).
          *  6: + income details, income lines, imports, trips and period summaries (0.1.0). */
-        const val FORMAT_VERSION = 6
+        // 7: expenses can be tax deductible (an older app would drop the mark).
+        const val FORMAT_VERSION = 7
     }
 }
 
@@ -154,6 +155,8 @@ data class BackupExpense(
     val category: String,
     val note: String? = null,
     val createdAtEpochMillis: Long,
+    /** Format 7. Older files read as not deductible. */
+    val taxDeductible: Boolean = false,
 )
 
 @Serializable
@@ -246,6 +249,7 @@ class BackupService(
                     category = it.category,
                     note = it.note,
                     createdAtEpochMillis = it.createdAt,
+                    taxDeductible = it.taxDeductible,
                 )
             },
             vehicles = database.vehicleDao().getAll().map {
@@ -360,6 +364,7 @@ class BackupService(
                 category = it.category,
                 note = it.note,
                 createdAt = it.createdAtEpochMillis,
+                taxDeductible = it.taxDeductible,
             )
         }
         val vehicles = file.vehicles.map { VehicleEntity(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor, it.bodyType, it.colorArgb) }
@@ -417,6 +422,22 @@ class BackupService(
             }
         }
         settingsRepository.clear()
+    }
+
+    /**
+     * Deletes every income entry (imported, estimated and typed in), trip, platform total and import, so the platforms'
+     * reports can be imported again from scratch. Expenses, apps, car, odometer and settings stay.
+     */
+    suspend fun eraseIncome() {
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                database.importDao().deleteAllSummaries()
+                database.importDao().deleteAllTrips()
+                database.importDao().deleteAllLines()
+                database.incomeEntryDao().deleteAll()
+                database.importDao().deleteAllBatches()
+            }
+        }
     }
 
     /** Children before parents, so foreign keys never block. Call inside a transaction. */

@@ -28,6 +28,7 @@ class ExpenseRepository(database: AppDatabase) {
         category: ExpenseCategory,
         note: String?,
         nowEpochMillis: Long,
+        taxDeductible: Boolean = false,
     ) {
         val cleanNote = note?.trim()?.ifEmpty { null }
         val existing = id?.let { expenses.getById(it) }
@@ -39,10 +40,13 @@ class ExpenseRepository(database: AppDatabase) {
                     category = category.id,
                     note = cleanNote,
                     createdAt = nowEpochMillis,
+                    taxDeductible = taxDeductible,
                 ),
             )
         } else {
-            expenses.update(existing.copy(amountMinor = amountMinor, date = date.toEpochDays(), category = category.id, note = cleanNote))
+            expenses.update(
+                existing.copy(amountMinor = amountMinor, date = date.toEpochDays(), category = category.id, note = cleanNote, taxDeductible = taxDeductible),
+            )
         }
     }
 

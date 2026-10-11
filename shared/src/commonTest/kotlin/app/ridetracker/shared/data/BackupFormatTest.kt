@@ -92,6 +92,22 @@ class BackupFormatTest {
     }
 
     @Test
+    fun readsVersion7TaxDeductibleExpenses() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 7, "appVersion": "0.12.0",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "expenses": [
+                { "id": 1, "amountMinor": 25000, "date": "2026-10-02", "category": "fuel", "createdAtEpochMillis": 1, "taxDeductible": true },
+                { "id": 2, "amountMinor": 1500, "date": "2026-10-03", "category": "food", "createdAtEpochMillis": 2 }
+              ]
+            }
+        """.trimIndent()
+        val file = json.decodeFromString(BackupFile.serializer(), text)
+        assertEquals(listOf(true, false), file.expenses.map { it.taxDeductible })
+    }
+
+    @Test
     fun version5EntriesReadAsManual() {
         val text = """
             {

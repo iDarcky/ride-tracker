@@ -1,5 +1,7 @@
 package app.ridetracker.ui.expense
 
+import app.ridetracker.shared.domain.Country
+import app.ridetracker.shared.domain.DrivingType
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,6 +40,9 @@ data class ExpenseUiState(
     val repeat: Boolean = false,
     val frequency: Frequency = Frequency.MONTHLY,
     val endDate: LocalDate? = null,
+    /** PFA drivers in Romania can mark an expense as tax deductible. */
+    val offerTaxDeductible: Boolean = false,
+    val taxDeductible: Boolean = false,
 )
 
 class ExpenseViewModel(
@@ -56,12 +61,14 @@ class ExpenseViewModel(
 
     init {
         viewModelScope.launch {
-            val currency = resolveCurrency(settingsRepository.settings.first().currencyCode)
+            val settings = settingsRepository.settings.first()
+            val currency = resolveCurrency(settings.currencyCode)
+            val pfa = settings.country == Country.ROMANIA && settings.drivingType == DrivingType.PFA
             val digits = currency.defaultFractionDigits.coerceAtLeast(0)
             val expense = expenseId?.let { expenseRepository.get(it) }
             _state.update {
                 if (expense == null) {
-                    it.copy(loading = false, currency = currency)
+                    it.copy(loading = false, currency = currency, offerTaxDeductible = pfa)
                 } else {
                     val category = ExpenseCategory.fromId(expense.category)
                     it.copy(
@@ -72,6 +79,9 @@ class ExpenseViewModel(
                         amountText = Money.toPlainString(expense.amountMinor, digits),
                         date = LocalDate.fromEpochDays(expense.date),
                         note = expense.note ?: "",
+                        // Kept visible on an expense already marked, even if the driving type changed since.
+                        offerTaxDeductible = pfa || expense.taxDeductible,
+                        taxDeductible = expense.taxDeductible,
                     )
                 }
             }
@@ -88,6 +98,7 @@ class ExpenseViewModel(
     fun setCategory(category: ExpenseCategory) = _state.update { it.copy(category = category, group = category.group) }
     fun setDate(date: LocalDate) = _state.update { it.copy(date = date) }
     fun setNote(note: String) = _state.update { it.copy(note = note) }
+    fun setTaxDeductible(deductible: Boolean) = _state.update { it.copy(taxDeductible = deductible) }
     fun setRepeat(repeat: Boolean) = _state.update { it.copy(repeat = repeat) }
     fun setFrequency(frequency: Frequency) = _state.update { it.copy(frequency = frequency) }
     fun setEndDate(date: LocalDate?) = _state.update { it.copy(endDate = date) }
@@ -101,7 +112,7 @@ class ExpenseViewModel(
         }
         viewModelScope.launch {
             val now = Clock.System.now().toEpochMilliseconds()
-            expenseRepository.save(expenseId, minor, s.date, s.category, s.note, now)
+            expenseRepository.save(expenseId, minor, s.date, s.category, s.note, now, taxDeductible = s.offerTaxDeductible && s.taxDeductible)
             if (expenseId == null && s.repeat) {
                 recurringRepository.startFrom(s.date, minor, s.category, s.note, s.frequency, s.endDate, now)
             }

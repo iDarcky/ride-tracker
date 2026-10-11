@@ -27,7 +27,7 @@ import kotlinx.datetime.DayOfWeek
 import kotlin.time.Clock
 
 /** One-off results shown as a snackbar. */
-enum class SettingsMessage { BACKUP_SAVED, BACKUP_FAILED, RESTORE_DONE, RESTORE_INVALID, RESTORE_NEWER }
+enum class SettingsMessage { BACKUP_SAVED, BACKUP_FAILED, RESTORE_DONE, RESTORE_INVALID, RESTORE_NEWER, INCOME_ERASED }
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
@@ -125,6 +125,14 @@ class SettingsViewModel(
             backupService.restore(file)
             applyThemeMode(ThemeMode.fromId(file.settings.themeMode))
             _message.value = SettingsMessage.RESTORE_DONE
+        }
+    }
+
+    /** Erases income and imports only (see [BackupService.eraseIncome]). */
+    fun eraseIncome() {
+        viewModelScope.launch {
+            backupService.eraseIncome()
+            _message.value = SettingsMessage.INCOME_ERASED
         }
     }
 

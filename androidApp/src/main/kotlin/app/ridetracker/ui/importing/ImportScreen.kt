@@ -215,6 +215,7 @@ fun ImportScreen(
                         onRemove = { viewModel.remove(item.uri) },
                         onEdit = { editing = uberEditTarget(item.uri, it) ?: EditTarget(item.uri, it) },
                         onEditDay = { report, i -> editing = uberEditTarget(item.uri, report, i) },
+                        onImportAgain = { viewModel.importAgain(item.uri) },
                     )
                 }
                 item {
@@ -326,6 +327,7 @@ private fun ItemCard(
     onRemove: () -> Unit,
     onEdit: (ReadReport) -> Unit,
     onEditDay: (ReadReport.UberDays, Int) -> Unit,
+    onImportAgain: () -> Unit,
 ) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -359,10 +361,17 @@ private fun ItemCard(
             when {
                 item.failed -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_failed), warning = true)
                 report == null -> LinearProgressIndicator(Modifier.fillMaxWidth())
-                item.alreadyImported -> Note(Icons.Outlined.Info, stringResource(R.string.import_already))
+                item.alreadyImported -> {
+                    Note(Icons.Outlined.Info, stringResource(R.string.import_already))
+                    // A misread or deleted import can be saved again; it replaces what this file saved before.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onImportAgain) { Text(stringResource(R.string.import_again)) }
+                    }
+                }
                 else -> Details(report, item.replaces, money, dates, hasUberTotals, onEditDay)
             }
             if (item.edited) Note(Icons.Outlined.Edit, stringResource(R.string.import_edited))
+            if (item.reimport) Note(Icons.Outlined.Info, stringResource(R.string.import_again_note))
             if (report != null && !item.alreadyImported) EditActions(report, onEdit)
         }
     }

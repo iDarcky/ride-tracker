@@ -58,6 +58,13 @@ private val DarkColors = darkColorScheme(
 @Composable
 fun positiveColor(): Color = if (isSystemInDarkTheme()) Color(0xFF7EE2A8) else Color(0xFF146C3E)
 
+/** The green's container and the colour on it (Money's Income), like errorContainer is for red. */
+@Composable
+fun positiveContainerColor(): Color = if (isSystemInDarkTheme()) Color(0xFF00522B) else Color(0xFFA6F4C0)
+
+@Composable
+fun onPositiveContainerColor(): Color = if (isSystemInDarkTheme()) Color(0xFFA6F4C0) else Color(0xFF00522B)
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RideTrackerTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {

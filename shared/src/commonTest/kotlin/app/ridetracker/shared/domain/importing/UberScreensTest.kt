@@ -67,6 +67,22 @@ class UberScreensTest {
     }
 
     @Test
+    fun readsTheWeekPickerArrowAndAOneReadAsL() {
+        // As text recognition read a real screen: the dropdown arrow after the dates, "1 h" as "lh".
+        val rows = earningsRows.map {
+            when (it) {
+                "Oct 5 - Oct 12" -> "Oct 5- Oct 12 v"
+                "3 h 05 m 9" -> "lh 05 m 9"
+                else -> it
+            }
+        }
+        val e = assertNotNull(UberEarningsParser.parse(rows, taken, selectedDayOfMonth = 8))
+        assertEquals(LocalDate(2026, 10, 8), e.day)
+        assertEquals(65, e.onlineMinutes)
+        assertEquals(9, e.trips)
+    }
+
+    @Test
     fun readsMinutesOnly() {
         val rows = earningsRows.map { if (it == "3 h 05 m 9") "45 m 2" else it }
         val e = assertNotNull(UberEarningsParser.parse(rows, taken, null))

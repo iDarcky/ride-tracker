@@ -40,6 +40,16 @@ class ImportRepository(private val database: AppDatabase) {
 
     suspend fun isImported(fileHash: String): Boolean = imports.hasFile(fileHash)
 
+    /**
+     * "Import again": removes what this file saved before (its days, trips, totals and hours), so the file can be saved
+     * again, e.g. after a misread. Days a later import replaced stay as they are.
+     */
+    suspend fun forgetImport(fileHash: String) = transaction {
+        val batch = imports.getBatchByHash(fileHash) ?: return@transaction
+        imports.deleteEntriesOfBatch(batch.id)
+        imports.deleteBatch(batch.id)
+    }
+
     fun observeTrips(range: DateRange): Flow<List<TripWithPlatform>> =
         imports.observeTrips(range.start.toEpochDays(), range.endInclusive.toEpochDays())
 

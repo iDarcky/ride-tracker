@@ -1,5 +1,7 @@
 package app.ridetracker.ui.expense
 
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.DatePickerDefaults
 import app.ridetracker.ui.common.GLASS_DIALOG
 import app.ridetracker.ui.common.glassContainer
@@ -166,6 +168,24 @@ fun ExpenseScreen(
                 label = { Text(stringResource(R.string.note_optional)) },
                 minLines = 2,
             )
+
+            if (state.offerTaxDeductible) {
+                Row(
+                    Modifier.fillMaxWidth().toggleable(value = state.taxDeductible, role = Role.Checkbox, onValueChange = viewModel::setTaxDeductible),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = state.taxDeductible, onCheckedChange = null)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.tax_deductible), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            stringResource(R.string.tax_deductible_detail),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
 
             // Repeat is offered when adding; existing series are edited under Money → Recurring expenses.
             if (!state.isEdit) {

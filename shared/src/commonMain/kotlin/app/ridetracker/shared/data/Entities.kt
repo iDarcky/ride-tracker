@@ -161,6 +161,8 @@ data class ExpenseEntity(
     val note: String? = null,
     /** Creation instant in epoch milliseconds. */
     val createdAt: Long,
+    /** Marked by a PFA driver as deductible from taxable income (database 7). */
+    @ColumnInfo(defaultValue = "0") val taxDeductible: Boolean = false,
 )
 
 /**

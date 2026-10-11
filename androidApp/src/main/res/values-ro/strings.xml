@@ -646,4 +646,13 @@
         <item quantity="few">Încă %d</item>
         <item quantity="other">Încă %d</item>
     </plurals>
+    <string name="erase_income">Șterge veniturile și importurile</string>
+    <string name="erase_income_summary">Păstrează cheltuielile, platformele, mașina și setările</string>
+    <string name="erase_income_confirm_title">Ștergi veniturile și importurile?</string>
+    <string name="erase_income_confirm_body">Se șterg toate veniturile (importate și introduse de tine), cursele, orele și totalurile platformelor, ca să poți importa totul din nou. Cheltuielile, platformele, mașina și setările rămân. Nu se poate anula, așa că fă întâi o copie de rezervă dacă ai putea avea nevoie de date.</string>
+    <string name="erase_income_done">Veniturile și importurile au fost șterse</string>
+    <string name="import_again">Importă din nou</string>
+    <string name="import_again_note">Înlocuiește ce a salvat acest fișier prima dată.</string>
+    <string name="tax_deductible">Deductibilă</string>
+    <string name="tax_deductible_detail">O cheltuială de activitate pe care o poți deduce ca PFA (carburant, mașină, telefon…)</string>
 </resources>

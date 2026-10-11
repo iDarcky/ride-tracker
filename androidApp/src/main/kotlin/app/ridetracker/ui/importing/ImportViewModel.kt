@@ -44,6 +44,8 @@ data class ImportItem(
     val selected: Boolean = true,
     /** The driver corrected or typed in what was read. */
     val edited: Boolean = false,
+    /** Imported before, and the driver chose "Import again": saving replaces what it saved then. */
+    val reimport: Boolean = false,
 ) {
     val canSave: Boolean
         get() = !alreadyImported && when (report) {
@@ -151,6 +153,16 @@ class ImportViewModel(
         else -> 0
     }
 
+    /** An already imported file: save it again, replacing what it saved before. */
+    fun importAgain(uri: Uri) {
+        replace(uri) { it.copy(alreadyImported = false, reimport = true, selected = true) }
+        val report = _state.value.items.firstOrNull { it.uri == uri }?.report ?: return
+        viewModelScope.launch {
+            val replaces = replaces(report)
+            replace(uri) { it.copy(replaces = replaces) }
+        }
+    }
+
     fun remove(uri: Uri) = _state.update { s -> s.copy(items = s.items.filterNot { it.uri == uri }) }
 
     fun save() {
@@ -164,6 +176,7 @@ class ImportViewModel(
             // Oldest days first, so a later screenshot of the same day wins.
             for (item in items.sortedBy { (it.report as? ReadReport.BoltDay)?.day?.date ?: (it.report as? ReadReport.UberDay)?.day?.date }) {
                 val now = Clock.System.now().toEpochMilliseconds()
+                item.report?.takeIf { item.reimport }?.let { importRepository.forgetImport(it.fileHash) }
                 val outcome = when (val r = item.report) {
                     is ReadReport.BoltDay ->
                         importRepository.saveDay(platformId, ImportKind.BOLT_DAILY_SCREENSHOT, IncomeSource.SCREENSHOT, r.fileHash, r.day, now)
