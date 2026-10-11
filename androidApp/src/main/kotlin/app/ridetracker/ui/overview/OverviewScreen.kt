@@ -1,5 +1,10 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.ui.platform.LocalContext
 import app.ridetracker.notifications.ZReportReminderScheduler
 import androidx.compose.material3.DatePickerDefaults
@@ -161,6 +166,14 @@ fun OverviewScreen(
     var editing by rememberSaveable { mutableStateOf(false) }
     var order by remember { mutableStateOf(state.widgets) }
     val listState = rememberLazyListState()
+    // The month title is the first item: once more than half of it has scrolled up under the top bar, the bar shows
+    // the period instead.
+    val headerHidden by remember {
+        derivedStateOf {
+            val title = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+            title == null || title.offset + title.size / 2 <= 0
+        }
+    }
     ScrollToTopOnReselect(listState)
     val reorder = rememberReorderableLazyListState(listState) { from, to ->
         val moving = (from.key as? String)?.let(HomeWidget::fromId) ?: return@rememberReorderableLazyListState
@@ -173,7 +186,34 @@ fun OverviewScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (editing) R.string.widget_customise else R.string.nav_home)) },
+                title = {
+                    // Once the month header scrolls away, the bar says which period the numbers are for; tapping it
+                    // goes back to the top.
+                    val period = state.period
+                    val periodLabel = when (period) {
+                        is Period.All -> stringResource(R.string.all_time)
+                        is Period.Custom -> dates.range(period.range)
+                        else -> dates.period(period)
+                    }
+                    val title = when {
+                        editing -> stringResource(R.string.widget_customise)
+                        headerHidden -> periodLabel
+                        else -> stringResource(R.string.nav_home)
+                    }
+                    AnimatedContent(targetState = title, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "home title") { text ->
+                        Text(
+                            text,
+                            maxLines = 1,
+                            modifier = if (headerHidden && !editing) {
+                                Modifier.clickable(onClickLabel = stringResource(R.string.back_to_top)) {
+                                    scope.launch { listState.animateScrollToItem(0) }
+                                }
+                            } else {
+                                Modifier
+                            },
+                        )
+                    }
+                },
                 actions = {
                     if (editing) {
                         // Always in reach while the cards are being moved, however long the list.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.2
+- **The period stays in sight on Home**: once the month title scrolls away, the top bar shows the period you're
+  looking at ("October 2026", "5 Oct – 11 Oct 2026", "All time"). Tap it to go back to the top.
+
 ## 0.12.1
 - **Smoother going back** (e.g. from Settings to Home): tab screens keep the navigation bar's space the whole time, so
   Home no longer re-lays itself out mid-animation; the bar fades with its screen instead of popping; screens use
