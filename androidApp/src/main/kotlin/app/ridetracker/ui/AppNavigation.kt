@@ -3,9 +3,6 @@ package app.ridetracker.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.mutableIntStateOf
 import app.ridetracker.ui.money.IncomeExpenseSwitch
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.ui.layout.onSizeChanged
@@ -26,12 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.navigation.NavBackStackEntry
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
@@ -167,12 +161,11 @@ fun AppNavigation() {
                 startDestination = Tab.HOME.route,
                 // The floating bar blurs whatever scrolls under it.
                 modifier = Modifier.hazeSource(haze),
-                // Opening fades the new screen in over the old one; going back is Android's predictive back: the screen
-                // shrinks and slides away over the one behind, following the finger. Tabs switch instantly.
-                enterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
-                exitTransition = { if (betweenTabs()) ExitTransition.None else ExitTransition.KeepUntilTransitionsFinished },
+                // No screen animations (owner, 12 Oct 2026): every screen and tab changes instantly, going back too.
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
                 popEnterTransition = { EnterTransition.None },
-                popExitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.back },
+                popExitTransition = { ExitTransition.None },
             ) {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
@@ -257,8 +250,9 @@ fun AppNavigation() {
         }
         AnimatedVisibility(
             visible = currentTab != null,
-            enter = fadeIn(tween(210, delayMillis = 90)),
-            exit = fadeOut(tween(90)),
+            // Instant, like the screens.
+            enter = EnterTransition.None,
+            exit = ExitTransition.None,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             // The + is a circle exactly as tall as the bar.
@@ -300,12 +294,9 @@ fun AppNavigation() {
     }
 }
 
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boolean =
-    Tab.entries.any { it.route == initialState.destination.route } && Tab.entries.any { it.route == targetState.destination.route }
-
 @Composable
 private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () -> Unit) {
-    // Tab screens always keep room for the floating bar, so nothing jumps while a screen fades in or out.
+    // Tab screens always keep room for the floating bar, so nothing jumps when the bar shows or hides.
     val barSpace = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + FloatingBarHeight
     CompositionLocalProvider(
         LocalTabReselects provides reselects,
@@ -313,22 +304,6 @@ private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () 
         LocalBottomBarSpace provides barSpace,
         content = content,
     )
-}
-
-/**
- * Screen motion. [back] is the predictive back animation from Android's guide (navigation-event, "Handle back
- * gestures"): the screen scales down to 90 % and shifts sideways while the previous one stays still behind it;
- * Navigation plays it under the finger during the back gesture, and to the end when back is released or pressed.
- */
-private object ScreenMotion {
-    // Short (owner, 12 Oct 2026: 300 ms felt slow). While swiping the screen follows the finger whatever the length;
-    // this is how long the rest takes once back is released, and the whole thing for the back button.
-    private const val OPEN = 220
-    private const val BACK = 200
-    val open: EnterTransition = fadeIn(tween(OPEN * 2 / 3)) + scaleIn(tween(OPEN), initialScale = 0.94f)
-    val back: ExitTransition = scaleOut(tween(BACK), targetScale = 0.9f) +
-        slideOutHorizontally(tween(BACK)) { width -> width / 20 } +
-        fadeOut(tween(BACK, easing = { t -> (t - 0.5f).coerceAtLeast(0f) / 0.5f }))
 }
 
 private fun NavHostController.switchTab(tab: Tab) {

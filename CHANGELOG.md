@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.15.2
+- **No screen animations**: screens, tabs and the navigation bar now change instantly, opening and going back alike.
+
 ## 0.15.1
 - **Faster going back and opening screens**: once you let go of the back swipe (or press back), the screen finishes
   leaving in 200 ms instead of 300; opening a screen takes 220 ms. While you swipe it still follows your finger.
