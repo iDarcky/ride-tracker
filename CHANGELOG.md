@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1
+- **Smoother going back** (e.g. from Settings to Home): tab screens keep the navigation bar's space the whole time, so
+  Home no longer re-lays itself out mid-animation; the bar fades with its screen instead of popping; screens use
+  Material's quick fade through (300 ms instead of a 700 ms fade).
+- "Tax deductible" is a plain row with the checkbox on the right.
+
 ## 0.12.0
 - **Tabs open at the top** when you switch to them; coming back from a trip or an entry keeps your place.
 - **Uber Earnings screenshots read more reliably**: the week picker's arrow ("Oct 12 ⌄") and a "1" read as "l" in the

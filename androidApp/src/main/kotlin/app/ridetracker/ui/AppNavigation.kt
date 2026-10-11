@@ -1,5 +1,7 @@
 package app.ridetracker.ui
 
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -137,22 +139,20 @@ fun AppNavigation() {
     val reselects = remember { mutableStateMapOf<Tab, Int>() }
     val entries = remember { mutableStateMapOf<Tab, Int>() }
     val haze = rememberHazeState()
-    val barSpace = if (currentTab != null) {
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + FloatingBarHeight
-    } else {
-        0.dp
-    }
+    // The bar fades out with its tab rather than vanishing, so it keeps showing that tab while it goes.
+    var lastTab by remember { mutableStateOf(Tab.HOME) }
+    if (currentTab != null) lastTab = currentTab
 
     Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalHaze provides haze, LocalBottomBarSpace provides barSpace, LocalOpenMenu provides { nav.navigate("menu") }) {
+        CompositionLocalProvider(LocalHaze provides haze, LocalOpenMenu provides { nav.navigate("menu") }) {
             NavHost(
                 navController = nav,
                 startDestination = Tab.HOME.route,
                 // The floating bar blurs whatever scrolls under it.
                 modifier = Modifier.hazeSource(haze),
-                // Navigation's own animation (a fade, which the back gesture follows); tabs switch instantly.
-                enterTransition = { if (betweenTabs()) EnterTransition.None else fadeIn(tween(700)) },
-                exitTransition = { if (betweenTabs()) ExitTransition.None else fadeOut(tween(700)) },
+                // Material's fade through (the back gesture follows it under the finger); tabs switch instantly.
+                enterTransition = { if (betweenTabs()) EnterTransition.None else FadeThrough.enter },
+                exitTransition = { if (betweenTabs()) ExitTransition.None else FadeThrough.exit },
             ) {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
@@ -228,7 +228,12 @@ fun AppNavigation() {
                 }
             }
         }
-        if (currentTab != null) {
+        AnimatedVisibility(
+            visible = currentTab != null,
+            enter = fadeIn(tween(210, delayMillis = 90)),
+            exit = fadeOut(tween(90)),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
             // The + is a circle exactly as tall as the bar.
             val density = LocalDensity.current
             var barHeight by remember { mutableStateOf(48.dp) }
@@ -236,10 +241,10 @@ fun AppNavigation() {
                 buttonSize = barHeight,
                 bar = {
                     FloatingNavBar(
-                        current = currentTab,
+                        current = lastTab,
                         haze = haze,
                         onSelect = {
-                            if (it == currentTab) {
+                            if (it == lastTab) {
                                 reselects[it] = (reselects[it] ?: 0) + 1
                             } else {
                                 entries[it] = (entries[it] ?: 0) + 1
@@ -257,7 +262,7 @@ fun AppNavigation() {
                         onImport = { nav.navigate("import") },
                     )
                 },
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp),
             )
         }
     }
@@ -268,7 +273,20 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boo
 
 @Composable
 private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalTabReselects provides reselects, LocalTabEntries provides entries, content = content)
+    // Tab screens always keep room for the floating bar, so nothing jumps while a screen fades in or out.
+    val barSpace = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + FloatingBarHeight
+    CompositionLocalProvider(
+        LocalTabReselects provides reselects,
+        LocalTabEntries provides entries,
+        LocalBottomBarSpace provides barSpace,
+        content = content,
+    )
+}
+
+/** Material's fade through: the old screen fades out quickly, the new one fades in while growing slightly. */
+private object FadeThrough {
+    val enter: EnterTransition = fadeIn(tween(210, delayMillis = 90)) + scaleIn(tween(210, delayMillis = 90), initialScale = 0.92f)
+    val exit: ExitTransition = fadeOut(tween(90))
 }
 
 private fun NavHostController.switchTab(tab: Tab) {

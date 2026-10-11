@@ -174,16 +174,8 @@ fun ExpenseScreen(
                     Modifier.fillMaxWidth().toggleable(value = state.taxDeductible, role = Role.Checkbox, onValueChange = viewModel::setTaxDeductible),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Text(stringResource(R.string.tax_deductible), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                     Checkbox(checked = state.taxDeductible, onCheckedChange = null)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.tax_deductible), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.tax_deductible_detail),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
             }
 

@@ -636,5 +636,4 @@
     <string name="import_again">Import again</string>
     <string name="import_again_note">Replaces what this file saved the first time.</string>
     <string name="tax_deductible">Tax deductible</string>
-    <string name="tax_deductible_detail">A business expense you can deduct as a PFA (fuel, car, phone…)</string>
 </resources>
