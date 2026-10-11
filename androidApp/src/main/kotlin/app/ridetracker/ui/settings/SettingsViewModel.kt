@@ -11,6 +11,7 @@ import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.ThemeMode
+import app.ridetracker.shared.domain.ImportReminderSettings
 import app.ridetracker.shared.domain.ZReportReminder
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.TargetBasis
@@ -71,6 +72,17 @@ class SettingsViewModel(
 
     fun setZReportTime(hour: Int, minute: Int) {
         viewModelScope.launch { settingsRepository.setZReportTime(hour * 60 + minute) }
+    }
+
+    val importReminder: StateFlow<ImportReminderSettings> = settingsRepository.importReminder
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ImportReminderSettings())
+
+    fun setImportReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setImportReminderEnabled(enabled) }
+    }
+
+    fun setImportReminderTime(hour: Int, minute: Int) {
+        viewModelScope.launch { settingsRepository.setImportReminderTime(hour * 60 + minute) }
     }
 
     val target: StateFlow<TargetSettings> = settingsRepository.target

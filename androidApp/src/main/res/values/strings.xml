@@ -277,8 +277,7 @@
     <string name="import_title">Import</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="import_menu_summary">Bolt and Uber screenshots and reports</string>
-    <string name="import_empty_title">Import from Bolt and Uber</string>
-    <string name="import_empty_body">Choose screenshots of Bolt’s daily earnings breakdown, Bolt’s monthly summary PDF or rider invoices CSV, or Uber’s reports (CSV). Everything is read on this phone.</string>
+    <string name="import_empty_body">Screenshots and files are read on this phone; nothing is uploaded.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Imported</string>
     <string name="checklist_monthly">Monthly screenshot</string>
@@ -305,7 +304,6 @@
         <item quantity="other">%d without</item>
     </plurals>
     <string name="import_choose_screenshots">Choose screenshots</string>
-    <string name="import_choose_files">Choose PDF or CSV files</string>
     <string name="import_share_hint">You can also share screenshots to Ride Tracker from your gallery.</string>
     <string name="import_add_screenshots">Add screenshots</string>
     <string name="import_add_files">Add files</string>
@@ -321,7 +319,6 @@
     <string name="import_bolt_week">Bolt · weekly totals</string>
     <string name="import_bolt_month_screen">Bolt · monthly totals</string>
     <string name="import_period_not_income">Bolt’s own totals for this period. Used to check your days, not added as income. For income, import the Daily tab.</string>
-    <string name="import_not_recognised">Bolt’s earnings breakdown, the Activity screen (hours), the monthly summary (PDF) and rider invoices (CSV) can be read, and Uber’s CSV reports with the names Uber gave them. For a month’s hours in Bolt, tap its bar first so Bolt shows them.</string>
     <string name="import_your_earnings">Your earnings</string>
     <string name="import_cash_in_hand">Cash in hand</string>
     <string name="import_edit">Edit</string>
@@ -682,4 +679,33 @@
     <string name="document_notification_soon">%1$s expires on %2$s</string>
     <string name="document_notification_today">%1$s expires today</string>
     <string name="document_notification_body">Renew it, then update the date in Ride Tracker.</string>
+    <!-- Guided import -->
+    <string name="import_tab_today">Today</string>
+    <string name="import_tab_month">End of month</string>
+    <string name="import_today_intro">After each driving day, one screenshot from each app. It gives that day exactly, with card and cash.</string>
+    <string name="import_today_bolt_how">Bolt Driver → Earnings → Earnings breakdown → Daily, pick the day, take a screenshot.</string>
+    <string name="import_today_uber_how">Uber Driver → Earnings, tap the day’s bar (its date turns blue), take a screenshot.</string>
+    <string name="import_today_week">Last 7 days</string>
+    <string name="import_day_done">%1$s: imported</string>
+    <string name="import_day_missing">%1$s: not imported</string>
+    <string name="import_month_intro">When a month is over, these give its exact total, the platforms’ fees and your hours, and fill in days without a screenshot.</string>
+    <string name="import_reminder_row">Remind me every evening</string>
+    <string name="import_reminder_row_on">Reminder every day at %1$s</string>
+    <string name="import_reminder_setting">Import reminder</string>
+    <string name="import_reminder_intro">A reminder every evening to import the day’s screenshots from Bolt and Uber. It stays quiet once the day is imported.</string>
+    <string name="import_reminder_channel">Import reminder</string>
+    <string name="import_reminder_channel_description">Evening reminder to import the day’s screenshots</string>
+    <string name="import_reminder_title">Import today’s earnings</string>
+    <string name="import_reminder_body">Drove today? Add the day’s screenshots from Bolt and Uber.</string>
+    <string name="import_reason_no_text">No text found in this picture. Choose a screenshot of Bolt’s or Uber’s earnings.</string>
+    <string name="import_reason_uber_no_week">Uber’s Earnings screen, but the week at the top (like “Oct 5 – Oct 12”) isn’t in the picture. Take the screenshot with the week showing.</string>
+    <string name="import_reason_uber_cropped">An Uber screen Ride Tracker reads, but the total is cut off. Scroll so “Total Earnings” shows, or use Capture more for one long screenshot.</string>
+    <string name="import_reason_uber_other">This Uber screen isn’t one Ride Tracker reads. Use Earnings (tap the day’s bar) for a day, or the week’s Payments screen.</string>
+    <string name="import_reason_bolt_no_date">Bolt’s earnings breakdown, but the date above it isn’t in the picture. Take the screenshot from the top, with the day or month showing.</string>
+    <string name="import_reason_bolt_cropped">Bolt’s earnings breakdown, but it’s cut off before the commission. Scroll down so the whole breakdown fits, or take a longer screenshot.</string>
+    <string name="import_reason_bolt_other">This Bolt screen isn’t one Ride Tracker reads. Use Earnings breakdown (Daily or Monthly) or Activity → Hours.</string>
+    <string name="import_reason_other_image">This doesn’t look like a Bolt or Uber screen.</string>
+    <string name="import_reason_pdf">Only Bolt’s monthly summary PDF can be read.</string>
+    <string name="import_reason_uber_renamed">This Uber file was renamed: its month is only in the name Uber gave it. Download it again from supplier.uber.com and share it as it is.</string>
+    <string name="import_reason_csv">Not a file Ride Tracker reads: Bolt’s rider invoices (CSV) or Uber’s four files from supplier.uber.com.</string>
 </resources>

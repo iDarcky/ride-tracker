@@ -7,6 +7,7 @@ import app.ridetracker.importing.ReportReader
 import app.ridetracker.notifications.DocumentNotifier
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
+import app.ridetracker.notifications.ImportReminderScheduler
 import app.ridetracker.notifications.ZReportReminderScheduler
 import app.ridetracker.notifications.TargetNotifier
 import kotlinx.coroutines.flow.combine
@@ -43,6 +44,9 @@ class AppContainer(context: Context) {
 
     /** Files shared to the app from the gallery or a file manager, waiting for the Import screen. */
     val sharedFiles = MutableStateFlow<List<Uri>>(emptyList())
+
+    /** The import reminder was tapped: AppNavigation opens the Import screen. */
+    val openImport = MutableStateFlow(false)
 }
 
 class RideTrackerApplication : Application() {
@@ -59,6 +63,7 @@ class RideTrackerApplication : Application() {
         DocumentNotifier.createChannel(this)
         DueExpensesWorker.schedule(this)
         ZReportReminderScheduler.createChannel(this)
+        ImportReminderScheduler.createChannel(this)
         TargetNotifier.createChannel(this)
         @OptIn(DelicateCoroutinesApi::class)
         TargetNotifier.watch(this, container, GlobalScope)
@@ -68,6 +73,11 @@ class RideTrackerApplication : Application() {
             combine(container.settingsRepository.zReport, container.settingsRepository.settings.map { it.country }) { z, country -> z to country }
                 .distinctUntilChanged { a, b -> a.first.enabled == b.first.enabled && a.first.minuteOfDay == b.first.minuteOfDay && a.second == b.second }
                 .collect { (z, country) -> ZReportReminderScheduler.schedule(this@RideTrackerApplication, z, country) }
+        }
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch {
+            container.settingsRepository.importReminder.distinctUntilChanged()
+                .collect { ImportReminderScheduler.schedule(this@RideTrackerApplication, it) }
         }
         // Fix breakdown lines imported before the reader recognised their label.
         @OptIn(DelicateCoroutinesApi::class)

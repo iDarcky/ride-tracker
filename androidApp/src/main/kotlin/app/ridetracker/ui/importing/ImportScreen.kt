@@ -1,5 +1,21 @@
 package app.ridetracker.ui.importing
 
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.runtime.saveable.rememberSaveable
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toJavaLocalDate
+import app.ridetracker.shared.domain.importing.UnrecognisedReason
+import app.ridetracker.ui.expense.ConnectedChoice
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -133,6 +149,7 @@ private fun uberEditTarget(uri: Uri, report: ReadReport, dayIndex: Int? = null):
 @Composable
 fun ImportScreen(
     onDone: () -> Unit,
+    onOpenReminder: () -> Unit,
     sharedFiles: MutableStateFlow<List<Uri>>,
     viewModel: ImportViewModel = viewModel {
         ImportViewModel(container.reportReader, container.importRepository, container.incomeRepository, container.settingsRepository)
@@ -200,7 +217,7 @@ fun ImportScreen(
             state.items.isEmpty() && state.savedCount != null ->
                 DoneState(state.savedCount!!, onMore = viewModel::startOver, onDone = onDone, modifier = Modifier.padding(padding))
             state.items.isEmpty() ->
-                EmptyState(state.checklists, state.uberChecklists, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, modifier = Modifier.padding(padding))
+                EmptyState(state, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, onOpenReminder = onOpenReminder, modifier = Modifier.padding(padding))
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
@@ -229,40 +246,43 @@ fun ImportScreen(
     }
 }
 
+/** What the start page shows: the day's screenshots, or the month's files. */
+private enum class ImportGuide { TODAY, MONTH }
+
+/**
+ * The start page: "Today" (one screenshot per app after each driving day, with the last week's days ticked) or
+ * "End of month" (what a finished month needs from each app, ticked as it comes in). In the first days of a month it
+ * opens on the month.
+ */
 @Composable
 private fun EmptyState(
-    checklists: List<ImportChecklist>,
-    uberChecklists: List<ImportChecklist>,
+    state: ImportUiState,
     dates: DateFormats,
     onScreenshots: () -> Unit,
     onFiles: () -> Unit,
+    onOpenReminder: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    var guide by rememberSaveable { mutableStateOf(if (today.day <= 5) ImportGuide.MONTH else ImportGuide.TODAY) }
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Outlined.UploadFile, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.import_empty_title), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.import_empty_body),
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = onScreenshots, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Icon(Icons.Outlined.Image, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.import_choose_screenshots))
+        Spacer(Modifier.height(16.dp))
+        ConnectedChoice(ImportGuide.entries, guide, { guide = it }) {
+            Text(stringResource(if (it == ImportGuide.TODAY) R.string.import_tab_today else R.string.import_tab_month))
         }
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = onFiles, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Icon(Icons.Outlined.Description, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.import_choose_files))
+        Spacer(Modifier.height(16.dp))
+        when (guide) {
+            ImportGuide.TODAY -> TodayGuide(state, dates, onScreenshots, onOpenReminder)
+            ImportGuide.MONTH -> MonthGuide(state, dates, onScreenshots, onFiles)
         }
         Spacer(Modifier.height(16.dp))
         Text(
@@ -271,32 +291,131 @@ private fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (checklists.isNotEmpty()) {
-            Spacer(Modifier.height(32.dp))
-            Text(
-                stringResource(R.string.import_whats_missing),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            checklists.forEach { ImportChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
+    }
+}
+
+@Composable
+private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: () -> Unit, onOpenReminder: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.import_today_intro), style = MaterialTheme.typography.bodyLarge)
+        DayGuideCard("Bolt", BOLT_COLOR, stringResource(R.string.import_today_bolt_how), state.recentDays, state.boltDays, dates)
+        DayGuideCard("Uber", UBER_COLOR, stringResource(R.string.import_today_uber_how), state.recentDays, state.uberDays, dates)
+        Button(onClick = onScreenshots, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            Icon(Icons.Outlined.Image, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.import_choose_screenshots))
         }
-        if (uberChecklists.isNotEmpty()) {
-            Spacer(Modifier.height(32.dp))
-            Text(
-                stringResource(R.string.import_whats_missing_uber),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.titleMedium,
+        OutlinedCard(Modifier.fillMaxWidth()) {
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenReminder),
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                leadingContent = { Icon(Icons.Outlined.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                headlineContent = {
+                    Text(
+                        if (state.reminder.enabled) {
+                            stringResource(R.string.import_reminder_row_on, reminderTime(state.reminder.hour, state.reminder.minute))
+                        } else {
+                            stringResource(R.string.import_reminder_row)
+                        },
+                    )
+                },
+                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
             )
+        }
+    }
+}
+
+/** One app's daily screenshot: where to find it, and which of the last 7 days are in. */
+@Composable
+private fun DayGuideCard(name: String, color: Long, how: String, days: List<LocalDate>, done: Set<LocalDate>, dates: DateFormats) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PlatformBadge(name, color, size = 32.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(name, style = MaterialTheme.typography.titleMedium)
+            }
+            Text(how, style = MaterialTheme.typography.bodyMedium)
+            if (days.isNotEmpty()) {
+                Text(stringResource(R.string.import_today_week), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                WeekStrip(days, done, dates)
+            }
+        }
+    }
+}
+
+/** The last 7 days as weekday letters, each ticked when that day is imported. */
+@Composable
+private fun WeekStrip(days: List<LocalDate>, done: Set<LocalDate>, dates: DateFormats) {
+    val locale = currentLocale()
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        days.forEach { day ->
+            val imported = day in done
+            val label = stringResource(if (imported) R.string.import_day_done else R.string.import_day_missing, dates.day(day))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
+            ) {
+                Text(
+                    day.toJavaLocalDate().dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW_STANDALONE, locale),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Icon(
+                    if (imported) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = if (imported) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                )
+                Text(day.day.toString(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthGuide(state: ImportUiState, dates: DateFormats, onScreenshots: () -> Unit, onFiles: () -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.import_month_intro), style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onScreenshots, modifier = Modifier.weight(1f).height(56.dp)) {
+                Icon(Icons.Outlined.Image, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.import_add_screenshots))
+            }
+            OutlinedButton(onClick = onFiles, modifier = Modifier.weight(1f).height(56.dp)) {
+                Icon(Icons.Outlined.Description, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.import_add_files))
+            }
+        }
+        if (state.checklists.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.import_whats_missing), style = MaterialTheme.typography.titleMedium)
+            // The finished month first: that's the one these files are for.
+            state.checklists.sortedByDescending { it.monthOver }.forEach { ImportChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
+        }
+        if (state.uberChecklists.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.import_whats_missing_uber), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text(
                 stringResource(R.string.checklist_uber_intro),
-                modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            uberChecklists.forEach { UberChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
+            state.uberChecklists.sortedByDescending { it.monthOver }.forEach { UberChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
         }
     }
+}
+
+/** "21:30" or "9:30 PM", as the phone shows times. */
+@Composable
+private fun reminderTime(hour: Int, minute: Int): String {
+    val context = LocalContext.current
+    val pattern = if (android.text.format.DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
+    return java.time.LocalTime.of(hour, minute).format(java.time.format.DateTimeFormatter.ofPattern(pattern, currentLocale()))
 }
 
 @Composable
@@ -584,9 +703,27 @@ private fun Details(
             if (w.complete) Note(Icons.Outlined.Info, stringResource(R.string.import_uber_week_note))
         }
         is ReadReport.UberJoined -> Note(Icons.Outlined.Info, stringResource(R.string.import_uber_joined_note))
-        is ReadReport.Unknown -> Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_not_recognised), warning = true)
+        is ReadReport.Unknown -> Note(Icons.Outlined.WarningAmber, reasonText(report.reason), warning = true)
     }
 }
+
+/** What went wrong with a file and what to do instead. */
+@Composable
+private fun reasonText(reason: UnrecognisedReason): String = stringResource(
+    when (reason) {
+        UnrecognisedReason.NO_TEXT -> R.string.import_reason_no_text
+        UnrecognisedReason.UBER_NO_WEEK -> R.string.import_reason_uber_no_week
+        UnrecognisedReason.UBER_CROPPED -> R.string.import_reason_uber_cropped
+        UnrecognisedReason.UBER_OTHER_SCREEN -> R.string.import_reason_uber_other
+        UnrecognisedReason.BOLT_NO_DATE -> R.string.import_reason_bolt_no_date
+        UnrecognisedReason.BOLT_CROPPED -> R.string.import_reason_bolt_cropped
+        UnrecognisedReason.BOLT_OTHER_SCREEN -> R.string.import_reason_bolt_other
+        UnrecognisedReason.OTHER_IMAGE -> R.string.import_reason_other_image
+        UnrecognisedReason.PDF_NOT_BOLT_MONTHLY -> R.string.import_reason_pdf
+        UnrecognisedReason.UBER_RENAMED -> R.string.import_reason_uber_renamed
+        UnrecognisedReason.CSV_UNKNOWN -> R.string.import_reason_csv
+    },
+)
 
 /** Hours online and trips from Uber's Earnings screen. */
 @Composable

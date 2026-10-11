@@ -65,6 +65,7 @@ import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.TableView
@@ -132,6 +133,7 @@ enum class SettingsPage(val route: String) {
     THEME("settings/theme"),
     WEEK_START("settings/week"),
     Z_REPORT("settings/z-report"),
+    IMPORT_REMINDER("settings/import-reminder"),
     TARGET("settings/target"),
 }
 
@@ -214,6 +216,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
                     if (z.enabled) stringResource(R.string.z_setting_on, timeText(z.hour, z.minute)) else stringResource(R.string.z_setting_off),
                 ) { onOpen(SettingsPage.Z_REPORT) }
             }
+        }
+        item {
+            val reminder by viewModel.importReminder.collectAsStateWithLifecycle()
+            Row(
+                Icons.Outlined.UploadFile,
+                stringResource(R.string.import_reminder_setting),
+                if (reminder.enabled) stringResource(R.string.z_setting_on, timeText(reminder.hour, reminder.minute)) else stringResource(R.string.z_setting_off),
+            ) { onOpen(SettingsPage.IMPORT_REMINDER) }
         }
         item {
             val target by viewModel.target.collectAsStateWithLifecycle()
@@ -322,7 +332,24 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             onSelect = viewModel::setThemeMode,
             onBack = onBack,
         )
-        SettingsPage.Z_REPORT -> ZReportPage(viewModel, onBack)
+        SettingsPage.Z_REPORT -> {
+            val z by viewModel.zReport.collectAsStateWithLifecycle()
+            ReminderPage(
+                title = stringResource(R.string.z_setting),
+                intro = stringResource(R.string.z_page_intro),
+                enabled = z.enabled, hour = z.hour, minute = z.minute,
+                onEnabled = viewModel::setZReportEnabled, onTime = viewModel::setZReportTime, onBack = onBack,
+            )
+        }
+        SettingsPage.IMPORT_REMINDER -> {
+            val reminder by viewModel.importReminder.collectAsStateWithLifecycle()
+            ReminderPage(
+                title = stringResource(R.string.import_reminder_setting),
+                intro = stringResource(R.string.import_reminder_intro),
+                enabled = reminder.enabled, hour = reminder.hour, minute = reminder.minute,
+                onEnabled = viewModel::setImportReminderEnabled, onTime = viewModel::setImportReminderTime, onBack = onBack,
+            )
+        }
         SettingsPage.TARGET -> TargetPage(viewModel, resolveCurrency(settings?.currencyCode), onBack)
         SettingsPage.WEEK_START -> ChoicePage(
             title = stringResource(R.string.first_day_of_week),
@@ -443,11 +470,19 @@ fun timeText(hour: Int, minute: Int): String {
     return java.time.LocalTime.of(hour, minute).format(java.time.format.DateTimeFormatter.ofPattern(pattern, locale))
 }
 
-/** Raportul Z: on/off and one time for every day. Turning it on asks for notifications (Android 13+). */
+/** A daily reminder (Raportul Z, importing the day): on/off and one time for every day. Turning it on asks for notifications (Android 13+). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ZReportPage(viewModel: SettingsViewModel, onBack: () -> Unit) {
-    val z by viewModel.zReport.collectAsStateWithLifecycle()
+private fun ReminderPage(
+    title: String,
+    intro: String,
+    enabled: Boolean,
+    hour: Int,
+    minute: Int,
+    onEnabled: (Boolean) -> Unit,
+    onTime: (Int, Int) -> Unit,
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
@@ -459,7 +494,7 @@ private fun ZReportPage(viewModel: SettingsViewModel, onBack: () -> Unit) {
     }
     if (pickingTime) {
         val state = rememberTimePickerState(
-            initialHour = z.hour, initialMinute = z.minute,
+            initialHour = hour, initialMinute = minute,
             is24Hour = android.text.format.DateFormat.is24HourFormat(context),
         )
         TimePickerDialog(
@@ -469,7 +504,7 @@ private fun ZReportPage(viewModel: SettingsViewModel, onBack: () -> Unit) {
             title = { Text(stringResource(R.string.z_time)) },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setZReportTime(state.hour, state.minute)
+                    onTime(state.hour, state.minute)
                     pickingTime = false
                 }) { Text(stringResource(R.string.ok)) }
             },
@@ -488,36 +523,36 @@ private fun ZReportPage(viewModel: SettingsViewModel, onBack: () -> Unit) {
             )
         }
     }
-    SettingsFrame(stringResource(R.string.z_setting), onBack) {
+    SettingsFrame(title, onBack) {
         item {
             Text(
-                stringResource(R.string.z_page_intro),
+                intro,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         item {
             ListItem(
-                modifier = Modifier.toggleable(value = z.enabled, role = Role.Switch) { on ->
+                modifier = Modifier.toggleable(value = enabled, role = Role.Switch) { on ->
                     if (on && Build.VERSION.SDK_INT >= 33 &&
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                     ) {
                         permission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
-                    viewModel.setZReportEnabled(on)
+                    onEnabled(on)
                 },
                 headlineContent = { Text(stringResource(R.string.z_remind), style = MaterialTheme.typography.titleLarge) },
-                trailingContent = { Switch(checked = z.enabled, onCheckedChange = null) },
+                trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
             )
         }
         item {
             ListItem(
-                modifier = Modifier.clickable(enabled = z.enabled) { pickingTime = true },
+                modifier = Modifier.clickable(enabled = enabled) { pickingTime = true },
                 headlineContent = { Text(stringResource(R.string.z_time), style = MaterialTheme.typography.titleLarge) },
-                supportingContent = { Text(timeText(z.hour, z.minute)) },
+                supportingContent = { Text(timeText(hour, minute)) },
             )
         }
-        if (z.enabled && !exact && Build.VERSION.SDK_INT >= 31) {
+        if (enabled && !exact && Build.VERSION.SDK_INT >= 31) {
             item {
                 // Without "Alarms & reminders", Android may deliver the reminder up to an hour late.
                 ListItem(

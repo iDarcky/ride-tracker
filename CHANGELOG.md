@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.15.0
+- **Import is guided**: its start page has **Today** (after each driving day, one screenshot per app, with where to
+  find it in Bolt and Uber, and the last 7 days ticked as they come in) and **End of month** (what a finished month
+  needs from each app: the finished month first, ticked as it arrives). In the first days of a month it opens on
+  End of month.
+- **Clear reasons when something can't be read**, with what to do instead: the week or date missing from the
+  screenshot, the breakdown cut off before the commission or total, another Bolt or Uber screen, a picture with no
+  text, a PDF that isn't Bolt's monthly summary, an Uber file that was renamed, a spreadsheet that isn't one of ours.
+- **Import reminder** (optional, Settings or the Import page): every evening at your time (21:30 to start), "Import
+  today's earnings". It stays quiet when every app you usually import already has today. Tapping it opens Import.
+
 ## 0.14.0
 - **Car documents** in the Vehicle tab: RCA, ITP, rovinietă, CASCO, driving licence, or any other with your own name.
   Each has its "valid until" date and, optionally, its cost; ticking "Add the cost to expenses" adds it today in the

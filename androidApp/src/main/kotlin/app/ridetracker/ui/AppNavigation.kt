@@ -141,6 +141,15 @@ fun AppNavigation() {
     LaunchedEffect(shared) {
         if (shared.isNotEmpty() && backStack?.destination?.route != "import") nav.navigate("import")
     }
+    val openImportFlow = (LocalContext.current.applicationContext as RideTrackerApplication).container.openImport
+    val openImport by openImportFlow.collectAsState()
+    // Waits for the first screen, so a cold start from the notification doesn't navigate before the graph exists.
+    LaunchedEffect(openImport, backStack != null) {
+        if (openImport && backStack != null) {
+            openImportFlow.value = false
+            if (backStack?.destination?.route != "import") nav.navigate("import")
+        }
+    }
     val currentTab = Tab.entries.firstOrNull { it.route == backStack?.destination?.route }
     val reselects = remember { mutableStateMapOf<Tab, Int>() }
     val entries = remember { mutableStateMapOf<Tab, Int>() }
@@ -227,7 +236,9 @@ fun AppNavigation() {
                 composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
-                composable("import") { ImportScreen(onDone = { nav.popBackStack() }, sharedFiles = sharedFiles) }
+                composable("import") {
+                    ImportScreen(onDone = { nav.popBackStack() }, onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) }, sharedFiles = sharedFiles)
+                }
                 composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
                 }

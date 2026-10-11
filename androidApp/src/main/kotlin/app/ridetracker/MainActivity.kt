@@ -38,8 +38,11 @@ class MainActivity : AppCompatActivity() {
         receiveShare(intent)
     }
 
-    /** Screenshots or reports shared to the app ("Share → Ride Tracker") go to the Import screen. */
+    /** Screenshots or reports shared to the app ("Share → Ride Tracker") go to the Import screen, as does the import reminder. */
     private fun receiveShare(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_IMPORT, false) == true) {
+            (application as RideTrackerApplication).container.openImport.value = true
+        }
         val uris: List<Uri> = when (intent?.action) {
             Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
             Intent.ACTION_SEND_MULTIPLE ->
@@ -47,5 +50,10 @@ class MainActivity : AppCompatActivity() {
             else -> emptyList()
         }
         if (uris.isNotEmpty()) (application as RideTrackerApplication).container.sharedFiles.value = uris
+    }
+
+    companion object {
+        /** Set by the import reminder's notification: open the Import screen. */
+        const val EXTRA_OPEN_IMPORT = "open_import"
     }
 }

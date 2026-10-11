@@ -142,7 +142,7 @@ class ZReportReceiver : BroadcastReceiver() {
     }
 }
 
-/** After a restart, an app update or a change of time or time zone, the reminder's alarm is set again. */
+/** After a restart, an app update or a change of time or time zone, the reminders' alarms are set again. */
 class ZReportRescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in RESCHEDULE_ON) return
@@ -150,6 +150,7 @@ class ZReportRescheduleReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 ZReportReminderScheduler.reschedule(context)
+                ImportReminderScheduler.reschedule(context)
             } finally {
                 pending.finish()
             }

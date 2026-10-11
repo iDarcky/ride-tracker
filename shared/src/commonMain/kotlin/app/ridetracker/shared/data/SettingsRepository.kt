@@ -12,6 +12,7 @@ import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.ThemeMode
+import app.ridetracker.shared.domain.ImportReminderSettings
 import app.ridetracker.shared.domain.ZReportReminder
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.TargetBasis
@@ -55,6 +56,21 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     }
 
     /** The Raportul Z reminder (Romania). Kept apart from [AppSettings]: it isn't in backups and survives a restore. */
+    val importReminder: Flow<ImportReminderSettings> = dataStore.data.map { prefs ->
+        ImportReminderSettings(
+            enabled = prefs[IMPORT_REMINDER_ENABLED] ?: false,
+            minuteOfDay = prefs[IMPORT_REMINDER_MINUTE] ?: ImportReminderSettings.DEFAULT_MINUTE,
+        )
+    }
+
+    suspend fun setImportReminderEnabled(enabled: Boolean) {
+        dataStore.edit { it[IMPORT_REMINDER_ENABLED] = enabled }
+    }
+
+    suspend fun setImportReminderTime(minuteOfDay: Int) {
+        dataStore.edit { it[IMPORT_REMINDER_MINUTE] = minuteOfDay.coerceIn(0, 24 * 60 - 1) }
+    }
+
     val zReport: Flow<ZReportReminder> = dataStore.data.map { prefs ->
         ZReportReminder(
             enabled = prefs[Z_ENABLED] ?: false,
@@ -163,9 +179,11 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     /** Replaces every setting (used by restore). */
     suspend fun replaceAll(settings: AppSettings) {
         dataStore.edit { prefs ->
-            val zKeys = listOf(Z_ENABLED, Z_SUGGESTION_DISMISSED).associateWith { prefs[it] }
+            // Reminders and the target belong to this phone, not the backup: they stay as they are.
+            val zKeys = listOf(Z_ENABLED, Z_SUGGESTION_DISMISSED, IMPORT_REMINDER_ENABLED).associateWith { prefs[it] }
             val zLongs = listOf(Z_DONE_THROUGH, Z_ENABLED_FROM).associateWith { prefs[it] }
             val zMinute = prefs[Z_MINUTE]
+            val importMinute = prefs[IMPORT_REMINDER_MINUTE]
             val targetStrings = listOf(TARGET_AMOUNTS, TARGET_BASIS, TARGET_DAYS, TARGET_NOTIFIED).associateWith { prefs[it] }
             val targetDismissed = prefs[TARGET_SUGGESTION_DISMISSED]
             prefs.clear()
@@ -174,6 +192,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             zKeys.forEach { (key, value) -> if (value != null) prefs[key] = value }
             zLongs.forEach { (key, value) -> if (value != null) prefs[key] = value }
             if (zMinute != null) prefs[Z_MINUTE] = zMinute
+            if (importMinute != null) prefs[IMPORT_REMINDER_MINUTE] = importMinute
             settings.country?.let { prefs[COUNTRY] = it.id }
             settings.otherCurrencyCode?.let { prefs[CURRENCY] = it }
             prefs[FIRST_DAY_OF_WEEK] = settings.firstDayOfWeek.isoDayNumber
@@ -197,6 +216,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val DRIVING_TYPE = stringPreferencesKey("driving_type")
         private val HOME_WIDGETS = stringPreferencesKey("home_widgets")
         private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")
+        private val IMPORT_REMINDER_ENABLED = booleanPreferencesKey("import_reminder_enabled")
+        private val IMPORT_REMINDER_MINUTE = intPreferencesKey("import_reminder_minute")
         private val Z_ENABLED = booleanPreferencesKey("z_report_enabled")
         private val Z_MINUTE = intPreferencesKey("z_report_minute")
         private val Z_DONE_THROUGH = longPreferencesKey("z_report_done_through")

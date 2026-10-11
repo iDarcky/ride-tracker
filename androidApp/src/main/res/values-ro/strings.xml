@@ -277,8 +277,7 @@
     <string name="import_title">Importă</string>
     <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt și Uber</string>
-    <string name="import_empty_title">Importă din Bolt și Uber</string>
-    <string name="import_empty_body">Alege capturi de ecran cu detalierea câștigurilor zilnice din Bolt, rezumatul lunar Bolt (PDF) sau facturile către pasageri (CSV), ori rapoartele Uber (CSV). Totul se citește pe acest telefon.</string>
+    <string name="import_empty_body">Capturile și fișierele se citesc pe acest telefon; nu se încarcă nimic.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Importat</string>
     <string name="checklist_monthly">Captura lunară</string>
@@ -307,7 +306,6 @@
         <item quantity="other">%d fără</item>
     </plurals>
     <string name="import_choose_screenshots">Alege capturi de ecran</string>
-    <string name="import_choose_files">Alege fișiere PDF sau CSV</string>
     <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ride Tracker.</string>
     <string name="import_add_screenshots">Adaugă capturi</string>
     <string name="import_add_files">Adaugă fișiere</string>
@@ -323,7 +321,6 @@
     <string name="import_bolt_week">Bolt · totaluri pe săptămână</string>
     <string name="import_bolt_month_screen">Bolt · totaluri pe lună</string>
     <string name="import_period_not_income">Totalurile Bolt pentru această perioadă. Folosite ca să-ți verifici zilele, nu se adaugă la venit. Pentru venit, importă fila Zilnic.</string>
-    <string name="import_not_recognised">Deocamdată se pot citi defalcarea câștigurilor, ecranul Activitate (ore), rezumatul lunar (PDF) și facturile către pasageri (CSV) din Bolt, plus rapoartele CSV Uber cu numele date de Uber. Pentru orele unei luni în Bolt, atinge întâi bara lunii ca Bolt să le afișeze.</string>
     <string name="import_your_earnings">Câștigurile tale</string>
     <string name="import_cash_in_hand">Numerar încasat</string>
     <string name="import_edit">Editează</string>
@@ -702,4 +699,33 @@
     <string name="document_notification_soon">%1$s expiră pe %2$s</string>
     <string name="document_notification_today">%1$s expiră azi</string>
     <string name="document_notification_body">Reînnoiește-l, apoi schimbă data în Ride Tracker.</string>
+    <!-- Guided import -->
+    <string name="import_tab_today">Azi</string>
+    <string name="import_tab_month">La final de lună</string>
+    <string name="import_today_intro">După fiecare zi de condus, câte o captură din fiecare aplicație. Aduce ziua exact, cu card și numerar.</string>
+    <string name="import_today_bolt_how">Bolt Driver → Câștiguri → Defalcarea câștigurilor → Zilnic, alege ziua, fă o captură de ecran.</string>
+    <string name="import_today_uber_how">Uber Driver → Câștiguri, atinge bara zilei (data devine albastră), fă o captură de ecran.</string>
+    <string name="import_today_week">Ultimele 7 zile</string>
+    <string name="import_day_done">%1$s: importată</string>
+    <string name="import_day_missing">%1$s: neimportată</string>
+    <string name="import_month_intro">După ce se termină luna, acestea aduc totalul exact, comisioanele platformelor și orele, și completează zilele fără captură.</string>
+    <string name="import_reminder_row">Amintește-mi în fiecare seară</string>
+    <string name="import_reminder_row_on">Notificare în fiecare zi la %1$s</string>
+    <string name="import_reminder_setting">Notificare pentru import</string>
+    <string name="import_reminder_intro">O notificare în fiecare seară ca să imporți capturile zilei din Bolt și Uber. Nu mai apare dacă ziua e deja importată.</string>
+    <string name="import_reminder_channel">Notificare pentru import</string>
+    <string name="import_reminder_channel_description">Notificare seara pentru importul capturilor zilei</string>
+    <string name="import_reminder_title">Importă câștigurile de azi</string>
+    <string name="import_reminder_body">Ai condus azi? Adaugă capturile zilei din Bolt și Uber.</string>
+    <string name="import_reason_no_text">Nu am găsit text în imagine. Alege o captură cu câștigurile din Bolt sau Uber.</string>
+    <string name="import_reason_uber_no_week">E ecranul Câștiguri din Uber, dar săptămâna de sus (de ex. „5 oct. – 12 oct.”) nu apare în captură. Fă captura cu săptămâna vizibilă.</string>
+    <string name="import_reason_uber_cropped">E un ecran Uber pe care îl citim, dar totalul e tăiat. Derulează până apare totalul câștigurilor sau fă o captură lungă (cu derulare).</string>
+    <string name="import_reason_uber_other">Ecranul acesta din Uber nu poate fi citit. Folosește Câștiguri (atinge bara zilei) pentru o zi sau ecranul Plăți al săptămânii.</string>
+    <string name="import_reason_bolt_no_date">E defalcarea câștigurilor din Bolt, dar data de deasupra nu apare în captură. Fă captura de sus, cu ziua sau luna vizibilă.</string>
+    <string name="import_reason_bolt_cropped">E defalcarea câștigurilor din Bolt, dar e tăiată înainte de comision. Derulează ca să încapă toată defalcarea sau fă o captură mai lungă.</string>
+    <string name="import_reason_bolt_other">Ecranul acesta din Bolt nu poate fi citit. Folosește Defalcarea câștigurilor (Zilnic sau Lunar) ori Activitate → Ore.</string>
+    <string name="import_reason_other_image">Nu pare un ecran din Bolt sau Uber.</string>
+    <string name="import_reason_pdf">Se poate citi doar rezumatul lunar Bolt (PDF).</string>
+    <string name="import_reason_uber_renamed">Fișierul Uber a fost redenumit: luna apare doar în numele dat de Uber. Descarcă-l din nou de pe supplier.uber.com și trimite-l așa cum e.</string>
+    <string name="import_reason_csv">Nu e un fișier pe care îl citim: facturile către pasageri din Bolt (CSV) sau cele patru fișiere Uber de pe supplier.uber.com.</string>
 </resources>

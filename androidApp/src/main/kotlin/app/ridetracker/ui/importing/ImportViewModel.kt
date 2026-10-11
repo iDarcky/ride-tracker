@@ -11,6 +11,8 @@ import app.ridetracker.shared.domain.DateRange
 import app.ridetracker.shared.domain.ImportChecklist
 import app.ridetracker.shared.domain.ImportChecklists
 import app.ridetracker.shared.domain.ImportKind
+import app.ridetracker.shared.domain.ImportReminderSettings
+import app.ridetracker.shared.domain.ImportReminders
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.ImportOutcome
 import app.ridetracker.shared.domain.ImportRepository
@@ -29,7 +31,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Currency
 import kotlin.time.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 
 /** One picked or shared file and what was found in it. */
@@ -68,6 +73,11 @@ data class ImportUiState(
     val checklists: List<ImportChecklist> = emptyList(),
     /** The same for Uber. */
     val uberChecklists: List<ImportChecklist> = emptyList(),
+    /** The last 7 days, oldest first, and which of them have a day imported from each app. */
+    val recentDays: List<LocalDate> = emptyList(),
+    val boltDays: Set<LocalDate> = emptySet(),
+    val uberDays: Set<LocalDate> = emptySet(),
+    val reminder: ImportReminderSettings = ImportReminderSettings(),
 ) {
     val reading: Boolean get() = items.any { it.report == null && !it.failed }
     val toSave: List<ImportItem> get() = items.filter { it.canSave && it.selected }
@@ -103,9 +113,21 @@ class ImportViewModel(
                 fun id(name: String) = platforms.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.id ?: -1L
                 val bolt = id(BOLT)
                 val uber = id(UBER)
-                months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) } to
-                    months.map { ImportChecklists.compute(it, uber, entries, trips, summaries, today) }
-            }.collect { (bolt, uber) -> _state.update { it.copy(checklists = bolt, uberChecklists = uber) } }
+                val days = (6 downTo 0).map { today.minus(DatePeriod(days = it)) }
+                val change: (ImportUiState) -> ImportUiState = { s ->
+                    s.copy(
+                        checklists = months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) },
+                        uberChecklists = months.map { ImportChecklists.compute(it, uber, entries, trips, summaries, today) },
+                        recentDays = days,
+                        boltDays = ImportReminders.daysWithEntries(bolt, entries, days),
+                        uberDays = ImportReminders.daysWithEntries(uber, entries, days),
+                    )
+                }
+                change
+            }.collect { change -> _state.update(change) }
+        }
+        viewModelScope.launch {
+            settingsRepository.importReminder.collect { r -> _state.update { it.copy(reminder = r) } }
         }
     }
 

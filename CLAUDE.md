@@ -10,7 +10,7 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
 ## Where we are (11 October 2026)
-- App **0.14.0** (beta; live app 0.12.2), database version **8**, backup format **8**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- App **0.15.0** (beta; live app 0.12.2), database version **8**, backup format **8**. What each version added: [CHANGELOG.md](CHANGELOG.md).
 - Direction (owner, 8 Oct): data should come in automatically from screenshots/CSV/PDF. Bolt import is built
   (`shared/.../domain/importing/`, on-device ML Kit OCR in `androidApp/.../importing/ReportReader.kt`).
   Next steps: "Next up" in [docs/product-brief.md](docs/product-brief.md). Propose before building.

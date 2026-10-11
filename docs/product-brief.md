@@ -155,8 +155,8 @@ See the README for build, versioning and signing rules.
    Raportul Z daily reminder (Romania, every driver who takes cash).
    0.10.0–0.13.0: monthly target, pinned "Needs attention", tax deductible expenses, erase income, predictive back,
    comparison card. 0.14.0: car documents (RCA, ITP, rovinietă, CASCO, licence, other) with expiry reminders.
-   **Then (owner, 11 Oct 2026, in this order):** guided uploads ("Today" screenshots vs "End of month" files, clear
-   failure reasons, optional daily import reminder), a readability check of every Home widget, branding directions.
+   0.15.0: guided Import (Today / End of month), reasons when a file can't be read, optional evening import reminder.
+   **Then (owner, 11 Oct 2026, in this order):** a readability check of every Home widget, branding directions.
    **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
    maybe "See customer fare breakdown" per day; then the list below.
 
@@ -166,7 +166,7 @@ Product:
 - [ ] The week first: this week's payout prominent on Home (Bolt pays weekly).
 - [ ] Real profit per hour: after fuel (km × consumption × fuel price from the car) and commission.
 - [x] Monthly target (0.10.0): income or money kept, per driving day, pace, notification when reached.
-- [ ] Import reminders (e.g. Monday: "import last week's Bolt screenshots"; month end: the Monthly tab).
+- [x] Import reminders: an evening reminder for the day's screenshots (0.15.0); End of month opens first early in a month.
 - [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
 - [ ] "This didn't import" → send the screenshot (with the driver's OK) so new screen variants get supported.
 - [ ] TVA intracomunitar suggestion from imported commission (rate × commission), PFA only.

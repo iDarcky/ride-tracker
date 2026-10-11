@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Color as AndroidColor
 import android.graphics.Rect
+import app.ridetracker.shared.domain.importing.ScreenshotDiagnosis
+import app.ridetracker.shared.domain.importing.UnrecognisedReason
 import app.ridetracker.shared.domain.importing.ReportText
 import app.ridetracker.shared.domain.importing.UberEarningsParser
 import app.ridetracker.shared.domain.importing.UberPaymentsParser
@@ -89,7 +91,7 @@ sealed interface ReadReport {
 
     /** One of Uber's other reports: not read (it repeats the needed ones or holds personal data). */
     data class UberNotNeeded(override val fileHash: String, val report: UberReport) : ReadReport
-    data class Unknown(override val fileHash: String) : ReadReport
+    data class Unknown(override val fileHash: String, val reason: UnrecognisedReason) : ReadReport
 }
 
 /**
@@ -133,13 +135,13 @@ class ReportReader(private val context: Context) {
         val reference = takenOn(uri)
         val rows = rows(text)
         if (UberPaymentsParser.recognises(rows)) {
-            return UberPaymentsParser.parse(rows, reference)?.let { ReadReport.UberPaymentsScreen(hash, it) } ?: ReadReport.Unknown(hash)
+            return UberPaymentsParser.parse(rows, reference)?.let { ReadReport.UberPaymentsScreen(hash, it) } ?: ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
         }
         if (UberEarningsParser.recognises(rows)) {
             val earnings = UberEarningsParser.parse(rows, reference, bitmap?.let { selectedUberDay(text, it) })
             val day = earnings?.asDay()
             return when {
-                earnings == null -> ReadReport.Unknown(hash)
+                earnings == null -> ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
                 day != null -> ReadReport.UberDay(hash, day, earnings.onlineMinutes, earnings.trips)
                 else -> ReadReport.UberWeek(hash, earnings.asSummary(), earnings.onlineMinutes, earnings.addsUp)
             }
@@ -154,7 +156,7 @@ class ReportReader(private val context: Context) {
                 }
                 BoltActivityParser.parse(words, image.width, reference)?.takeIf { it.isNotEmpty() }
                     ?.let { ReadReport.BoltActivity(hash, it) }
-                    ?: ReadReport.Unknown(hash)
+                    ?: ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
             }
         }
     }
@@ -229,7 +231,7 @@ class ReportReader(private val context: Context) {
         } finally {
             file.delete()
         }
-        return BoltMonthlySummaryParser.parse(rows)?.let { ReadReport.BoltMonth(hash, it) } ?: ReadReport.Unknown(hash)
+        return BoltMonthlySummaryParser.parse(rows)?.let { ReadReport.BoltMonth(hash, it) } ?: ReadReport.Unknown(hash, UnrecognisedReason.PDF_NOT_BOLT_MONTHLY)
     }
 
     /** Uber's reports are told apart by the names Uber gives them; the ones not needed are never read. */
@@ -242,13 +244,15 @@ class ReportReader(private val context: Context) {
             UberReport.PAYMENTS_ORDER -> UberReports.parsePayments(text, period)?.let { ReadReport.UberDays(hash, it) }
             UberReport.TRIP_ACTIVITY -> UberReports.parseTrips(text)?.let { ReadReport.UberTrips(hash, it) }
             // These two have no dates inside: the period is only in the file name Uber gave them.
-            UberReport.PAYMENTS_ORGANIZATION -> period?.let { UberReports.parseTotals(text, it) }?.let { ReadReport.UberTotals(hash, it) }
-            UberReport.DRIVER_TIME_AND_DISTANCE -> period?.let { UberReports.parseTimeAndDistance(text, it) }?.let { ReadReport.UberHours(hash, it) }
+            UberReport.PAYMENTS_ORGANIZATION -> if (period == null) ReadReport.Unknown(hash, UnrecognisedReason.UBER_RENAMED)
+                else UberReports.parseTotals(text, period)?.let { ReadReport.UberTotals(hash, it) }
+            UberReport.DRIVER_TIME_AND_DISTANCE -> if (period == null) ReadReport.Unknown(hash, UnrecognisedReason.UBER_RENAMED)
+                else UberReports.parseTimeAndDistance(text, period)?.let { ReadReport.UberHours(hash, it) }
             else -> null
         }
         if (uber != null) return uber
         val trips = BoltRiderInvoicesParser.parse(text)
-        return trips?.let { ReadReport.BoltTrips(hash, it) } ?: ReadReport.Unknown(hash)
+        return trips?.let { ReadReport.BoltTrips(hash, it) } ?: ReadReport.Unknown(hash, UnrecognisedReason.CSV_UNKNOWN)
     }
 
     private suspend fun recognize(image: InputImage): Text = recognizer.process(image).await()

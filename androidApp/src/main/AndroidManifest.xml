@@ -49,6 +49,10 @@
         <receiver
             android:name=".notifications.ZReportReceiver"
             android:exported="false" />
+        <!-- The evening import reminder's alarm (in-app only); the receiver below sets it again too. -->
+        <receiver
+            android:name=".notifications.ImportReminderReceiver"
+            android:exported="false" />
         <receiver
             android:name=".notifications.ZReportRescheduleReceiver"
             android:exported="true">
