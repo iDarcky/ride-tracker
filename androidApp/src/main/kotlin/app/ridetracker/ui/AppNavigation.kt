@@ -321,11 +321,14 @@ private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () 
  * Navigation plays it under the finger during the back gesture, and to the end when back is released or pressed.
  */
 private object ScreenMotion {
-    private const val DURATION = 300
-    val open: EnterTransition = fadeIn(tween(DURATION)) + scaleIn(tween(DURATION), initialScale = 0.94f)
-    val back: ExitTransition = scaleOut(tween(DURATION), targetScale = 0.9f) +
-        slideOutHorizontally(tween(DURATION)) { width -> width / 20 } +
-        fadeOut(tween(DURATION, easing = { t -> (t - 0.6f).coerceAtLeast(0f) / 0.4f }))
+    // Short (owner, 12 Oct 2026: 300 ms felt slow). While swiping the screen follows the finger whatever the length;
+    // this is how long the rest takes once back is released, and the whole thing for the back button.
+    private const val OPEN = 220
+    private const val BACK = 200
+    val open: EnterTransition = fadeIn(tween(OPEN * 2 / 3)) + scaleIn(tween(OPEN), initialScale = 0.94f)
+    val back: ExitTransition = scaleOut(tween(BACK), targetScale = 0.9f) +
+        slideOutHorizontally(tween(BACK)) { width -> width / 20 } +
+        fadeOut(tween(BACK, easing = { t -> (t - 0.5f).coerceAtLeast(0f) / 0.5f }))
 }
 
 private fun NavHostController.switchTab(tab: Tab) {

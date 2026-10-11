@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.1
+- **Faster going back and opening screens**: once you let go of the back swipe (or press back), the screen finishes
+  leaving in 200 ms instead of 300; opening a screen takes 220 ms. While you swipe it still follows your finger.
+
 ## 0.15.0
 - **Import is guided**: its start page has **Today** (after each driving day, one screenshot per app, with where to
   find it in Bolt and Uber, and the last 7 days ticked as they come in) and **End of month** (what a finished month
