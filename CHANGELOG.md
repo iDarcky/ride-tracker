@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0
+- **Car documents** in the Vehicle tab: RCA, ITP, rovinietă, CASCO, driving licence, or any other with your own name.
+  Each has its "valid until" date and, optionally, its cost; ticking "Add the cost to expenses" adds it today in the
+  right category (insurance, inspection, road tax). The list shows the days left: red from a week before.
+- **Reminders**: a notification 30 and 7 days before a document expires, and on the day (with the daily 9:00 check).
+  From 30 days before, it shows under "Needs attention" on Home with "Renew", which opens it to set the new date.
+- Database version 8 (new table, nothing changes for existing data); backups include the documents (format 8).
+
 ## 0.13.0
 - **Android's predictive back**: while you swipe back, the screen shrinks a little and slides toward the edge, with the
   previous screen behind it, following your finger (as in Android's guide and system apps). Opening a screen fades it in.

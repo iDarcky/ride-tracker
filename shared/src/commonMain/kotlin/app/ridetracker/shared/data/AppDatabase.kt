@@ -22,8 +22,9 @@ import kotlinx.coroutines.IO
         PlatformEntity::class, IncomeEntryEntity::class, ExpenseEntity::class,
         VehicleEntity::class, OdometerReadingEntity::class, RecurringExpenseEntity::class,
         IncomeLineEntity::class, ImportBatchEntity::class, TripEntity::class, PeriodSummaryEntity::class,
+        VehicleDocumentEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // 0.0.6: expense table
@@ -32,6 +33,7 @@ import kotlinx.coroutines.IO
         AutoMigration(from = 4, to = 5), // 0.0.9: recurring expenses
         AutoMigration(from = 5, to = 6), // 0.1.0: income details, imports, trips, period summaries
         AutoMigration(from = 6, to = 7), // 0.12.0: expense.taxDeductible
+        AutoMigration(from = 7, to = 8), // 0.14.0: car documents
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)

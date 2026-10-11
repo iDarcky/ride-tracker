@@ -665,4 +665,41 @@
     <string name="comparison_hours">Ore online</string>
     <string name="comparison_per_hour">Pe oră</string>
     <string name="comparison_was">înainte %1$s</string>
+    <!-- Car documents -->
+    <string name="documents">Documente</string>
+    <string name="documents_empty">Adaugă RCA, ITP, rovinieta și celelalte: primești o notificare cu 30 și 7 zile înainte să expire fiecare, și în ziua respectivă.</string>
+    <string name="add_document">Adaugă un document</string>
+    <string name="edit_document">Editează documentul</string>
+    <string name="document_kind">Document</string>
+    <string name="document_rca">RCA</string>
+    <string name="document_itp">ITP</string>
+    <string name="document_rovinieta">Rovinietă</string>
+    <string name="document_casco">CASCO</string>
+    <string name="document_driving_licence">Permis de conducere</string>
+    <string name="document_other">Altul</string>
+    <string name="document_name">Nume</string>
+    <string name="document_name_missing">Dă-i un nume</string>
+    <string name="document_expires">Valabil până la</string>
+    <string name="document_cost">Cost (opțional)</string>
+    <string name="document_add_expense">Adaugă costul la cheltuieli</string>
+    <string name="document_deleted">Document șters</string>
+    <string name="delete_document_title">Ștergi documentul?</string>
+    <string name="document_valid_until">Valabil până la %1$s</string>
+    <string name="document_expires_today">Expiră azi</string>
+    <plurals name="document_days_left">
+        <item quantity="one">%d zi rămasă</item>
+        <item quantity="few">%d zile rămase</item>
+        <item quantity="other">%d de zile rămase</item>
+    </plurals>
+    <plurals name="document_expired_ago">
+        <item quantity="one">A expirat ieri</item>
+        <item quantity="few">A expirat acum %d zile</item>
+        <item quantity="other">A expirat acum %d de zile</item>
+    </plurals>
+    <string name="document_renew">Reînnoiește</string>
+    <string name="document_channel">Documentele mașinii</string>
+    <string name="document_channel_description">Notificări înainte să expire RCA, ITP și celelalte documente</string>
+    <string name="document_notification_soon">%1$s expiră pe %2$s</string>
+    <string name="document_notification_today">%1$s expiră azi</string>
+    <string name="document_notification_body">Reînnoiește-l, apoi schimbă data în Ride Tracker.</string>
 </resources>

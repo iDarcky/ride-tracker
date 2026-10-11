@@ -12,12 +12,13 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 
-/** Runs once a day (around 9:00) on the phone and notifies recurring expenses that became due. No server. */
+/** Runs once a day (around 9:00) on the phone: recurring expenses that became due and car documents about to expire. No server. */
 class DueExpensesWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val app = applicationContext as RideTrackerApplication
         DueExpenseNotifier.notifyDue(app, app.container)
+        DocumentNotifier.notifyDue(app, app.container)
         return Result.success()
     }
 

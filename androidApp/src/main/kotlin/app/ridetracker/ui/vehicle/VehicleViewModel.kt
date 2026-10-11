@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.OdometerReadingEntity
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.data.VehicleDocumentEntity
 import app.ridetracker.shared.data.VehicleEntity
 import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseGroup
@@ -44,6 +45,9 @@ data class VehicleUiState(
     /** Null when consumption, fuel price or km are missing. */
     val fuelEstimateMinor: Long? = null,
     val byCategory: List<CategoryTotal> = emptyList(),
+    /** Soonest to expire first. */
+    val documents: List<VehicleDocumentEntity> = emptyList(),
+    val today: LocalDate? = null,
 ) {
     val latest: OdometerReadingEntity? get() = readings.firstOrNull()
 }
@@ -64,12 +68,16 @@ class VehicleViewModel(
         }
     }
 
+    private val documents = vehicleRepository.observeVehicle().flatMapLatest { vehicle ->
+        if (vehicle == null) flowOf(emptyList()) else vehicleRepository.observeDocuments(vehicle.id)
+    }
+
     val state: StateFlow<VehicleUiState> = combine(readings, month, settingsRepository.settings) { (vehicle, readings), month, settings ->
         Triple(vehicle to readings, month, settings.currencyCode)
     }.flatMapLatest { (vehicleAndReadings, month, currencyCode) ->
         val (vehicle, readings) = vehicleAndReadings
         expenseRepository.observeInRange(month.range).let { expensesFlow ->
-            combine(expensesFlow, flowOf(Unit)) { expenses, _ ->
+            combine(expensesFlow, documents) { expenses, documents ->
                 val vehicleExpenses = expenses.filter { ExpenseCategory.fromId(it.category).group == ExpenseGroup.VEHICLE }
                 val km = VehicleMath.kmDriven(readings.map { OdometerPoint(it.date, it.km) }, month.range)
                 val cost = vehicleExpenses.sumOf { it.amountMinor }
@@ -96,6 +104,8 @@ class VehicleViewModel(
                     byCategory = vehicleExpenses.groupBy { ExpenseCategory.fromId(it.category) }
                         .map { (category, list) -> CategoryTotal(category, list.sumOf { it.amountMinor }) }
                         .sortedByDescending { it.totalMinor },
+                    documents = documents,
+                    today = today(),
                 )
             }
         }
@@ -133,5 +143,16 @@ class VehicleViewModel(
 
     fun restoreReading(reading: OdometerReadingEntity) {
         viewModelScope.launch { vehicleRepository.restoreReading(reading) }
+    }
+
+    /** Deletes the document and returns it so the screen can offer Undo. */
+    suspend fun deleteDocument(id: Long): VehicleDocumentEntity? {
+        val document = state.value.documents.firstOrNull { it.id == id } ?: return null
+        vehicleRepository.deleteDocument(id)
+        return document
+    }
+
+    fun restoreDocument(document: VehicleDocumentEntity) {
+        viewModelScope.launch { vehicleRepository.restoreDocument(document) }
     }
 }

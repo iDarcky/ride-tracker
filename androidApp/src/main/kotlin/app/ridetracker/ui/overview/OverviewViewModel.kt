@@ -15,6 +15,9 @@ import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.data.PlatformTotal
 import app.ridetracker.shared.data.SettingsRepository
+import app.ridetracker.shared.data.VehicleDocumentEntity
+import app.ridetracker.shared.domain.DocumentReminders
+import app.ridetracker.shared.domain.VehicleRepository
 import app.ridetracker.shared.domain.Comparison
 import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.DateRange
@@ -101,8 +104,11 @@ data class Attention(
     val suggestZReport: Boolean = false,
     /** Offer to set a monthly target (none set, not dismissed). */
     val suggestTarget: Boolean = false,
+    /** Car documents expiring within a month, or expired; soonest first. */
+    val documents: List<VehicleDocumentEntity> = emptyList(),
 ) {
-    fun isEmpty(): Boolean = pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget
+    fun isEmpty(): Boolean =
+        pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget && documents.isEmpty()
 }
 
 /** Home's comparison card: what it's compared with, the rows, and the "same days / whole month" choice. */
@@ -126,6 +132,7 @@ class OverviewViewModel(
     private val importRepository: ImportRepository,
     private val recurringRepository: RecurringRepository,
     private val settingsRepository: SettingsRepository,
+    private val vehicleRepository: VehicleRepository,
 ) : ViewModel() {
 
     private fun today() = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -221,13 +228,13 @@ class OverviewViewModel(
 
     /** Recurring expenses waiting for Add or Skip, and months still missing the platform's own monthly total. */
     val attention: StateFlow<Attention> = combine(
-        recurringRepository.observePending(today()),
+        combine(recurringRepository.observePending(today()), vehicleRepository.observeAllDocuments()) { p, d -> p to d },
         importRepository.observeMissingMonthlyTotals(today()),
         combine(settingsRepository.zReport, settingsRepository.target) { z, target -> z to target },
         settingsRepository.settings,
         // The Raportul Z day waits from the reminder's time on: look again every minute.
         flow { while (true) { emit(Unit); delay(60_000) } },
-    ) { pending, missing, (z, target), settings, _ ->
+    ) { (pending, documents), missing, (z, target), settings, _ ->
         val romania = settings.country == Country.ROMANIA
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         Attention(
@@ -235,6 +242,7 @@ class OverviewViewModel(
             zReportDay = if (romania) z.waitingDay(now) else null,
             suggestZReport = romania && !z.enabled && !z.suggestionDismissed,
             suggestTarget = !target.hasAny && !target.suggestionDismissed,
+            documents = documents.filter { DocumentReminders.needsAttention(it.expiryDate, now.date) },
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Attention())

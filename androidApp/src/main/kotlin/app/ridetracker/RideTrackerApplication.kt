@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import app.ridetracker.importing.ReportReader
+import app.ridetracker.notifications.DocumentNotifier
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
 import app.ridetracker.notifications.ZReportReminderScheduler
@@ -55,6 +56,7 @@ class RideTrackerApplication : Application() {
         // A tiny local file read; done once at startup.
         applyThemeMode(runBlocking { container.settingsRepository.settings.first().themeMode })
         DueExpenseNotifier.createChannel(this)
+        DocumentNotifier.createChannel(this)
         DueExpensesWorker.schedule(this)
         ZReportReminderScheduler.createChannel(this)
         TargetNotifier.createChannel(this)

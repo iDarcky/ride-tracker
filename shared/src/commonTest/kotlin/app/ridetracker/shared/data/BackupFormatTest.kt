@@ -108,6 +108,32 @@ class BackupFormatTest {
     }
 
     @Test
+    fun readsVersion8CarDocuments() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 8, "appVersion": "0.14.0",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "vehicles": [ { "id": 1, "name": "Test car", "fuelType": "diesel" } ],
+              "vehicleDocuments": [
+                { "id": 1, "vehicleId": 1, "kind": "rca", "expiryDate": "2027-03-01", "costMinor": 120000, "createdAtEpochMillis": 1 },
+                { "id": 2, "vehicleId": 1, "kind": "other", "name": "Fleet badge", "expiryDate": "2026-12-31", "notifiedStage": 30, "createdAtEpochMillis": 2 }
+              ]
+            }
+        """.trimIndent()
+        val file = json.decodeFromString(BackupFile.serializer(), text)
+        assertEquals(listOf("rca", "other"), file.vehicleDocuments.map { it.kind })
+        assertEquals("Fleet badge", file.vehicleDocuments.last().name)
+        assertEquals(30, file.vehicleDocuments.last().notifiedStage)
+        assertEquals(null, file.vehicleDocuments.first().notifiedStage)
+    }
+
+    @Test
+    fun version7HasNoDocuments() {
+        val text = """{ "format": "ridetracker-backup", "formatVersion": 7, "appVersion": "0.13.0", "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [] }"""
+        assertEquals(emptyList(), json.decodeFromString(BackupFile.serializer(), text).vehicleDocuments)
+    }
+
+    @Test
     fun version5EntriesReadAsManual() {
         val text = """
             {

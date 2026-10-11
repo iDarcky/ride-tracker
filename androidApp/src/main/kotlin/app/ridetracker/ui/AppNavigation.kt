@@ -116,6 +116,7 @@ import app.ridetracker.ui.settings.SettingsChoicePage
 import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
 import app.ridetracker.ui.settings.YourDataScreen
+import app.ridetracker.ui.vehicle.DocumentEditScreen
 import app.ridetracker.ui.vehicle.VehicleEditScreen
 import app.ridetracker.ui.vehicle.VehicleScreen
 
@@ -166,6 +167,7 @@ fun AppNavigation() {
             ) {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
+                        onOpenDocument = { nav.navigate("vehicle/document/$it") },
                     ) } }
                 composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
@@ -182,7 +184,7 @@ fun AppNavigation() {
                     )
                 } }
                 composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
-                    VehicleScreen(onEditVehicle = { nav.navigate("vehicle/edit") })
+                    VehicleScreen(onEditVehicle = { nav.navigate("vehicle/edit") }, onEditDocument = { nav.navigate("vehicle/document/$it") })
                 } }
                 composable("menu") {
                     MenuScreen(
@@ -204,6 +206,9 @@ fun AppNavigation() {
                 composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
                 composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
                 composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
+                composable("vehicle/document/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                    DocumentEditScreen(documentId = entry.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
+                }
                 composable(
                     "entry?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),

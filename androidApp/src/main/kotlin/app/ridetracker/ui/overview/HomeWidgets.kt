@@ -52,6 +52,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.ridetracker.R
+import app.ridetracker.shared.domain.DocumentKind
+import app.ridetracker.ui.vehicle.documentName
+import app.ridetracker.ui.vehicle.icon
+import app.ridetracker.ui.vehicle.documentStatus
+import app.ridetracker.ui.vehicle.documentStatusColor
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.domain.HomeWidget
 import app.ridetracker.shared.domain.MissingMonthlyTotal
@@ -236,6 +241,7 @@ fun NeedsAttention(
     onDismissZReport: () -> Unit,
     onOpenTarget: () -> Unit,
     onDismissTarget: () -> Unit,
+    onOpenDocument: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val rows = buildList<@Composable () -> Unit> {
@@ -246,6 +252,16 @@ fun NeedsAttention(
                     title = stringResource(R.string.z_notification_title),
                     detail = stringResource(R.string.z_waiting, dates.day(day)),
                 ) { FilledTonalButton(onClick = { onZReportDone(day) }) { Text(stringResource(R.string.z_done)) } }
+            }
+        }
+        attention.documents.forEach { document ->
+            add {
+                AttentionRow(
+                    leading = { ExpenseBadge(DocumentKind.fromId(document.kind).icon, size = 32.dp) },
+                    title = documentName(document),
+                    detail = documentStatus(document, state.today),
+                    detailColor = documentStatusColor(document, state.today),
+                ) { FilledTonalButton(onClick = { onOpenDocument(document.id) }) { Text(stringResource(R.string.document_renew)) } }
             }
         }
         attention.pending.forEach { item ->
@@ -313,6 +329,7 @@ private fun AttentionRow(
     leading: @Composable () -> Unit,
     title: String,
     detail: String?,
+    detailColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     actions: @Composable RowScope.() -> Unit,
 ) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -320,7 +337,7 @@ private fun AttentionRow(
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2)
-            detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = detailColor) }
         }
         Spacer(Modifier.width(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, content = actions)

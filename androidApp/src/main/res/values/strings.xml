@@ -647,4 +647,39 @@
     <string name="comparison_hours">Hours online</string>
     <string name="comparison_per_hour">Per hour</string>
     <string name="comparison_was">was %1$s</string>
+    <!-- Car documents -->
+    <string name="documents">Documents</string>
+    <string name="documents_empty">Add RCA, ITP, rovinietă and the rest: you\'ll get a reminder 30 and 7 days before each expires, and on the day.</string>
+    <string name="add_document">Add document</string>
+    <string name="edit_document">Edit document</string>
+    <string name="document_kind">Document</string>
+    <string name="document_rca">RCA</string>
+    <string name="document_itp">ITP</string>
+    <string name="document_rovinieta">Rovinietă</string>
+    <string name="document_casco">CASCO</string>
+    <string name="document_driving_licence">Driving licence</string>
+    <string name="document_other">Other</string>
+    <string name="document_name">Name</string>
+    <string name="document_name_missing">Give it a name</string>
+    <string name="document_expires">Valid until</string>
+    <string name="document_cost">Cost (optional)</string>
+    <string name="document_add_expense">Add the cost to expenses</string>
+    <string name="document_deleted">Document deleted</string>
+    <string name="delete_document_title">Delete this document?</string>
+    <string name="document_valid_until">Valid until %1$s</string>
+    <string name="document_expires_today">Expires today</string>
+    <plurals name="document_days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="document_expired_ago">
+        <item quantity="one">Expired yesterday</item>
+        <item quantity="other">Expired %d days ago</item>
+    </plurals>
+    <string name="document_renew">Renew</string>
+    <string name="document_channel">Car documents</string>
+    <string name="document_channel_description">Reminders before RCA, ITP and other documents expire</string>
+    <string name="document_notification_soon">%1$s expires on %2$s</string>
+    <string name="document_notification_today">%1$s expires today</string>
+    <string name="document_notification_body">Renew it, then update the date in Ride Tracker.</string>
 </resources>

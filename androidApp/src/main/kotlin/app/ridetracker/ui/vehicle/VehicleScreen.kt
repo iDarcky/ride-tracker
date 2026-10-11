@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Edit
@@ -77,6 +78,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.data.OdometerReadingEntity
+import app.ridetracker.shared.domain.DocumentKind
 import app.ridetracker.shared.domain.FuelType
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.ConfirmDialog
@@ -106,6 +108,7 @@ import kotlin.time.Clock
 @Composable
 fun VehicleScreen(
     onEditVehicle: () -> Unit,
+    onEditDocument: (Long) -> Unit,
     viewModel: VehicleViewModel = viewModel {
         VehicleViewModel(container.vehicleRepository, container.expenseRepository, container.settingsRepository)
     },
@@ -120,6 +123,7 @@ fun VehicleScreen(
     var updateOdometer by rememberSaveable { mutableStateOf(false) }
     var deleteReadingId by rememberSaveable { mutableStateOf<Long?>(null) }
     val deletedText = stringResource(R.string.reading_deleted)
+    val documentDeletedText = stringResource(R.string.document_deleted)
     val undoText = stringResource(R.string.undo)
     val bottomSpace = LocalBottomBarSpace.current
 
@@ -128,6 +132,14 @@ fun VehicleScreen(
             val deleted = viewModel.deleteReading(id) ?: return@launch
             val result = snackbar.showSnackbar(deletedText, undoText, duration = SnackbarDuration.Short)
             if (result == SnackbarResult.ActionPerformed) viewModel.restoreReading(deleted)
+        }
+    }
+
+    fun deleteDocumentWithUndo(id: Long) {
+        scope.launch {
+            val deleted = viewModel.deleteDocument(id) ?: return@launch
+            val result = snackbar.showSnackbar(documentDeletedText, undoText, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreDocument(deleted)
         }
     }
 
@@ -215,6 +227,41 @@ fun VehicleScreen(
                             Text(stringResource(R.string.update_odometer))
                         }
                     }
+                }
+            }
+            item { SectionHeader(stringResource(R.string.documents)) }
+            if (state.documents.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.documents_empty),
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            val today = state.today
+            if (today != null) {
+                items(state.documents, key = { "document-${it.id}" }) { document ->
+                    val kind = DocumentKind.fromId(document.kind)
+                    ActionRow(
+                        leading = { ExpenseBadge(kind.icon) },
+                        title = documentName(document),
+                        note = stringResource(R.string.document_valid_until, dates.day(LocalDate.fromEpochDays(document.expiryDate))),
+                        amount = documentStatus(document, today),
+                        amountColor = documentStatusColor(document, today),
+                        onClick = { onEditDocument(document.id) },
+                        onDelete = { deleteDocumentWithUndo(document.id) },
+                        deleteTitle = stringResource(R.string.delete_document_title),
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            item {
+                TextButton(onClick = { onEditDocument(0L) }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.add_document))
                 }
             }
             item {

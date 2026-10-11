@@ -61,6 +61,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -166,6 +167,7 @@ fun ActionRow(
     deleteTitle: String,
     modifier: Modifier = Modifier,
     onEdit: (() -> Unit)? = onClick,
+    amountColor: Color = Color.Unspecified,
 ) {
     var menu by remember { mutableStateOf(false) }
     var confirm by rememberSaveable { mutableStateOf(false) }
@@ -184,7 +186,7 @@ fun ActionRow(
             leadingContent = leading,
             headlineContent = { Text(title) },
             supportingContent = note?.let { { Text(it, maxLines = 2) } },
-            trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular()) },
+            trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular(), color = amountColor) },
         )
         GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {
             if (onEdit != null) {

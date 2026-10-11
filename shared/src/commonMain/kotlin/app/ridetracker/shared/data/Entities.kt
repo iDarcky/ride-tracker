@@ -278,3 +278,25 @@ data class PlatformTotal(
     val colorArgb: Long,
     val totalMinor: Long,
 )
+
+/** A car document with an expiry date (RCA, ITP, rovinietă…). Renewing it moves [expiryDate] on. */
+@Entity(
+    tableName = "vehicle_document",
+    foreignKeys = [ForeignKey(entity = VehicleEntity::class, parentColumns = ["id"], childColumns = ["vehicleId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("vehicleId")],
+)
+data class VehicleDocumentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val vehicleId: Long,
+    /** [app.ridetracker.shared.domain.DocumentKind] id. */
+    val kind: String,
+    /** The driver's own name, for [app.ridetracker.shared.domain.DocumentKind.OTHER]. */
+    val name: String? = null,
+    /** Last valid day, as epoch days. */
+    val expiryDate: Long,
+    /** What it last cost, in minor units; null if not given. */
+    val costMinor: Long? = null,
+    /** The reminder (days before expiry: 30, 7, 0) last sent for this [expiryDate]; null when none yet. */
+    val notifiedStage: Int? = null,
+    val createdAt: Long,
+)

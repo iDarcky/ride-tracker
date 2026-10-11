@@ -2,6 +2,7 @@ package app.ridetracker.shared.domain
 
 import app.ridetracker.shared.data.AppDatabase
 import app.ridetracker.shared.data.OdometerReadingEntity
+import app.ridetracker.shared.data.VehicleDocumentEntity
 import app.ridetracker.shared.data.VehicleEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
@@ -39,4 +40,29 @@ class VehicleRepository(database: AppDatabase) {
     suspend fun restoreReading(reading: OdometerReadingEntity) {
         dao.insertReading(reading)
     }
+
+    fun observeDocuments(vehicleId: Long): Flow<List<VehicleDocumentEntity>> = dao.observeDocuments(vehicleId)
+
+    fun observeAllDocuments(): Flow<List<VehicleDocumentEntity>> = dao.observeAllDocuments()
+
+    suspend fun getAllDocuments(): List<VehicleDocumentEntity> = dao.getAllDocuments()
+
+    suspend fun getDocument(id: Long): VehicleDocumentEntity? = dao.getDocument(id)
+
+    /** Adds or updates a document; a new expiry date starts its reminders again. */
+    suspend fun saveDocument(document: VehicleDocumentEntity): Long {
+        if (document.id == 0L) return dao.insertDocument(document)
+        val old = dao.getDocument(document.id)
+        dao.updateDocument(if (old != null && old.expiryDate != document.expiryDate) document.copy(notifiedStage = null) else document)
+        return document.id
+    }
+
+    suspend fun deleteDocument(id: Long) = dao.deleteDocument(id)
+
+    /** Puts a deleted document back with its original id (Undo). */
+    suspend fun restoreDocument(document: VehicleDocumentEntity) {
+        dao.insertDocument(document)
+    }
+
+    suspend fun markDocumentNotified(document: VehicleDocumentEntity, stage: Int) = dao.updateDocument(document.copy(notifiedStage = stage))
 }

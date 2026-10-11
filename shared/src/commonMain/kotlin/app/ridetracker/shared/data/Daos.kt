@@ -195,6 +195,33 @@ interface VehicleDao {
 
     @Query("DELETE FROM odometer_reading")
     suspend fun deleteAllReadings()
+
+    @Query("SELECT * FROM vehicle_document WHERE vehicleId = :vehicleId ORDER BY expiryDate ASC, id ASC")
+    fun observeDocuments(vehicleId: Long): Flow<List<VehicleDocumentEntity>>
+
+    @Query("SELECT * FROM vehicle_document ORDER BY expiryDate ASC, id ASC")
+    fun observeAllDocuments(): Flow<List<VehicleDocumentEntity>>
+
+    @Query("SELECT * FROM vehicle_document ORDER BY id")
+    suspend fun getAllDocuments(): List<VehicleDocumentEntity>
+
+    @Query("SELECT * FROM vehicle_document WHERE id = :id")
+    suspend fun getDocument(id: Long): VehicleDocumentEntity?
+
+    @Insert
+    suspend fun insertDocument(document: VehicleDocumentEntity): Long
+
+    @Update
+    suspend fun updateDocument(document: VehicleDocumentEntity)
+
+    @Insert
+    suspend fun insertDocuments(documents: List<VehicleDocumentEntity>)
+
+    @Query("DELETE FROM vehicle_document WHERE id = :id")
+    suspend fun deleteDocument(id: Long)
+
+    @Query("DELETE FROM vehicle_document")
+    suspend fun deleteAllDocuments()
 }
 
 @Dao

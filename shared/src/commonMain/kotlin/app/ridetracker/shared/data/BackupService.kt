@@ -40,14 +40,16 @@ data class BackupFile(
     val importBatches: List<BackupImportBatch> = emptyList(),
     val trips: List<BackupTrip> = emptyList(),
     val periodSummaries: List<BackupPeriodSummary> = emptyList(),
+    /** Added in format 8 (0.14.0). */
+    val vehicleDocuments: List<BackupVehicleDocument> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
 
         /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9).
          *  6: + income details, income lines, imports, trips and period summaries (0.1.0). */
-        // 7: expenses can be tax deductible (an older app would drop the mark).
-        const val FORMAT_VERSION = 7
+        // 7: expenses can be tax deductible (an older app would drop the mark). 8: + car documents.
+        const val FORMAT_VERSION = 8
     }
 }
 
@@ -182,6 +184,19 @@ data class BackupOdometerReading(
 )
 
 @Serializable
+data class BackupVehicleDocument(
+    val id: Long,
+    val vehicleId: Long,
+    val kind: String,
+    val name: String? = null,
+    /** ISO date: the last valid day. */
+    val expiryDate: String,
+    val costMinor: Long? = null,
+    val notifiedStage: Int? = null,
+    val createdAtEpochMillis: Long,
+)
+
+@Serializable
 data class BackupRecurringExpense(
     val id: Long,
     val amountMinor: Long,
@@ -258,6 +273,9 @@ class BackupService(
             odometerReadings = database.vehicleDao().getAllReadings().map {
                 BackupOdometerReading(it.id, it.vehicleId, LocalDate.fromEpochDays(it.date).toString(), it.km, it.createdAt)
             },
+            vehicleDocuments = database.vehicleDao().getAllDocuments().map {
+                BackupVehicleDocument(it.id, it.vehicleId, it.kind, it.name, day(it.expiryDate), it.costMinor, it.notifiedStage, it.createdAt)
+            },
             recurringExpenses = database.recurringExpenseDao().getAll().map {
                 BackupRecurringExpense(
                     id = it.id,
@@ -308,7 +326,7 @@ class BackupService(
         val platformIds = file.platforms.map { it.id }.toSet()
         if (file.entries.any { it.platformId !in platformIds }) throw InvalidBackupException("Backup is damaged")
         val vehicleIds = file.vehicles.map { it.id }.toSet()
-        if (file.odometerReadings.any { it.vehicleId !in vehicleIds }) throw InvalidBackupException("Backup is damaged")
+        if (file.odometerReadings.any { it.vehicleId !in vehicleIds } || file.vehicleDocuments.any { it.vehicleId !in vehicleIds }) throw InvalidBackupException("Backup is damaged")
         val entryIds = file.entries.map { it.id }.toSet()
         val batchIds = file.importBatches.map { it.id }.toSet()
         if (file.incomeLines.any { it.entryId !in entryIds } ||
@@ -371,6 +389,9 @@ class BackupService(
         val readings = file.odometerReadings.map {
             OdometerReadingEntity(it.id, it.vehicleId, LocalDate.parse(it.date).toEpochDays(), it.km, it.createdAtEpochMillis)
         }
+        val documents = file.vehicleDocuments.map {
+            VehicleDocumentEntity(it.id, it.vehicleId, it.kind, it.name, epochDay(it.expiryDate), it.costMinor, it.notifiedStage, it.createdAtEpochMillis)
+        }
         val recurring = file.recurringExpenses.map {
             RecurringExpenseEntity(
                 id = it.id,
@@ -396,6 +417,7 @@ class BackupService(
                 database.expenseDao().insertAll(expenses)
                 database.vehicleDao().insertAll(vehicles)
                 database.vehicleDao().insertReadings(readings)
+                database.vehicleDao().insertDocuments(documents)
                 database.recurringExpenseDao().insertAll(recurring)
             }
         }
@@ -447,6 +469,7 @@ class BackupService(
         database.importDao().deleteAllLines()
         database.recurringExpenseDao().deleteAll()
         database.vehicleDao().deleteAllReadings()
+        database.vehicleDao().deleteAllDocuments()
         database.vehicleDao().deleteAll()
         database.expenseDao().deleteAll()
         database.incomeEntryDao().deleteAll()

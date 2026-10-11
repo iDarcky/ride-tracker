@@ -153,6 +153,10 @@ See the README for build, versioning and signing rules.
    0.8.1–0.8.3: import edit sheet fix, new navigation bar (outline, round blue + beside it on every tab).
    0.9.0: Uber screenshots (Earnings day/week, Payments week with Uber's fee), week totals fill missing days,
    Raportul Z daily reminder (Romania, every driver who takes cash).
+   0.10.0–0.13.0: monthly target, pinned "Needs attention", tax deductible expenses, erase income, predictive back,
+   comparison card. 0.14.0: car documents (RCA, ITP, rovinietă, CASCO, licence, other) with expiry reminders.
+   **Then (owner, 11 Oct 2026, in this order):** guided uploads ("Today" screenshots vs "End of month" files, clear
+   failure reasons, optional daily import reminder), a readability check of every Home widget, branding directions.
    **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
    maybe "See customer fare breakdown" per day; then the list below.
 

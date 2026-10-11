@@ -139,6 +139,7 @@ fun OverviewScreen(
     onImport: () -> Unit,
     onOpenZReport: () -> Unit,
     onOpenTarget: () -> Unit,
+    onOpenDocument: (Long) -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
             container.incomeRepository,
@@ -146,6 +147,7 @@ fun OverviewScreen(
             container.importRepository,
             container.recurringRepository,
             container.settingsRepository,
+            container.vehicleRepository,
         )
     },
 ) {
@@ -308,6 +310,7 @@ fun OverviewScreen(
                         onDismissZReport = viewModel::dismissZReportSuggestion,
                         onOpenTarget = onOpenTarget,
                         onDismissTarget = viewModel::dismissTargetSuggestion,
+                        onOpenDocument = onOpenDocument,
                         modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp),
                     )
                 }
