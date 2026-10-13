@@ -150,7 +150,7 @@ data class PeriodSummaryEntity(
 )
 
 /** Money spent: fuel, repairs, accountant… [category] is an [app.ridetracker.shared.domain.ExpenseCategory] id. */
-@Entity(tableName = "expense", indices = [Index("date")])
+@Entity(tableName = "expense", indices = [Index("date"), Index("documentId")])
 data class ExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     /** Amount in minor units of the app currency. Never a float. */
@@ -163,6 +163,11 @@ data class ExpenseEntity(
     val createdAt: Long,
     /** Marked by a PFA driver as deductible from taxable income (database 7). */
     @ColumnInfo(defaultValue = "0") val taxDeductible: Boolean = false,
+    /**
+     * The car document this paid for (a rovinietă, an RCA…), database 9. No foreign key: a deleted document leaves
+     * the id behind (ids are never reused), so the expense simply shows no document, and Undo links it again.
+     */
+    val documentId: Long? = null,
 )
 
 /**

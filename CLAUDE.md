@@ -9,10 +9,12 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 - Design: Material 3 **Expressive** components only (no hand-built components), "Rideshare cockpit"
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
-## Where we are (11 October 2026)
-- App **0.15.2** (live and beta), database version **8**, backup format **8**. What each version added: [CHANGELOG.md](CHANGELOG.md).
-- Direction (owner, 8 Oct): data should come in automatically from screenshots/CSV/PDF. Bolt import is built
-  (`shared/.../domain/importing/`, on-device ML Kit OCR in `androidApp/.../importing/ReportReader.kt`).
+## Where we are (13 October 2026)
+- App **0.16.0** (live and beta), database version **9**, backup format **9**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- Direction (owner, 13 Oct): **screenshots first**: after each driving day, one screenshot per app (Bolt Daily,
+  Uber's day). A missing day counts as 0; no estimates (the estimating code is kept but not called). PDF/CSV import
+  still works from Import's "End of month" page, which needs a rework ("monthly is overcomplicated"). Parsers in
+  `shared/.../domain/importing/`, on-device ML Kit OCR in `androidApp/.../importing/ReportReader.kt`.
   Next steps: "Next up" in [docs/product-brief.md](docs/product-brief.md). Propose before building.
 - Import parsers: test with made-up fixtures only; the owner's real screenshots/exports never go in the repo.
   ML Kit model is bundled (works without Google Play); APK is ARM-only to keep it ~25 MB.

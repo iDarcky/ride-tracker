@@ -2,7 +2,9 @@ package app.ridetracker.ui.vehicle
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.LocalTaxi
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Toll
@@ -28,6 +30,9 @@ val DocumentKind.label: Int
         DocumentKind.ROVINIETA -> R.string.document_rovinieta
         DocumentKind.CASCO -> R.string.document_casco
         DocumentKind.DRIVING_LICENCE -> R.string.document_driving_licence
+        DocumentKind.COPIE_CONFORMA -> R.string.document_copie_conforma
+        DocumentKind.BADGE_UBER -> R.string.document_badge_uber
+        DocumentKind.BADGE_BOLT -> R.string.document_badge_bolt
         DocumentKind.OTHER -> R.string.document_other
     }
 
@@ -38,6 +43,8 @@ val DocumentKind.icon: ImageVector
         DocumentKind.ROVINIETA -> Icons.Outlined.Toll
         DocumentKind.CASCO -> Icons.Outlined.VerifiedUser
         DocumentKind.DRIVING_LICENCE -> Icons.Outlined.Badge
+        DocumentKind.COPIE_CONFORMA -> Icons.AutoMirrored.Outlined.Assignment
+        DocumentKind.BADGE_UBER, DocumentKind.BADGE_BOLT -> Icons.Outlined.LocalTaxi
         DocumentKind.OTHER -> Icons.Outlined.Description
     }
 

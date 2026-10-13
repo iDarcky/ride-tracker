@@ -21,6 +21,9 @@ class ExpenseRepository(database: AppDatabase) {
 
     suspend fun get(id: Long): ExpenseEntity? = expenses.getById(id)
 
+    /** What was paid for a car document, newest first. */
+    fun observeForDocument(documentId: Long): Flow<List<ExpenseEntity>> = expenses.observeForDocument(documentId)
+
     suspend fun save(
         id: Long?,
         amountMinor: Long,
@@ -29,10 +32,11 @@ class ExpenseRepository(database: AppDatabase) {
         note: String?,
         nowEpochMillis: Long,
         taxDeductible: Boolean = false,
-    ) {
+        documentId: Long? = null,
+    ): Long {
         val cleanNote = note?.trim()?.ifEmpty { null }
         val existing = id?.let { expenses.getById(it) }
-        if (existing == null) {
+        return if (existing == null) {
             expenses.insert(
                 ExpenseEntity(
                     amountMinor = amountMinor,
@@ -41,12 +45,17 @@ class ExpenseRepository(database: AppDatabase) {
                     note = cleanNote,
                     createdAt = nowEpochMillis,
                     taxDeductible = taxDeductible,
+                    documentId = documentId,
                 ),
             )
         } else {
             expenses.update(
-                existing.copy(amountMinor = amountMinor, date = date.toEpochDays(), category = category.id, note = cleanNote, taxDeductible = taxDeductible),
+                existing.copy(
+                    amountMinor = amountMinor, date = date.toEpochDays(), category = category.id, note = cleanNote,
+                    taxDeductible = taxDeductible, documentId = documentId,
+                ),
             )
+            existing.id
         }
     }
 

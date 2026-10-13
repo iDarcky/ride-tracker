@@ -59,7 +59,6 @@ import app.ridetracker.ui.vehicle.documentStatus
 import app.ridetracker.ui.vehicle.documentStatusColor
 import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.domain.HomeWidget
-import app.ridetracker.shared.domain.MissingMonthlyTotal
 import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.ui.common.DateFormats
@@ -241,7 +240,7 @@ fun NeedsAttention(
     onDismissZReport: () -> Unit,
     onOpenTarget: () -> Unit,
     onDismissTarget: () -> Unit,
-    onOpenDocument: (Long) -> Unit,
+    onRenewDocument: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val rows = buildList<@Composable () -> Unit> {
@@ -261,7 +260,7 @@ fun NeedsAttention(
                     title = documentName(document),
                     detail = documentStatus(document, state.today),
                     detailColor = documentStatusColor(document, state.today),
-                ) { FilledTonalButton(onClick = { onOpenDocument(document.id) }) { Text(stringResource(R.string.document_renew)) } }
+                ) { FilledTonalButton(onClick = { onRenewDocument(document.id) }) { Text(stringResource(R.string.document_renew)) } }
             }
         }
         attention.pending.forEach { item ->
@@ -275,16 +274,6 @@ fun NeedsAttention(
                     TextButton(onClick = { onSkipDue(item) }) { Text(stringResource(R.string.skip)) }
                     FilledTonalButton(onClick = { onAcceptDue(item) }) { Text(stringResource(R.string.add)) }
                 }
-            }
-        }
-        attention.missingMonthly.forEach { missing ->
-            add {
-                val platform = state.platforms.firstOrNull { it.id == missing.platformId }
-                AttentionRow(
-                    leading = { if (platform != null) PlatformBadge(platform.name, platform.colorArgb, size = 32.dp) },
-                    title = stringResource(R.string.missing_monthly_title, platform?.name.orEmpty(), dates.period(missing.month)),
-                    detail = stringResource(R.string.missing_monthly_short),
-                ) { FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.import_title)) } }
             }
         }
     }

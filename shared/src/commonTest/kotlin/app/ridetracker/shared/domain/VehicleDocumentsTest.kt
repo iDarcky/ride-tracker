@@ -38,8 +38,28 @@ class VehicleDocumentsTest {
 
     @Test
     fun kindsKeepTheirIds() {
-        assertEquals(listOf("rca", "itp", "rovinieta", "casco", "driving_licence", "other"), DocumentKind.entries.map { it.id })
+        assertEquals(
+            listOf("rca", "itp", "rovinieta", "casco", "driving_licence", "copie_conforma", "badge_uber", "badge_bolt", "other"),
+            DocumentKind.entries.map { it.id },
+        )
         assertEquals(DocumentKind.OTHER, DocumentKind.fromId("unknown"))
         assertEquals(ExpenseCategory.ROAD_TAX, DocumentKind.ROVINIETA.expenseCategory)
+    }
+
+    @Test
+    fun romanianKindsOnlyInRomania() {
+        val romanian = listOf(DocumentKind.ROVINIETA, DocumentKind.COPIE_CONFORMA, DocumentKind.BADGE_UBER, DocumentKind.BADGE_BOLT)
+        assertTrue(DocumentKind.offered(Country.ROMANIA).containsAll(romanian))
+        assertTrue(DocumentKind.offered(null).none { it in romanian })
+        // A saved rovinietă stays editable after the country changes.
+        assertTrue(DocumentKind.ROVINIETA in DocumentKind.offered(null, current = DocumentKind.ROVINIETA))
+    }
+
+    @Test
+    fun renewalSuggestsAYearOn() {
+        // Still valid: a year after the current expiry.
+        assertEquals(LocalDate(2027, 11, 30), DocumentRenewal.suggestedExpiry(expiry, LocalDate(2026, 11, 20)))
+        // Already expired: a year from today.
+        assertEquals(LocalDate(2027, 12, 5), DocumentRenewal.suggestedExpiry(expiry, LocalDate(2026, 12, 5)))
     }
 }

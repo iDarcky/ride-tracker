@@ -50,6 +50,25 @@ class BoltParsersTest {
     )
 
     @Test
+    fun aTotalReadWithExtraDigitsFallsBackToTheLines() {
+        // OCR added a digit to the big "Your earnings" figure; every group still checks out against its rows.
+        val rows = dailyRows.map { if (it.startsWith("Your earnings")) "Your earnings lei 161.400" else it }
+        val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(rows, today)).day
+        assertEquals(16140, day.earningsMinor)
+        assertTrue(day.addsUp)
+    }
+
+    @Test
+    fun misreadTotals() {
+        assertTrue(MisreadTotal.isMisread(16140000, 16140)) // 161,400.00 vs 161.40
+        assertTrue(MisreadTotal.isMisread(1614050, 16140)) // an extra digit: 16,140.50
+        assertTrue(MisreadTotal.isMisread(5000000, 16140)) // 300 times more
+        kotlin.test.assertFalse(MisreadTotal.isMisread(16500, 16140)) // a real small difference
+        kotlin.test.assertFalse(MisreadTotal.isMisread(90000, 16140)) // 5 times: not sure, leave it
+        kotlin.test.assertFalse(MisreadTotal.isMisread(16140, 0))
+    }
+
+    @Test
     fun readsBoltDailyBreakdown() {
         val day = assertIs<DailyParseResult.Day>(BoltDailyParser.parse(dailyRows, today)).day
         assertEquals(LocalDate(2026, 10, 5), day.date)

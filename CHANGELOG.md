@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.16.0
+- **One month for the whole app**: the month you pick on Home is the one Income and Expenses show, and the other
+  way round (a week or day on Home shows its month there). While another month is open, **This month** next to the
+  title goes back. Reopening the app starts on this month again.
+- **Each car document has its own page**: tapping one shows how long it's still valid, what it last cost, the
+  reminders and its **payments**. Edit and Delete are at the top (and on long press in the list).
+- **Renew**: on the document's page (or from Home's "Renew"): the new date (a year on to start) and what you paid;
+  the document moves on and the payment goes to expenses, linked to it.
+- **Expenses linked to documents**: adding an insurance, inspection or road tax expense (or another business cost)
+  offers your matching documents; picking one also asks for its new "valid until" date. A linked expense shows its
+  document, one tap away.
+- **New documents (Romania)**: Copie conformă, Ecuson Uber, Ecuson Bolt. The rovinietă and these show only in Romania.
+- Backups keep the link between expenses and documents (backup format 9; older backups still restore).
+- **Screenshots first**: Import always opens on Today: after each driving day, one screenshot from each app (Bolt's
+  Daily breakdown, Uber's day), with the last 7 days ticked. End of month is still there, but no longer opens by
+  itself in the first days of a month.
+- **No more estimates**: a day without a screenshot counts as 0, so every number is one you imported or typed.
+  Estimated days made before are removed, and Home no longer asks for Bolt's monthly total.
+- **Monthly report**: the share button on Money makes a one-page report of the month shown, as a **PDF** or an
+  **image**: income, expenses and profit (with the change from last month), income by app and expenses by
+  category, and how many days had income. No name on it. It opens the share sheet (WhatsApp, email, print, Files…).
+- **The + menu on Money opens over the Income | Expenses switch** instead of pushing it up.
+- **Tax deductible on document costs** (PFA, Romania): adding or renewing a document with its cost can mark it
+  deductible, like any other expense.
+- **Fix: a misread Bolt day total** (e.g. "lei 161.40" read as 161,400) no longer gets saved: when every line of the
+  breakdown checks out, the day's total comes from the lines. Days already saved that way are corrected when the app
+  starts. Import also warns about any day over 5,000.
+
 ## 0.15.2
 - **No screen animations**: screens, tabs and the navigation bar now change instantly, opening and going back alike.
 

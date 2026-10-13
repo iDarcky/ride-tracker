@@ -1,14 +1,23 @@
 package app.ridetracker.shared.domain
 
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 /** A car document's type. [id] is stored in the database and backups: never rename. */
-enum class DocumentKind(val id: String, val expenseCategory: ExpenseCategory) {
+enum class DocumentKind(val id: String, val expenseCategory: ExpenseCategory, val romaniaOnly: Boolean = false) {
     RCA("rca", ExpenseCategory.INSURANCE),
     ITP("itp", ExpenseCategory.INSPECTION),
-    ROVINIETA("rovinieta", ExpenseCategory.ROAD_TAX),
+    ROVINIETA("rovinieta", ExpenseCategory.ROAD_TAX, romaniaOnly = true),
     CASCO("casco", ExpenseCategory.INSURANCE),
     DRIVING_LICENCE("driving_licence", ExpenseCategory.OTHER_BUSINESS),
+
+    /** The ARR copy of the transport licence that rides in the car (Romania). */
+    COPIE_CONFORMA("copie_conforma", ExpenseCategory.OTHER_BUSINESS, romaniaOnly = true),
+
+    /** The platforms' windscreen badges (ecusoane), Romania. */
+    BADGE_UBER("badge_uber", ExpenseCategory.OTHER_BUSINESS, romaniaOnly = true),
+    BADGE_BOLT("badge_bolt", ExpenseCategory.OTHER_BUSINESS, romaniaOnly = true),
 
     /** Anything else, with the driver's own name (an Uber or Bolt document, say). */
     OTHER("other", ExpenseCategory.OTHER_BUSINESS),
@@ -16,6 +25,19 @@ enum class DocumentKind(val id: String, val expenseCategory: ExpenseCategory) {
 
     companion object {
         fun fromId(id: String?): DocumentKind = entries.firstOrNull { it.id == id } ?: OTHER
+
+        /** The kinds offered when adding a document; Romanian ones only in Romania (one already saved stays offered). */
+        fun offered(country: Country?, current: DocumentKind? = null): List<DocumentKind> =
+            entries.filter { !it.romaniaOnly || country == Country.ROMANIA || it == current }
+    }
+}
+
+/** Renewing a document: paying for it again moves its expiry on. */
+object DocumentRenewal {
+    /** The suggested new last valid day: a year after the current one, or a year from today once it has expired. */
+    fun suggestedExpiry(expiryEpochDay: Long, today: LocalDate): LocalDate {
+        val from = maxOf(LocalDate.fromEpochDays(expiryEpochDay), today)
+        return from.plus(DatePeriod(years = 1))
     }
 }
 

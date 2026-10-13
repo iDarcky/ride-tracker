@@ -108,6 +108,7 @@ import kotlin.time.Clock
 @Composable
 fun VehicleScreen(
     onEditVehicle: () -> Unit,
+    onOpenDocument: (Long) -> Unit,
     onEditDocument: (Long) -> Unit,
     viewModel: VehicleViewModel = viewModel {
         VehicleViewModel(container.vehicleRepository, container.expenseRepository, container.settingsRepository)
@@ -250,7 +251,8 @@ fun VehicleScreen(
                         note = stringResource(R.string.document_valid_until, dates.day(LocalDate.fromEpochDays(document.expiryDate))),
                         amount = documentStatus(document, today),
                         amountColor = documentStatusColor(document, today),
-                        onClick = { onEditDocument(document.id) },
+                        onClick = { onOpenDocument(document.id) },
+                        onEdit = { onEditDocument(document.id) },
                         onDelete = { deleteDocumentWithUndo(document.id) },
                         deleteTitle = stringResource(R.string.delete_document_title),
                         modifier = Modifier.animateItem(),

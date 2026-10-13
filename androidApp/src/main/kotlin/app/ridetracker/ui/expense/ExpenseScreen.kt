@@ -43,7 +43,14 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import app.ridetracker.shared.domain.DocumentKind
+import app.ridetracker.ui.vehicle.documentName
+import app.ridetracker.ui.vehicle.icon
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -90,8 +97,12 @@ import app.ridetracker.ui.common.toPickerMillis
 @Composable
 fun ExpenseScreen(
     onDone: () -> Unit,
+    onOpenDocument: (Long) -> Unit,
     viewModel: ExpenseViewModel = viewModel {
-        ExpenseViewModel(createSavedStateHandle(), container.expenseRepository, container.recurringRepository, container.settingsRepository)
+        ExpenseViewModel(
+            createSavedStateHandle(), container.expenseRepository, container.recurringRepository, container.settingsRepository,
+            container.vehicleRepository,
+        )
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -153,6 +164,41 @@ fun ExpenseScreen(
             )
 
             CategoryPicker(state.group, state.category, viewModel::setGroup, viewModel::setCategory)
+
+            // Paying for a car document (rovinietă, RCA…): link it, and its expiry moves on.
+            if (state.offeredDocuments.isNotEmpty()) {
+                Text(stringResource(R.string.expense_document), style = MaterialTheme.typography.titleSmall)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = state.documentId == null,
+                        onClick = { viewModel.setDocument(null) },
+                        label = { Text(stringResource(R.string.expense_document_none)) },
+                    )
+                    state.offeredDocuments.forEach { document ->
+                        FilterChip(
+                            selected = state.documentId == document.id,
+                            onClick = { viewModel.setDocument(document.id) },
+                            label = { Text(documentName(document)) },
+                            leadingIcon = {
+                                Icon(DocumentKind.fromId(document.kind).icon, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize))
+                            },
+                        )
+                    }
+                }
+                state.newExpiry?.let { expiry ->
+                    DateField(stringResource(R.string.expense_document_new_expiry), expiry, viewModel::setNewExpiry)
+                }
+                val linked = state.documentId?.takeIf { it == state.savedDocumentId }
+                if (linked != null) {
+                    val document = state.documents.first { it.id == linked }
+                    AssistChip(
+                        onClick = { onOpenDocument(linked) },
+                        label = { Text(documentName(document)) },
+                        leadingIcon = { Icon(DocumentKind.fromId(document.kind).icon, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+                        trailingIcon = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+                    )
+                }
+            }
 
             Text(stringResource(R.string.date), style = MaterialTheme.typography.titleSmall)
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {

@@ -12,6 +12,7 @@ import app.ridetracker.shared.data.PeriodSummaryEntity
 import app.ridetracker.shared.data.TripEntity
 import app.ridetracker.shared.data.TripWithPlatform
 import app.ridetracker.shared.domain.importing.BoltDailyParser
+import app.ridetracker.shared.domain.importing.MisreadTotal
 import app.ridetracker.shared.domain.importing.OnlineTime
 import app.ridetracker.shared.domain.importing.ParsedDay
 import app.ridetracker.shared.domain.importing.ParsedSummary
@@ -333,6 +334,12 @@ class ImportRepository(private val database: AppDatabase) {
      * days without an exact entry are filled from the platform's own reports (see [IncomeEstimator]).
      * Exact entries are never changed. Run after every import and on start.
      */
+    /**
+     * Screenshots only for now (owner, 13 Oct 2026): a day without one counts as 0, so no estimates. Removes the ones
+     * made before. [refreshEstimates] stays for when PDF and CSV imports come back.
+     */
+    suspend fun clearEstimates() = imports.deleteAllEstimates()
+
     suspend fun refreshEstimates(nowEpochMillis: Long) = transaction {
         val months = buildSet {
             (imports.getTripDays() + imports.getEstimateDays()).forEach { add(it.platformId to Period.Month.containing(LocalDate.fromEpochDays(it.date))) }
@@ -431,6 +438,13 @@ class ImportRepository(private val database: AppDatabase) {
         for (line in imports.getLinesOfKind(IncomeLineKind.OTHER.id)) {
             val kind = BoltDailyParser.lineKind(line.label ?: continue)
             if (kind != IncomeLineKind.OTHER) imports.setLineKind(line.id, kind.id)
+        }
+    }
+
+    /** Fixes imported days saved with a misread total (see [MisreadTotal]): the amount becomes what the lines add up to. */
+    suspend fun repairMisreadTotals() {
+        for (e in imports.getEntryLineSums()) {
+            if (MisreadTotal.isMisread(e.amountMinor, e.linesMinor)) imports.setEntryAmount(e.entryId, e.linesMinor)
         }
     }
 

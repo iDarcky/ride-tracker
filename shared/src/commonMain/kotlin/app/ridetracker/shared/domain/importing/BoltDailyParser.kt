@@ -156,8 +156,12 @@ object BoltDailyParser {
         val groupsMatch = (inAppTotal == null || sum(false) == inAppTotal) &&
             (cashTotal == null || sum(true) == cashTotal) &&
             (feesTotal == null || lines.filter { it.kind == IncomeLineKind.OTHER_FEE }.sumOf { it.amountMinor } == feesTotal)
-        val addsUp = groupsMatch && inAppTotal != null && commission != null && lines.sumOf { it.amountMinor } == earnings
-        return Breakdown(lines, earnings, cashInHand, addsUp)
+        val linesSum = lines.sumOf { it.amountMinor }
+        // Every group checks out against its own total: a "Your earnings" far off is a misread, so trust the lines.
+        val checked = groupsMatch && inAppTotal != null && commission != null
+        val total = if (checked && MisreadTotal.isMisread(earnings, linesSum)) linesSum else earnings
+        val addsUp = checked && linesSum == total
+        return Breakdown(lines, total, cashInHand, addsUp)
     }
 
     private fun String.isIn(vararg names: String) = names.any { this == it }

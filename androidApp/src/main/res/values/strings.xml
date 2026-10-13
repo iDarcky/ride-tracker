@@ -166,6 +166,23 @@
     <string name="custom_range">Custom range…</string>
     <string name="export_saved">CSV exported</string>
     <string name="export_failed">Couldn’t export the file</string>
+    <!-- Monthly report (PDF / image) -->
+    <string name="report_menu">Monthly report</string>
+    <string name="report_share_pdf">Share as PDF</string>
+    <string name="report_share_image">Share as image</string>
+    <string name="report_failed">Couldn’t make the report</string>
+    <string name="report_brand">Ride Tracker</string>
+    <string name="report_income">Income</string>
+    <string name="report_expenses">Expenses</string>
+    <string name="report_profit">Profit</string>
+    <string name="report_change">%1$s vs %2$s</string>
+    <string name="report_by_app">Income by app</string>
+    <string name="report_by_category">Expenses by category</string>
+    <string name="report_no_income">No income this month</string>
+    <string name="report_no_expenses">No expenses this month</string>
+    <string name="report_days">Days with income: %1$d of %2$d</string>
+    <string name="report_made">Made on %1$s</string>
+    <string name="report_file">Ride Tracker %1$s</string>
     <string name="csv_date">Date</string>
     <string name="csv_type">Type</string>
     <string name="csv_item">Platform or category</string>
@@ -275,7 +292,6 @@
     <!-- Import -->
     <string name="done">Done</string>
     <string name="import_title">Import</string>
-    <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="import_menu_summary">Bolt and Uber screenshots and reports</string>
     <string name="import_empty_body">Screenshots and files are read on this phone; nothing is uploaded.</string>
     <string name="checklist_title">Bolt · %1$s</string>
@@ -336,6 +352,7 @@
     <string name="edit_minutes">Minutes</string>
     <string name="import_adds_up">All figures add up.</string>
     <string name="import_does_not_add_up">Some figures don’t add up and may be misread. Check them against the screenshot, or untick it.</string>
+    <string name="import_unusually_high">That’s a lot for one day: check the total against the screenshot.</string>
     <string name="import_paid_in_app">Paid in the app</string>
     <string name="import_paid_cash">Paid in cash</string>
     <string name="import_no_personal_data">Rider names and addresses are not saved.</string>
@@ -619,7 +636,6 @@
     <string name="target_notification_title">Monthly target reached</string>
     <string name="target_notification_body">%1$s in %2$s: your target of %3$s is done.</string>
     <string name="widget_target">Target</string>
-    <string name="missing_monthly_short">Monthly total missing: bonuses aren’t counted yet</string>
     <string name="show_less">Show less</string>
     <plurals name="attention_more">
         <item quantity="one">%d more</item>
@@ -674,6 +690,20 @@
         <item quantity="other">Expired %d days ago</item>
     </plurals>
     <string name="document_renew">Renew</string>
+    <string name="document_copie_conforma">Copie conformă</string>
+    <string name="document_badge_uber">Uber badge</string>
+    <string name="document_badge_bolt">Bolt badge</string>
+    <string name="document_payments">Payments</string>
+    <string name="document_payments_empty">No payments yet. Renew it here, or pick it as the document when you add the expense.</string>
+    <string name="document_last_cost">Last cost</string>
+    <string name="document_reminders">Reminders</string>
+    <string name="document_reminders_value">30 and 7 days before, and on the day</string>
+    <string name="document_renew_title">Renew %1$s</string>
+    <string name="document_renew_cost">Paid</string>
+    <string name="document_renewed">Valid until %1$s</string>
+    <string name="expense_document">Document</string>
+    <string name="expense_document_none">None</string>
+    <string name="expense_document_new_expiry">Now valid until</string>
     <string name="document_channel">Car documents</string>
     <string name="document_channel_description">Reminders before RCA, ITP and other documents expire</string>
     <string name="document_notification_soon">%1$s expires on %2$s</string>
@@ -682,7 +712,7 @@
     <!-- Guided import -->
     <string name="import_tab_today">Today</string>
     <string name="import_tab_month">End of month</string>
-    <string name="import_today_intro">After each driving day, one screenshot from each app. It gives that day exactly, with card and cash.</string>
+    <string name="import_today_intro">After each driving day, one screenshot from each app. It gives that day exactly. A day without one counts as 0.</string>
     <string name="import_today_bolt_how">Bolt Driver → Earnings → Earnings breakdown → Daily, pick the day, take a screenshot.</string>
     <string name="import_today_uber_how">Uber Driver → Earnings, tap the day’s bar (its date turns blue), take a screenshot.</string>
     <string name="import_today_week">Last 7 days</string>

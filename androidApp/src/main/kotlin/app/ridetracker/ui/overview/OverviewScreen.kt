@@ -139,7 +139,7 @@ fun OverviewScreen(
     onImport: () -> Unit,
     onOpenZReport: () -> Unit,
     onOpenTarget: () -> Unit,
-    onOpenDocument: (Long) -> Unit,
+    onRenewDocument: (Long) -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
             container.incomeRepository,
@@ -148,6 +148,7 @@ fun OverviewScreen(
             container.recurringRepository,
             container.settingsRepository,
             container.vehicleRepository,
+            container.period,
         )
     },
 ) {
@@ -266,6 +267,7 @@ fun OverviewScreen(
                     selected = (period as? Period.Month),
                     dates = dates,
                     onMonth = viewModel::selectMonth,
+                    current = Period.Month.containing(state.today).takeIf { period is Period.Month },
                     onCustom = { showRangePicker = true },
                     onOpen = viewModel::refreshMonths,
                     modifier = Modifier.padding(horizontal = 4.dp),
@@ -310,7 +312,7 @@ fun OverviewScreen(
                         onDismissZReport = viewModel::dismissZReportSuggestion,
                         onOpenTarget = onOpenTarget,
                         onDismissTarget = viewModel::dismissTargetSuggestion,
-                        onOpenDocument = onOpenDocument,
+                        onRenewDocument = onRenewDocument,
                         modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp),
                     )
                 }

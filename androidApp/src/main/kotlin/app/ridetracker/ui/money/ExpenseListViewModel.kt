@@ -8,6 +8,7 @@ import app.ridetracker.shared.domain.ExpenseCategory
 import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.RecurringRepository
+import app.ridetracker.ui.common.shownMonth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,8 @@ data class CategoryTotal(val category: ExpenseCategory, val totalMinor: Long)
 data class ExpenseListState(
     val months: List<Period.Month> = emptyList(),
     val month: Period.Month? = null,
+    /** Today's month: a "This month" button shows while another one is selected. */
+    val currentMonth: Period.Month? = null,
     val totalMinor: Long = 0,
     /** The whole previous month's total; null when it has no expenses (then no comparison is shown). */
     val previousMinor: Long? = null,
@@ -40,33 +43,34 @@ data class ExpenseListState(
     val loading: Boolean = true,
 )
 
-private data class ExpenseFilters(val month: Period.Month? = null, val category: ExpenseCategory? = null)
-
 /** Expenses of one month: total, by category, and the list. */
 class ExpenseListViewModel(
     private val expenseRepository: ExpenseRepository,
     recurringRepository: RecurringRepository,
     settingsRepository: SettingsRepository,
+    /** App-wide, shared with Home: this list shows its month. */
+    private val period: MutableStateFlow<Period>,
 ) : ViewModel() {
 
     val recurringCount: StateFlow<Int> = recurringRepository.observeAll().map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    private val filters = MutableStateFlow(ExpenseFilters())
+    private val category = MutableStateFlow<ExpenseCategory?>(null)
 
     val state: StateFlow<ExpenseListState> = combine(
         expenseRepository.observeAll(),
-        filters,
+        combine(period, category) { p, c -> p to c },
         settingsRepository.settings,
-    ) { all, f, settings ->
-        val current = Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault()))
-        val months = (all.map { Period.Month.containing(LocalDate.fromEpochDays(it.date)) } + current).distinct()
+    ) { all, (p, selectedCategory), settings ->
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val current = Period.Month.containing(today)
+        val month = p.shownMonth(today)
+        val months = (all.map { Period.Month.containing(LocalDate.fromEpochDays(it.date)) } + current + month).distinct()
             .sortedByDescending { it.range.start }
-        val month = f.month?.takeIf { it in months } ?: current
         fun inMonth(m: Period.Month) = all.filter { LocalDate.fromEpochDays(it.date) in m.range.start..m.range.endInclusive }
         val monthly = inMonth(month)
         val previous = inMonth(month.previous() as Period.Month)
-        val shown = if (f.category == null) monthly else monthly.filter { ExpenseCategory.fromId(it.category) == f.category }
+        val shown = if (selectedCategory == null) monthly else monthly.filter { ExpenseCategory.fromId(it.category) == selectedCategory }
         ExpenseListState(
             months = months,
             month = month,
@@ -75,7 +79,8 @@ class ExpenseListViewModel(
             categories = monthly.groupBy { ExpenseCategory.fromId(it.category) }
                 .map { (category, list) -> CategoryTotal(category, list.sumOf { it.amountMinor }) }
                 .sortedByDescending { it.totalMinor },
-            category = f.category,
+            currentMonth = current,
+            category = selectedCategory,
             days = shown.groupBy { it.date }.map { (day, list) ->
                 ExpenseDay(LocalDate.fromEpochDays(day), list.sumOf { it.amountMinor }, list)
             },
@@ -84,10 +89,13 @@ class ExpenseListViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExpenseListState())
 
-    fun selectMonth(month: Period.Month) = filters.update { it.copy(month = month, category = null) }
+    fun selectMonth(month: Period.Month) {
+        period.value = month
+        category.value = null
+    }
 
     /** Tapping the selected category again clears the filter. */
-    fun toggleCategory(category: ExpenseCategory?) = filters.update { it.copy(category = if (it.category == category) null else category) }
+    fun toggleCategory(tapped: ExpenseCategory?) = category.update { if (it == tapped) null else tapped }
 
     /** Deletes the expense and returns it so the UI can offer Undo. */
     suspend fun delete(id: Long): ExpenseEntity? {

@@ -11,6 +11,7 @@ import app.ridetracker.shared.domain.IncomeBreakdownCalculator
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
 import app.ridetracker.shared.domain.Period
+import app.ridetracker.ui.common.shownMonth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +30,8 @@ data class IncomeDay(val date: LocalDate, val totalMinor: Long, val entries: Lis
 data class IncomeListState(
     val months: List<Period.Month> = emptyList(),
     val month: Period.Month? = null,
+    /** Today's month: a "This month" button shows while another one is selected. */
+    val currentMonth: Period.Month? = null,
     val totalMinor: Long = 0,
     /** The whole previous month's income; null when it has none. */
     val previousMinor: Long? = null,
@@ -46,20 +49,21 @@ class IncomeListViewModel(
     private val incomeRepository: IncomeRepository,
     private val importRepository: ImportRepository,
     settingsRepository: SettingsRepository,
+    /** App-wide, shared with Home: this list shows its month. */
+    private val period: MutableStateFlow<Period>,
 ) : ViewModel() {
-
-    private val selectedMonth = MutableStateFlow<Period.Month?>(null)
 
     val state: StateFlow<IncomeListState> = combine(
         incomeRepository.observeAllEntries(),
-        selectedMonth,
+        period,
         settingsRepository.settings,
     ) { all, selected, settings -> Triple(all, selected, settings.currencyCode) }
         .flatMapLatest { (all, selected, currency) ->
-            val current = Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault()))
-            val months = (all.map { Period.Month.containing(LocalDate.fromEpochDays(it.date)) } + current).distinct()
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            val current = Period.Month.containing(today)
+            val month = selected.shownMonth(today)
+            val months = (all.map { Period.Month.containing(LocalDate.fromEpochDays(it.date)) } + current + month).distinct()
                 .sortedByDescending { it.range.start }
-            val month = selected?.takeIf { it in months } ?: current
             fun inMonth(m: Period.Month) = all.filter { LocalDate.fromEpochDays(it.date) in m.range.start..m.range.endInclusive }
             val monthly = inMonth(month)
             val previous = inMonth(month.previous() as Period.Month)
@@ -73,6 +77,7 @@ class IncomeListViewModel(
                 IncomeListState(
                     months = months,
                     month = month,
+                    currentMonth = current,
                     totalMinor = monthly.sumOf { it.amountMinor },
                     previousMinor = previous.takeIf { it.isNotEmpty() }?.sumOf { it.amountMinor },
                     platforms = totals,
@@ -87,7 +92,7 @@ class IncomeListViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IncomeListState())
 
     fun selectMonth(month: Period.Month) {
-        selectedMonth.value = month
+        period.value = month
     }
 
     /** Deletes the entry and returns it so the UI can offer Undo. */

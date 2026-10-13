@@ -10,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ridetracker.shared.data.AppSettings
+import app.ridetracker.shared.domain.Period
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 import app.ridetracker.ui.AppNavigation
 import app.ridetracker.ui.theme.RideTrackerTheme
 import app.ridetracker.ui.welcome.WelcomeScreen
@@ -19,8 +23,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val settingsFlow = (application as RideTrackerApplication).container.settingsRepository.settings
-        if (savedInstanceState == null) receiveShare(intent)
+        val container = (application as RideTrackerApplication).container
+        val settingsFlow = container.settingsRepository.settings
+        if (savedInstanceState == null) {
+            container.period.value = Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault()))
+            receiveShare(intent)
+        }
         setContent {
             RideTrackerTheme {
                 val settings: AppSettings? by settingsFlow.collectAsStateWithLifecycle(initialValue = null)

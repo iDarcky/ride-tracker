@@ -31,7 +31,6 @@ import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeBreakdown
 import app.ridetracker.shared.domain.IncomeBreakdownCalculator
 import app.ridetracker.shared.domain.IncomeRepository
-import app.ridetracker.shared.domain.MissingMonthlyTotal
 import app.ridetracker.shared.domain.PendingExpense
 import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.RecurringRepository
@@ -97,7 +96,6 @@ data class OverviewUiState(
 /** What "Needs attention" on Home lists. */
 data class Attention(
     val pending: List<PendingExpense> = emptyList(),
-    val missingMonthly: List<MissingMonthlyTotal> = emptyList(),
     /** The day whose Raportul Z is still waiting for "Done" (Romania). */
     val zReportDay: LocalDate? = null,
     /** Offer to set up the Raportul Z reminder (Romania, not set up, not dismissed). */
@@ -108,7 +106,7 @@ data class Attention(
     val documents: List<VehicleDocumentEntity> = emptyList(),
 ) {
     fun isEmpty(): Boolean =
-        pending.isEmpty() && missingMonthly.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget && documents.isEmpty()
+        pending.isEmpty() && zReportDay == null && !suggestZReport && !suggestTarget && documents.isEmpty()
 }
 
 /** Home's comparison card: what it's compared with, the rows, and the "same days / whole month" choice. */
@@ -133,11 +131,11 @@ class OverviewViewModel(
     private val recurringRepository: RecurringRepository,
     private val settingsRepository: SettingsRepository,
     private val vehicleRepository: VehicleRepository,
+    /** App-wide, shared with Income and Expenses. */
+    private val selected: MutableStateFlow<Period>,
 ) : ViewModel() {
 
     private fun today() = Clock.System.todayIn(TimeZone.currentSystemDefault())
-
-    private val selected = MutableStateFlow<Period>(Period.Month.containing(today()))
 
     private val _months = MutableStateFlow(listOf(Period.Month.containing(today())))
 
@@ -226,19 +224,18 @@ class OverviewViewModel(
         OverviewUiState(period = selected.value, today = today(), currencyCode = null),
     )
 
-    /** Recurring expenses waiting for Add or Skip, and months still missing the platform's own monthly total. */
+    /** Recurring expenses waiting for Add or Skip, documents running out, Raportul Z and suggestions. */
     val attention: StateFlow<Attention> = combine(
         combine(recurringRepository.observePending(today()), vehicleRepository.observeAllDocuments()) { p, d -> p to d },
-        importRepository.observeMissingMonthlyTotals(today()),
         combine(settingsRepository.zReport, settingsRepository.target) { z, target -> z to target },
         settingsRepository.settings,
         // The Raportul Z day waits from the reminder's time on: look again every minute.
         flow { while (true) { emit(Unit); delay(60_000) } },
-    ) { (pending, documents), missing, (z, target), settings, _ ->
+    ) { (pending, documents), (z, target), settings, _ ->
         val romania = settings.country == Country.ROMANIA
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         Attention(
-            pending, missing,
+            pending,
             zReportDay = if (romania) z.waitingDay(now) else null,
             suggestZReport = romania && !z.enabled && !z.suggestionDismissed,
             suggestTarget = !target.hasAny && !target.suggestionDismissed,

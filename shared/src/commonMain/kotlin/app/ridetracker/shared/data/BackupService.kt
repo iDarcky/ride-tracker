@@ -49,7 +49,8 @@ data class BackupFile(
         /** 1: income only (0.0.4–0.0.5). 2: + expenses (0.0.6). 3: + vehicle and odometer (0.0.7). 4: + body type and colour (0.0.8). 5: + recurring expenses (0.0.9).
          *  6: + income details, income lines, imports, trips and period summaries (0.1.0). */
         // 7: expenses can be tax deductible (an older app would drop the mark). 8: + car documents.
-        const val FORMAT_VERSION = 8
+        // 9: expenses can be linked to a car document (an older app would drop the link).
+        const val FORMAT_VERSION = 9
     }
 }
 
@@ -159,6 +160,8 @@ data class BackupExpense(
     val createdAtEpochMillis: Long,
     /** Format 7. Older files read as not deductible. */
     val taxDeductible: Boolean = false,
+    /** Format 9: the car document it paid for. */
+    val documentId: Long? = null,
 )
 
 @Serializable
@@ -265,6 +268,7 @@ class BackupService(
                     note = it.note,
                     createdAtEpochMillis = it.createdAt,
                     taxDeductible = it.taxDeductible,
+                    documentId = it.documentId,
                 )
             },
             vehicles = database.vehicleDao().getAll().map {
@@ -383,6 +387,7 @@ class BackupService(
                 note = it.note,
                 createdAt = it.createdAtEpochMillis,
                 taxDeductible = it.taxDeductible,
+                documentId = it.documentId,
             )
         }
         val vehicles = file.vehicles.map { VehicleEntity(it.id, it.name, it.year, it.fuelType, it.consumptionCenti, it.fuelPriceMinor, it.bodyType, it.colorArgb) }

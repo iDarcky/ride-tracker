@@ -156,6 +156,11 @@ See the README for build, versioning and signing rules.
    0.10.0–0.13.0: monthly target, pinned "Needs attention", tax deductible expenses, erase income, predictive back,
    comparison card. 0.14.0: car documents (RCA, ITP, rovinietă, CASCO, licence, other) with expiry reminders.
    0.15.0: guided Import (Today / End of month), reasons when a file can't be read, optional evening import reminder.
+   **Screenshots first (owner, 13 Oct 2026):** daily screenshots (Bolt Daily, Uber's day) are the main way in; a
+   missing day counts as 0, no estimates. Import always opens on Today; End of month stays as a second page, but
+   files no longer fill missing days. The monthly side needs reworking ("monthly is overcomplicated, we need to help
+   with that soon"). Different sources contain different things (Bolt's PDF has no campaigns): each figure should
+   come only from sources that have it, and differences be shown, not silently applied.
    **Then (owner, 11 Oct 2026, in this order):** a readability check of every Home widget, branding directions.
    **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
    maybe "See customer fare breakdown" per day; then the list below.
@@ -168,6 +173,14 @@ Product:
 - [x] Monthly target (0.10.0): income or money kept, per driving day, pace, notification when reached.
 - [x] Import reminders: an evening reminder for the day's screenshots (0.15.0); End of month opens first early in a month.
 - [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
+- [ ] Past months (owner, 13 Oct 2026: later): a "Past months" page in Import: Uber Supplier portal CSVs for a whole
+      year, which Bolt monthly PDFs to get, and a quick "a month's total" per app for months without files. Bolt's
+      personal data export (below) would be the best Bolt source.
+- [ ] Tax deductible expenses (PFA, Romania): the mark is saved (expenses and document costs) but nothing uses it
+      yet. Owner (13 Oct 2026): "we need to do something with it, not sure what yet". Ideas: a month's deductible
+      total in Expenses, a column in the CSV export, ticked by default for business categories.
+- [ ] Car documents: photos and PDFs on each document (owner, 13 Oct 2026: "maybe later"). Kept on the phone;
+      decide then whether backups include them (a zip, larger) or not.
 - [ ] "This didn't import" → send the screenshot (with the driver's OK) so new screen variants get supported.
 - [ ] TVA intracomunitar suggestion from imported commission (rate × commission), PFA only.
 - [ ] Bolt "Rides" (acceptance) and "Cancels" tabs; Bolt's personal data export (ZIP with CSV/JSON) as a

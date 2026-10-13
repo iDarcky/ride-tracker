@@ -20,6 +20,7 @@ import app.ridetracker.shared.data.createSettingsRepository
 import app.ridetracker.shared.domain.ExpenseRepository
 import app.ridetracker.shared.domain.ImportRepository
 import app.ridetracker.shared.domain.IncomeRepository
+import app.ridetracker.shared.domain.Period
 import app.ridetracker.shared.domain.RecurringRepository
 import app.ridetracker.shared.domain.ThemeMode
 import app.ridetracker.shared.domain.VehicleRepository
@@ -29,6 +30,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 
 /** App-wide singletons (manual dependency injection). */
 class AppContainer(context: Context) {
@@ -47,6 +51,9 @@ class AppContainer(context: Context) {
 
     /** The import reminder was tapped: AppNavigation opens the Import screen. */
     val openImport = MutableStateFlow(false)
+
+    /** The period Home shows; Income and Expenses show its month. Back to this month when the app is reopened. */
+    val period = MutableStateFlow<Period>(Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault())))
 }
 
 class RideTrackerApplication : Application() {
@@ -79,11 +86,12 @@ class RideTrackerApplication : Application() {
             container.settingsRepository.importReminder.distinctUntilChanged()
                 .collect { ImportReminderScheduler.schedule(this@RideTrackerApplication, it) }
         }
-        // Fix breakdown lines imported before the reader recognised their label.
+        // Fix breakdown lines imported before the reader recognised their label, and days saved with a misread total.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {
             container.importRepository.reclassifyLines()
-            container.importRepository.refreshEstimates(kotlin.time.Clock.System.now().toEpochMilliseconds())
+            container.importRepository.repairMisreadTotals()
+            container.importRepository.clearEstimates()
         }
     }
 }

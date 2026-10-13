@@ -1,6 +1,5 @@
 package app.ridetracker.ui
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.mutableIntStateOf
 import app.ridetracker.ui.money.IncomeExpenseSwitch
 import androidx.compose.animation.AnimatedVisibility
@@ -111,6 +110,7 @@ import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
 import app.ridetracker.ui.settings.YourDataScreen
 import app.ridetracker.ui.vehicle.DocumentEditScreen
+import app.ridetracker.ui.vehicle.DocumentScreen
 import app.ridetracker.ui.vehicle.VehicleEditScreen
 import app.ridetracker.ui.vehicle.VehicleScreen
 
@@ -169,7 +169,7 @@ fun AppNavigation() {
             ) {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
-                        onOpenDocument = { nav.navigate("vehicle/document/$it") },
+                        onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
                     ) } }
                 composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
@@ -186,7 +186,11 @@ fun AppNavigation() {
                     )
                 } }
                 composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
-                    VehicleScreen(onEditVehicle = { nav.navigate("vehicle/edit") }, onEditDocument = { nav.navigate("vehicle/document/$it") })
+                    VehicleScreen(
+                        onEditVehicle = { nav.navigate("vehicle/edit") },
+                        onOpenDocument = { nav.navigate("vehicle/document/$it") },
+                        onEditDocument = { nav.navigate("vehicle/document/$it/edit") },
+                    )
                 } }
                 composable("menu") {
                     MenuScreen(
@@ -208,7 +212,23 @@ fun AppNavigation() {
                 composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
                 composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
                 composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
-                composable("vehicle/document/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                composable(
+                    "vehicle/document/{id}?renew={renew}",
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.LongType },
+                        navArgument("renew") { type = NavType.BoolType; defaultValue = false },
+                    ),
+                ) { entry ->
+                    val id = entry.arguments?.getLong("id") ?: 0L
+                    DocumentScreen(
+                        documentId = id,
+                        startRenewing = entry.arguments?.getBoolean("renew") == true,
+                        onBack = { nav.popBackStack() },
+                        onEdit = { nav.navigate("vehicle/document/$id/edit") },
+                        onOpenExpense = { nav.navigate("expense?id=$it") },
+                    )
+                }
+                composable("vehicle/document/{id}/edit", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     DocumentEditScreen(documentId = entry.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
                 }
                 composable(
@@ -221,7 +241,7 @@ fun AppNavigation() {
                     "expense?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
-                    ExpenseScreen(onDone = { nav.popBackStack() })
+                    ExpenseScreen(onDone = { nav.popBackStack() }, onOpenDocument = { nav.navigate("vehicle/document/$it") })
                 }
                 composable("recurring") {
                     RecurringListScreen(onBack = { nav.popBackStack() }, onEdit = { id -> nav.navigate("recurring/$id") })
@@ -258,9 +278,16 @@ fun AppNavigation() {
             // The + is a circle exactly as tall as the bar.
             val density = LocalDensity.current
             var barHeight by remember { mutableStateOf(48.dp) }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AnimatedVisibility(visible = lastTab == Tab.MONEY, enter = fadeIn(), exit = fadeOut()) {
-                    IncomeExpenseSwitch(tab = moneyTab, haze = haze, onSelect = { moneyTab = it }, modifier = Modifier.padding(bottom = 8.dp))
+            // The switch sits a fixed distance above the bar, so the + menu opening (which makes the bar's row taller)
+            // covers it instead of pushing it up.
+            Box(contentAlignment = Alignment.BottomCenter) {
+                AnimatedVisibility(
+                    visible = lastTab == Tab.MONEY,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.navigationBarsPadding().padding(bottom = 16.dp + barHeight + 8.dp),
+                ) {
+                    IncomeExpenseSwitch(tab = moneyTab, haze = haze, onSelect = { moneyTab = it })
                 }
                 BarWithAddButton(
                     buttonSize = barHeight,

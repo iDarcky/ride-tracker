@@ -148,4 +148,32 @@ class BackupFormatTest {
         assertEquals(null, file.entries.single().cashCollectedMinor)
         assertEquals(emptyList(), file.trips)
     }
+
+    @Test
+    fun readsVersion9ExpenseDocumentLinks() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 9, "appVersion": "0.16.0",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "expenses": [
+                { "id": 1, "amountMinor": 2800, "date": "2026-10-01", "category": "road_tax", "createdAtEpochMillis": 1, "documentId": 3 },
+                { "id": 2, "amountMinor": 500, "date": "2026-10-02", "category": "fuel", "createdAtEpochMillis": 2 }
+              ]
+            }
+        """.trimIndent()
+        val file = json.decodeFromString(BackupFile.serializer(), text)
+        assertEquals(listOf(3L, null), file.expenses.map { it.documentId })
+    }
+
+    @Test
+    fun version8ExpensesHaveNoDocument() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 8, "appVersion": "0.15.2",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "expenses": [ { "id": 1, "amountMinor": 2800, "date": "2026-10-01", "category": "road_tax", "createdAtEpochMillis": 1 } ]
+            }
+        """.trimIndent()
+        assertEquals(null, json.decodeFromString(BackupFile.serializer(), text).expenses.single().documentId)
+    }
 }

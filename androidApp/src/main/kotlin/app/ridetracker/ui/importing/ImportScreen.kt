@@ -251,8 +251,8 @@ private enum class ImportGuide { TODAY, MONTH }
 
 /**
  * The start page: "Today" (one screenshot per app after each driving day, with the last week's days ticked) or
- * "End of month" (what a finished month needs from each app, ticked as it comes in). In the first days of a month it
- * opens on the month.
+ * "End of month" (what a finished month needs from each app, ticked as it comes in). Screenshots come first (owner,
+ * 13 Oct 2026): it always opens on Today; the month is there when the driver wants it.
  */
 @Composable
 private fun EmptyState(
@@ -263,8 +263,7 @@ private fun EmptyState(
     onOpenReminder: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
-    var guide by rememberSaveable { mutableStateOf(if (today.day <= 5) ImportGuide.MONTH else ImportGuide.TODAY) }
+    var guide by rememberSaveable { mutableStateOf(ImportGuide.TODAY) }
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -298,8 +297,18 @@ private fun EmptyState(
 private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: () -> Unit, onOpenReminder: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.import_today_intro), style = MaterialTheme.typography.bodyLarge)
-        DayGuideCard("Bolt", BOLT_COLOR, stringResource(R.string.import_today_bolt_how), state.recentDays, state.boltDays, dates)
-        DayGuideCard("Uber", UBER_COLOR, stringResource(R.string.import_today_uber_how), state.recentDays, state.uberDays, dates)
+        GuideCard("Bolt", BOLT_COLOR, stringResource(R.string.import_today_bolt_how)) {
+            if (state.recentDays.isNotEmpty()) {
+                StripLabel(stringResource(R.string.import_today_week))
+                WeekStrip(state.recentDays, state.boltDays, dates)
+            }
+        }
+        GuideCard("Uber", UBER_COLOR, stringResource(R.string.import_today_uber_how)) {
+            if (state.recentDays.isNotEmpty()) {
+                StripLabel(stringResource(R.string.import_today_week))
+                WeekStrip(state.recentDays, state.uberDays, dates)
+            }
+        }
         Button(onClick = onScreenshots, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Icon(Icons.Outlined.Image, contentDescription = null)
             Spacer(Modifier.width(8.dp))
@@ -325,9 +334,9 @@ private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: 
     }
 }
 
-/** One app's daily screenshot: where to find it, and which of the last 7 days are in. */
+/** One app's screenshots: where to find them, then [progress] (which recent days or weeks are in). */
 @Composable
-private fun DayGuideCard(name: String, color: Long, how: String, days: List<LocalDate>, done: Set<LocalDate>, dates: DateFormats) {
+private fun GuideCard(name: String, color: Long, how: String, progress: @Composable () -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -336,12 +345,14 @@ private fun DayGuideCard(name: String, color: Long, how: String, days: List<Loca
                 Text(name, style = MaterialTheme.typography.titleMedium)
             }
             Text(how, style = MaterialTheme.typography.bodyMedium)
-            if (days.isNotEmpty()) {
-                Text(stringResource(R.string.import_today_week), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                WeekStrip(days, done, dates)
-            }
+            progress()
         }
     }
+}
+
+@Composable
+private fun StripLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** The last 7 days as weekday letters, each ticked when that day is imported. */
@@ -591,6 +602,10 @@ private fun Details(
             } else {
                 Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_does_not_add_up), warning = true)
             }
+            // More than 5,000 (lei, euro…) in a day is almost always a misread total.
+            if (day.earningsMinor > UNUSUALLY_HIGH_DAY_MINOR) {
+                Note(Icons.Outlined.WarningAmber, stringResource(R.string.import_unusually_high), warning = true)
+            }
             if (replaces > 0) Note(Icons.Outlined.Info, pluralStringResource(R.plurals.import_replaces, replaces, replaces))
         }
         is ReadReport.BoltTrips -> {
@@ -823,3 +838,6 @@ private fun Note(icon: ImageVector, text: String, warning: Boolean = false) {
         Text(text, style = MaterialTheme.typography.bodySmall, color = color)
     }
 }
+
+/** A day's earnings above this (5,000 in the app currency) get a "check the total" warning on import. */
+private const val UNUSUALLY_HIGH_DAY_MINOR = 500_000L

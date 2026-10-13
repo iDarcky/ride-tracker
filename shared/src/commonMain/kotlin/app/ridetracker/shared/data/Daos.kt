@@ -139,6 +139,9 @@ interface ExpenseDao {
     @Query("SELECT * FROM expense WHERE id = :id")
     suspend fun getById(id: Long): ExpenseEntity?
 
+    @Query("SELECT * FROM expense WHERE documentId = :documentId ORDER BY date DESC, createdAt DESC")
+    fun observeForDocument(documentId: Long): Flow<List<ExpenseEntity>>
+
     @Insert
     suspend fun insert(expense: ExpenseEntity): Long
 
@@ -251,6 +254,9 @@ interface RecurringExpenseDao {
     suspend fun deleteAll()
 }
 
+/** An entry's amount next to the sum of its lines. */
+data class EntryLineSum(val entryId: Long, val amountMinor: Long, val linesMinor: Long)
+
 @Dao
 interface ImportDao {
     @Query("SELECT * FROM income_line WHERE entryId = :entryId ORDER BY id")
@@ -264,6 +270,9 @@ interface ImportDao {
 
     @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
     suspend fun getEntries(platformId: Long, startEpochDay: Long, endEpochDay: Long): List<IncomeEntryEntity>
+
+    @Query("DELETE FROM income_entry WHERE source = 'estimate'")
+    suspend fun deleteAllEstimates()
 
     @Query("DELETE FROM income_entry WHERE source = 'estimate' AND platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
     suspend fun deleteEstimates(platformId: Long, startEpochDay: Long, endEpochDay: Long)
@@ -314,6 +323,19 @@ interface ImportDao {
 
     @Query("UPDATE income_line SET kind = :kind WHERE id = :id")
     suspend fun setLineKind(id: Long, kind: String)
+
+    /** Imported entries with a breakdown, and what their lines add up to. */
+    @Query(
+        """
+        SELECT e.id AS entryId, e.amountMinor AS amountMinor, SUM(l.amountMinor) AS linesMinor
+        FROM income_entry e JOIN income_line l ON l.entryId = e.id
+        WHERE e.importBatchId IS NOT NULL GROUP BY e.id
+        """,
+    )
+    suspend fun getEntryLineSums(): List<EntryLineSum>
+
+    @Query("UPDATE income_entry SET amountMinor = :amountMinor WHERE id = :id")
+    suspend fun setEntryAmount(id: Long, amountMinor: Long)
 
     @Query("DELETE FROM income_line WHERE entryId = :entryId")
     suspend fun deleteLines(entryId: Long)

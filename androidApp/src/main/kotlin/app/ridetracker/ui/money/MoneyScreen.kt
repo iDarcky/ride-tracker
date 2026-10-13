@@ -1,5 +1,14 @@
 package app.ridetracker.ui.money
 
+import androidx.compose.material3.IconButton
+import app.ridetracker.ui.common.GlassDropdownMenu
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.ui.platform.LocalContext
+import app.ridetracker.RideTrackerApplication
+import app.ridetracker.ui.report.MonthlyReportFiles
+import app.ridetracker.ui.report.ReportFormat
 import app.ridetracker.ui.common.rememberGlassStyle
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.HazeInput
@@ -121,10 +130,10 @@ fun MoneyScreen(
     onOpenRecurring: () -> Unit,
     onOpenPlatform: (Long, Period.Month) -> Unit,
     viewModel: IncomeListViewModel = viewModel {
-        IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository)
+        IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository, container.period)
     },
     expenseViewModel: ExpenseListViewModel = viewModel {
-        ExpenseListViewModel(container.expenseRepository, container.recurringRepository, container.settingsRepository)
+        ExpenseListViewModel(container.expenseRepository, container.recurringRepository, container.settingsRepository, container.period)
     },
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -132,13 +141,57 @@ fun MoneyScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_money)) }, actions = { MenuButton() }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.nav_money)) },
+                actions = {
+                    ReportButton(month = { viewModel.state.value.month }, snackbar = snackbar)
+                    MenuButton()
+                },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = bottomSpace + SwitchSpace)) },
     ) { padding ->
         val modifier = Modifier.padding(top = padding.calculateTopPadding())
         when (tab) {
             0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
             else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
+        }
+    }
+}
+
+/** The month shown (same on Income and Expenses) as a shareable report: PDF or image. */
+@Composable
+private fun ReportButton(month: () -> Period.Month?, snackbar: SnackbarHostState) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val locale = currentLocale()
+    val failed = stringResource(R.string.report_failed)
+    var open by remember { mutableStateOf(false) }
+    fun share(format: ReportFormat) {
+        open = false
+        val m = month() ?: return
+        val container = (context.applicationContext as RideTrackerApplication).container
+        scope.launch {
+            runCatching { MonthlyReportFiles.share(context, container, m, format, locale) }
+                .onFailure { snackbar.showSnackbar(failed) }
+        }
+    }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Outlined.Share, contentDescription = stringResource(R.string.report_menu))
+        }
+        GlassDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.report_share_pdf)) },
+                leadingIcon = { Icon(Icons.Outlined.PictureAsPdf, contentDescription = null) },
+                onClick = { share(ReportFormat.PDF) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.report_share_image)) },
+                leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
+                onClick = { share(ReportFormat.IMAGE) },
+            )
         }
     }
 }
@@ -215,6 +268,7 @@ private fun IncomeTab(
                 selected = state.month,
                 dates = dates,
                 onMonth = viewModel::selectMonth,
+                current = state.currentMonth,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
         }
@@ -321,6 +375,7 @@ private fun ExpenseTab(
                 selected = state.month,
                 dates = dates,
                 onMonth = viewModel::selectMonth,
+                current = state.currentMonth,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
         }

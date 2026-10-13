@@ -47,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import app.ridetracker.R
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.shared.data.VehicleDocumentEntity
+import app.ridetracker.shared.domain.Country
 import app.ridetracker.shared.domain.DocumentKind
+import app.ridetracker.shared.domain.DrivingType
 import app.ridetracker.shared.domain.Money
 import app.ridetracker.ui.common.currentLocale
 import app.ridetracker.ui.common.resolveCurrency
@@ -62,8 +64,9 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
- * Add or edit a car document: what it is, the last day it's valid and, optionally, what it cost. Renewing is
- * editing: a new date starts the reminders again, and the cost can go to expenses (dated today).
+ * Add or edit a car document: what it is, the last day it's valid and, optionally, what it cost. A new date starts
+ * the reminders again, and the cost can go to expenses (dated today, linked to the document). Renewing has its own
+ * button on the document's page.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +82,10 @@ fun DocumentEditScreen(documentId: Long, onDone: () -> Unit) {
     var cost by rememberSaveable { mutableStateOf("") }
     var addExpense by rememberSaveable { mutableStateOf(false) }
     var currencyCode by rememberSaveable { mutableStateOf<String?>(null) }
+    var country by rememberSaveable { mutableStateOf<Country?>(null) }
+    var savedKind by rememberSaveable { mutableStateOf<DocumentKind?>(null) }
+    var pfa by rememberSaveable { mutableStateOf(false) }
+    var taxDeductible by rememberSaveable { mutableStateOf(false) }
     var nameMissing by rememberSaveable { mutableStateOf(false) }
     var costInvalid by rememberSaveable { mutableStateOf(false) }
     val digits = resolveCurrency(currencyCode).defaultFractionDigits.coerceAtLeast(0)
@@ -86,18 +93,22 @@ fun DocumentEditScreen(documentId: Long, onDone: () -> Unit) {
 
     LaunchedEffect(Unit) {
         if (loaded) return@LaunchedEffect
-        currencyCode = container.settingsRepository.settings.first().currencyCode
+        val settings = container.settingsRepository.settings.first()
+        currencyCode = settings.currencyCode
+        country = settings.country
+        pfa = settings.country == Country.ROMANIA && settings.drivingType == DrivingType.PFA
         val d = resolveCurrency(currencyCode).defaultFractionDigits.coerceAtLeast(0)
         val existing = documentId.takeIf { it != 0L }?.let { container.vehicleRepository.getDocument(it) }
         if (existing != null) {
             kind = DocumentKind.fromId(existing.kind)
+            savedKind = kind
             name = existing.name.orEmpty()
             expiryDay = existing.expiryDate
             cost = existing.costMinor?.let { Money.toPlainString(it, d) }.orEmpty()
         } else {
             // A new one starts on the first usual document the car doesn't have yet.
             val used = container.vehicleRepository.getAllDocuments().map { DocumentKind.fromId(it.kind) }.toSet()
-            kind = (DocumentKind.entries - DocumentKind.OTHER).firstOrNull { it !in used } ?: DocumentKind.OTHER
+            kind = (DocumentKind.offered(country) - DocumentKind.OTHER).firstOrNull { it !in used } ?: DocumentKind.OTHER
         }
         loaded = true
     }
@@ -117,10 +128,12 @@ fun DocumentEditScreen(documentId: Long, onDone: () -> Unit) {
                 expiryDate = expiryDay,
                 costMinor = costMinor,
             )
-            container.vehicleRepository.saveDocument(document)
+            val savedId = container.vehicleRepository.saveDocument(document)
             if (addExpense && costMinor != null && costMinor > 0) {
                 val label = if (kind == DocumentKind.OTHER) name.trim() else kindNames.getValue(kind)
-                container.expenseRepository.save(null, costMinor, today, kind.expenseCategory, label, now)
+                container.expenseRepository.save(
+                    null, costMinor, today, kind.expenseCategory, label, now, taxDeductible = pfa && taxDeductible, documentId = savedId,
+                )
             }
             onDone()
         }
@@ -142,7 +155,7 @@ fun DocumentEditScreen(documentId: Long, onDone: () -> Unit) {
         ) {
             Text(stringResource(R.string.document_kind), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DocumentKind.entries.forEach { k ->
+                DocumentKind.offered(country, savedKind).forEach { k ->
                     FilterChip(
                         selected = k == kind,
                         onClick = { kind = k; nameMissing = false },
@@ -189,6 +202,16 @@ fun DocumentEditScreen(documentId: Long, onDone: () -> Unit) {
                 ) {
                     Text(stringResource(R.string.document_add_expense), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                     Checkbox(checked = addExpense, onCheckedChange = null)
+                }
+                // PFA drivers in Romania can mark it deductible, like any other expense.
+                if (addExpense && pfa) {
+                    Row(
+                        Modifier.fillMaxWidth().toggleable(value = taxDeductible, role = Role.Checkbox, onValueChange = { taxDeductible = it }),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(stringResource(R.string.tax_deductible), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        Checkbox(checked = taxDeductible, onCheckedChange = null)
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))

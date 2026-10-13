@@ -165,6 +165,23 @@
     <string name="custom_range">Interval personalizat…</string>
     <string name="export_saved">CSV exportat</string>
     <string name="export_failed">Fișierul nu a putut fi exportat</string>
+    <!-- Monthly report (PDF / image) -->
+    <string name="report_menu">Raport lunar</string>
+    <string name="report_share_pdf">Trimite ca PDF</string>
+    <string name="report_share_image">Trimite ca imagine</string>
+    <string name="report_failed">Nu am putut face raportul</string>
+    <string name="report_brand">Ride Tracker</string>
+    <string name="report_income">Venituri</string>
+    <string name="report_expenses">Cheltuieli</string>
+    <string name="report_profit">Profit</string>
+    <string name="report_change">%1$s față de %2$s</string>
+    <string name="report_by_app">Venituri pe aplicație</string>
+    <string name="report_by_category">Cheltuieli pe categorii</string>
+    <string name="report_no_income">Niciun venit luna aceasta</string>
+    <string name="report_no_expenses">Nicio cheltuială luna aceasta</string>
+    <string name="report_days">Zile cu venituri: %1$d din %2$d</string>
+    <string name="report_made">Generat pe %1$s</string>
+    <string name="report_file">Ride Tracker %1$s</string>
     <string name="csv_date">Data</string>
     <string name="csv_type">Tip</string>
     <string name="csv_item">Platformă sau categorie</string>
@@ -275,7 +292,6 @@
     <!-- Import -->
     <string name="done">Gata</string>
     <string name="import_title">Importă</string>
-    <string name="missing_monthly_title">%1$s · %2$s</string>
     <string name="import_menu_summary">Capturi de ecran și rapoarte Bolt și Uber</string>
     <string name="import_empty_body">Capturile și fișierele se citesc pe acest telefon; nu se încarcă nimic.</string>
     <string name="checklist_title">Bolt · %1$s</string>
@@ -338,6 +354,7 @@
     <string name="edit_minutes">Minute</string>
     <string name="import_adds_up">Toate sumele se potrivesc.</string>
     <string name="import_does_not_add_up">Unele sume nu se potrivesc și poate au fost citite greșit. Verifică-le cu captura sau debifeaz-o.</string>
+    <string name="import_unusually_high">E mult pentru o singură zi: verifică totalul cu captura.</string>
     <string name="import_paid_in_app">Plătit în aplicație</string>
     <string name="import_paid_cash">Plătit cash</string>
     <string name="import_no_personal_data">Numele și adresele pasagerilor nu se salvează.</string>
@@ -636,7 +653,6 @@
     <string name="target_notification_title">Țintă lunară atinsă</string>
     <string name="target_notification_body">%1$s în %2$s: ținta de %3$s e atinsă.</string>
     <string name="widget_target">Țintă</string>
-    <string name="missing_monthly_short">Lipsește totalul lunar: bonusurile nu sunt încă numărate</string>
     <string name="show_less">Arată mai puțin</string>
     <plurals name="attention_more">
         <item quantity="one">Încă %d</item>
@@ -694,6 +710,20 @@
         <item quantity="other">A expirat acum %d de zile</item>
     </plurals>
     <string name="document_renew">Reînnoiește</string>
+    <string name="document_copie_conforma">Copie conformă</string>
+    <string name="document_badge_uber">Ecuson Uber</string>
+    <string name="document_badge_bolt">Ecuson Bolt</string>
+    <string name="document_payments">Plăți</string>
+    <string name="document_payments_empty">Nicio plată încă. Reînnoiește-l de aici sau alege-l ca document când adaugi cheltuiala.</string>
+    <string name="document_last_cost">Ultimul cost</string>
+    <string name="document_reminders">Notificări</string>
+    <string name="document_reminders_value">Cu 30 și 7 zile înainte, și în ziua respectivă</string>
+    <string name="document_renew_title">Reînnoiește %1$s</string>
+    <string name="document_renew_cost">Plătit</string>
+    <string name="document_renewed">Valabil până la %1$s</string>
+    <string name="expense_document">Document</string>
+    <string name="expense_document_none">Niciunul</string>
+    <string name="expense_document_new_expiry">Acum valabil până la</string>
     <string name="document_channel">Documentele mașinii</string>
     <string name="document_channel_description">Notificări înainte să expire RCA, ITP și celelalte documente</string>
     <string name="document_notification_soon">%1$s expiră pe %2$s</string>
@@ -702,7 +732,7 @@
     <!-- Guided import -->
     <string name="import_tab_today">Azi</string>
     <string name="import_tab_month">La final de lună</string>
-    <string name="import_today_intro">După fiecare zi de condus, câte o captură din fiecare aplicație. Aduce ziua exact, cu card și numerar.</string>
+    <string name="import_today_intro">După fiecare zi de condus, câte o captură din fiecare aplicație. Aduce ziua exact. O zi fără captură contează 0.</string>
     <string name="import_today_bolt_how">Bolt Driver → Câștiguri → Defalcarea câștigurilor → Zilnic, alege ziua, fă o captură de ecran.</string>
     <string name="import_today_uber_how">Uber Driver → Câștiguri, atinge bara zilei (data devine albastră), fă o captură de ecran.</string>
     <string name="import_today_week">Ultimele 7 zile</string>
