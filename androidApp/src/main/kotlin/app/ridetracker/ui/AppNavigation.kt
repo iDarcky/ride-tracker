@@ -1,5 +1,8 @@
 package app.ridetracker.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -184,11 +187,17 @@ fun AppNavigation() {
                 modifier = Modifier.hazeSource(haze),
                 // Material 3 motion (owner, 14 Oct 2026, after 0.15.2 turned it off): screens open and close with
                 // the shared axis; swiping back is Material's predictive back. Tabs switch instantly.
-                enterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
+                enterTransition = { ScreenMotion.revealing = null; if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
                 exitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.openBehind },
-                popEnterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.backBehind },
+                popEnterTransition = {
+                    ScreenMotion.revealing = targetState.id
+                    if (betweenTabs()) EnterTransition.None else ScreenMotion.backBehind
+                },
                 popExitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.back },
-                predictivePopEnterTransition = { _ -> if (betweenTabs()) EnterTransition.None else ScreenMotion.predictiveBehind },
+                predictivePopEnterTransition = { _ ->
+                    ScreenMotion.revealing = targetState.id
+                    if (betweenTabs()) EnterTransition.None else ScreenMotion.predictiveBehind
+                },
                 predictivePopExitTransition = { edge -> if (betweenTabs()) ExitTransition.None else ScreenMotion.predictiveBack(edge) },
             ) {
                 screen(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
@@ -347,9 +356,10 @@ fun AppNavigation() {
 
 /**
  * Material 3 screen motion. Opening a screen and the back button use the shared axis (a short slide with a cross-fade);
- * the back gesture is Material's predictive back: the screen shrinks to 90%, rounds its corners and follows the finger
- * toward the side it's swiped from, with the previous screen still behind it. Released, it finishes leaving; cancelled,
- * it springs back. Kept short: 300 ms felt slow (owner, 12 Oct 2026).
+ * the back gesture matches Android's own predictive back (compared with Settings on the emulator, 14 Oct 2026): the
+ * screen shrinks to 85%, rounds its corners, lifts with a shadow and drifts toward the side it's swiped from; the
+ * screen behind waits dimmed and shifted to the left, and slides into place once back is committed. Cancelled, it all
+ * springs back. Kept short: 300 ms felt slow (owner, 12 Oct 2026).
  */
 private object ScreenMotion {
     private const val DURATION = 250
@@ -363,14 +373,27 @@ private object ScreenMotion {
     val back: ExitTransition = slideOutHorizontally(slide()) { it / 10 } + fadeOut(fadeOutEarly)
     val backBehind: EnterTransition = slideInHorizontally(slide()) { -it / 10 } + fadeIn(fadeInLate)
 
-    /** The screen behind stays put while the one on top is swiped away. */
-    val predictiveBehind: EnterTransition = EnterTransition.None
+    /** Most of the shrink in the first part of the swipe, like Android's own (the card is small almost at once). */
+    private val early = Easing { t -> 1f - (1f - t) * (1f - t) * (1f - t) }
 
-    /** Shrinks to 90% and drifts toward the swiped side; it only fades out in the last part, once back is committed. */
+    /** Mostly still while the finger moves, then quickly into place: the gesture covers the start, the release the end. */
+    private val late = Easing { t -> t * t * t }
+
+    /** The screen behind waits a fifth of the width to the left (a parallax) and slides in once back is committed. */
+    val predictiveBehind: EnterTransition = slideInHorizontally(tween(DURATION, easing = late)) { -it / 5 }
+
+    /** Dims the screen being revealed, fading as it slides into place. */
+    const val REVEAL_SCRIM = 0.2f
+    val scrimSpec = tween<Float>(DURATION, easing = late)
+
+    /** The screen being revealed by going back (its back stack entry id), so it can wear the scrim. */
+    var revealing by mutableStateOf<String?>(null)
+
+    /** Shrinks to 85% and drifts toward the swiped side; it only fades out in the last part, once back is committed. */
     fun predictiveBack(swipeEdge: Int): ExitTransition {
         val toRight = swipeEdge == BackEventCompat.EDGE_LEFT
-        return scaleOut(tween(DURATION, easing = LinearEasing), targetScale = 0.9f) +
-            slideOutHorizontally(tween(DURATION, easing = LinearEasing)) { width -> if (toRight) width / 12 else -width / 12 } +
+        return scaleOut(tween(DURATION, easing = early), targetScale = 0.85f) +
+            slideOutHorizontally(tween(DURATION, easing = early)) { width -> if (toRight) width / 16 else -width / 16 } +
             fadeOut(tween(DURATION, easing = { t -> ((t - 0.7f) / 0.3f).coerceIn(0f, 1f) }))
     }
 
@@ -391,13 +414,20 @@ private fun NavGraphBuilder.screen(
     val corner by transition.animateDp(label = "screen corner") { if (leaving(it)) ScreenMotion.corner else 0.dp }
     // A soft shadow so the card stands out from the screen behind, which has the same background.
     val shadow by transition.animateDp(label = "screen shadow") { if (leaving(it)) ScreenMotion.shadow else 0.dp }
+    // The screen being revealed by back starts dimmed and brightens as it slides into place.
+    val scrim by transition.animateFloat(transitionSpec = { ScreenMotion.scrimSpec }, label = "screen scrim") {
+        if (it == EnterExitState.PreEnter && ScreenMotion.revealing == entry.id) ScreenMotion.REVEAL_SCRIM else 0f
+    }
     Box(
         Modifier.fillMaxSize().graphicsLayer {
             shape = RoundedCornerShape(corner)
             clip = true
             shadowElevation = shadow.toPx()
         },
-    ) { content(entry) }
+    ) {
+        content(entry)
+        if (scrim > 0f) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = scrim)))
+    }
 }
 
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boolean =

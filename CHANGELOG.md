@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.2
+- **Back swipe now matches Android's own** (compared side by side with the Settings app): the screen behind waits
+  dimmed and shifted a little to the left, then slides into place when you let go; the screen you're leaving
+  shrinks to 85% early in the swipe, like the system does.
+
 ## 0.16.1
 - **Material 3 screen motion is back, done properly**: opening a screen and the back button use Material's shared
   axis (a short slide with a fade, 250 ms); the back swipe is Material's **predictive back**: the screen shrinks,
