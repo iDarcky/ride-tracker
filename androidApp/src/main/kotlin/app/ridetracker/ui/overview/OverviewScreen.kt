@@ -1,5 +1,8 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeOut
@@ -204,7 +207,12 @@ fun OverviewScreen(
                         headerHidden -> periodLabel
                         else -> stringResource(R.string.nav_home)
                     }
-                    AnimatedContent(targetState = title, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "home title") { text ->
+                    val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+                    AnimatedContent(
+                        targetState = title,
+                        transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
+                        label = "home title",
+                    ) { text ->
                         Text(
                             text,
                             maxLines = 1,
@@ -313,17 +321,17 @@ fun OverviewScreen(
                         onOpenTarget = onOpenTarget,
                         onDismissTarget = viewModel::dismissTargetSuggestion,
                         onRenewDocument = onRenewDocument,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
                     )
                 }
             }
             item {
-                TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp))
+                TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
             }
             val shown = if (editing) order else state.widgets.filter { it.hasContent(state, attention) }
             items(shown, key = { it.id }) { widget ->
                 ReorderableItem(reorder, key = widget.id, enabled = editing) { dragging ->
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         val body: @Composable () -> Unit = {
                             if (widget.hasContent(state, attention)) {
                                 WidgetBody(
@@ -417,7 +425,8 @@ private fun PeriodTypeSelector(selected: PeriodType, onSelect: (PeriodType) -> U
                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
             ) {
-                Text(stringResource(label), maxLines = 1)
+                // Whole words even with large text: shrink to fit instead of "Mont".
+                Text(stringResource(label), maxLines = 1, autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = LocalTextStyle.current.fontSize))
             }
         }
     }
@@ -454,7 +463,7 @@ private fun PeriodNavigator(
 @Composable
 private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.fillMaxWidth().animateContentSize(),
+        modifier = modifier.fillMaxWidth().animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -514,7 +523,7 @@ private fun ComparisonLine(current: Long, previous: Long, comparison: Comparison
             tint = color,
             modifier = Modifier.size(18.dp),
         )
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(8.dp))
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(color = color, fontWeight = FontWeight.Medium)) { append(change) }

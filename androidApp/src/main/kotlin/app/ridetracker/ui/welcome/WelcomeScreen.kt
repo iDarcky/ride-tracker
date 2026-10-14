@@ -1,5 +1,8 @@
 package app.ridetracker.ui.welcome
 
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
 import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedContent
@@ -121,7 +124,12 @@ fun WelcomeScreen() {
                     Text(languageName(languageTag))
                 }
             }
-            AnimatedContent(targetState = step, label = "welcome-step") { current ->
+            val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+            AnimatedContent(
+                targetState = step,
+                transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
+                label = "welcome-step",
+            ) { current ->
                 Column(
                     Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),

@@ -187,7 +187,7 @@ private fun ChecklistRow(title: String, status: String, state: Status, how: Stri
         if (open) {
             Text(
                 how,
-                modifier = Modifier.padding(start = 36.dp, top = 6.dp),
+                modifier = Modifier.padding(start = 36.dp, top = 8.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

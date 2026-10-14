@@ -221,6 +221,7 @@
     <string name="delete_reading_title">Delete this reading?</string>
     <string name="reading_deleted">Reading deleted</string>
     <string name="km_value">%1$s km</string>
+    <string name="km_unit">km</string>
     <string name="km_driven">Km driven</string>
     <string name="vehicle_costs">Vehicle costs</string>
     <string name="cost_per_km">Cost per km</string>
@@ -453,6 +454,13 @@
     <string name="best_time">When you earn</string>
     <string name="best_time_caption">Trip fares by weekday and time of day: when you drove and earned, not pay per hour. The top slot is outlined; tap a cell for its total.</string>
     <string name="heat_cell">%1$s, %2$s: %3$s in fares</string>
+    <string name="chart_bars_description">Bar chart, one bar per day. Use actions to move between days.</string>
+    <string name="chart_bars_month_description">Bar chart, one bar per month. Use actions to move between months.</string>
+    <string name="chart_previous_day">Previous day</string>
+    <string name="chart_next_day">Next day</string>
+    <string name="chart_previous_month">Previous month</string>
+    <string name="chart_next_month">Next month</string>
+    <string name="heat_cell_busiest">%1$s, busiest</string>
     <string name="activity_money">Money</string>
     <string name="activity_trips">Trips</string>
     <string name="best_day">best %1$s %2$s</string>

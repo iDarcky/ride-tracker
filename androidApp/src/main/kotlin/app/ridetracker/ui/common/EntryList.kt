@@ -185,7 +185,7 @@ fun ActionRow(
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
             leadingContent = leading,
             headlineContent = { Text(title) },
-            supportingContent = note?.let { { Text(it, maxLines = 2) } },
+            supportingContent = note?.let { { Text(it, maxLines = if (isLargeText()) 4 else 2) } },
             trailingContent = { Text(amount, style = MaterialTheme.typography.titleMedium.tabular(), color = amountColor) },
         )
         GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }, offset = DpOffset(16.dp, 0.dp)) {

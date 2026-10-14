@@ -1,5 +1,12 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.FlowRow
+import app.ridetracker.ui.common.isLargeText
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -140,14 +147,27 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
                     Box(Modifier.weight(weights[i]).height(10.dp).clip(RoundedCornerShape(5.dp)).background(parts[i].color))
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                drawn.forEach { i ->
-                    SegmentLabel(
-                        label = parts[i].label + " · " + percent.format(raw[i]),
-                        value = money.format(parts[i].shown),
-                        color = parts[i].color,
-                        modifier = Modifier.weight(weights[i]),
-                    )
+            if (isLargeText()) {
+                // Each label at its own width, wrapping, instead of squeezed under its (maybe thin) segment.
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    drawn.forEach { i ->
+                        SegmentLabel(parts[i].label + " · " + percent.format(raw[i]), money.format(parts[i].shown), parts[i].color)
+                    }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    drawn.forEach { i ->
+                        SegmentLabel(
+                            label = parts[i].label + " · " + percent.format(raw[i]),
+                            value = money.format(parts[i].shown),
+                            color = parts[i].color,
+                            modifier = Modifier.weight(weights[i]),
+                        )
+                    }
                 }
             }
         } else {
@@ -163,7 +183,7 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
         }
         Text(
             stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")),
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 12.dp),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -182,7 +202,7 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
 private fun SegmentLabel(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Row(modifier.height(IntrinsicSize.Min)) {
         Box(Modifier.width(2.dp).fillMaxHeight().background(color))
-        Column(Modifier.padding(start = 6.dp)) {
+        Column(Modifier.padding(start = 8.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             Text(value, style = MaterialTheme.typography.titleSmall.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
@@ -269,8 +289,17 @@ fun PlatformSplit(totals: List<PlatformTotal>, money: MoneyFormat, modifier: Mod
     val percent = NumberFormat.getPercentInstance(currentLocale())
     val colors = totals.map { platformChartColor(it.colorArgb) }
     val gap = MaterialTheme.colorScheme.surface
+    val large = isLargeText()
     ChartCard(stringResource(R.string.split_by_app), modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // With large text the legend goes under the donut, full width, so names aren't broken ("Ube / r").
+        val layout: @Composable (@Composable () -> Unit, @Composable () -> Unit) -> Unit = { donut, legend ->
+            if (large) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { donut(); legend() }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) { donut(); Spacer(Modifier.width(20.dp)); legend() }
+            }
+        }
+        layout({
             Canvas(Modifier.size(96.dp)) {
                 val stroke = 20.dp.toPx()
                 val inset = stroke / 2
@@ -286,8 +315,8 @@ fun PlatformSplit(totals: List<PlatformTotal>, money: MoneyFormat, modifier: Mod
                     startAngle += sweep
                 }
             }
-            Spacer(Modifier.width(20.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        }, {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 totals.forEachIndexed { i, t ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(10.dp).clip(CircleShape).background(colors[i]))
@@ -304,7 +333,7 @@ fun PlatformSplit(totals: List<PlatformTotal>, money: MoneyFormat, modifier: Mod
                     }
                 }
             }
-        }
+        })
     }
 }
 
@@ -404,10 +433,25 @@ fun DailyActivity(
             Text(pick?.let { bucketName(it.date) } ?: stringResource(R.string.tap_a_bar), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             if (pick != null) Text(format(value(pick)), style = MaterialTheme.typography.titleLarge.tabular())
         }
+        // TalkBack: what the chart is, the selected day and its figure, and actions to move along the days
+        // (the bars themselves are drawn, so they can't be focused one by one).
+        val chartDescription = stringResource(if (monthly) R.string.chart_bars_month_description else R.string.chart_bars_description)
+        val previousLabel = stringResource(if (monthly) R.string.chart_previous_month else R.string.chart_previous_day)
+        val nextLabel = stringResource(if (monthly) R.string.chart_next_month else R.string.chart_next_day)
+        val selectedState = pick?.let { bucketName(it.date) + ": " + format(value(it)) }
         Canvas(
             Modifier
                 .fillMaxWidth()
                 .height(150.dp)
+                .semantics {
+                    contentDescription = chartDescription
+                    selectedState?.let { stateDescription = it }
+                    val at = selected
+                    customActions = listOfNotNull(
+                        driven.lastOrNull { at == null || it < at }?.let { i -> CustomAccessibilityAction(previousLabel) { selected = i; true } },
+                        driven.firstOrNull { at == null || it > at }?.let { i -> CustomAccessibilityAction(nextLabel) { selected = i; true } },
+                    )
+                }
                 .pointerInput(days, metric) {
                     detectTapGestures { offset ->
                         val index = (offset.x / (size.width.toFloat() / days.size)).toInt().coerceIn(0, days.lastIndex)
@@ -462,7 +506,7 @@ fun DailyActivity(
         if (metric == ActivityMetric.MONEY && days.any { it.estimatedMinor > 0 }) {
             Text(
                 stringResource(R.string.estimated_bars),
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -472,7 +516,7 @@ fun DailyActivity(
                 shown.forEach { p ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(10.dp).clip(CircleShape).background(colorOf.getValue(p.id)))
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(p.name, style = MaterialTheme.typography.labelMedium)
                     }
                 }
@@ -510,6 +554,11 @@ fun BestTimeToDrive(heat: List<List<Long>>, money: MoneyFormat, modifier: Modifi
     }
     val slots = listOf("00–04", "04–08", "08–12", "12–16", "16–20", "20–24")
     var picked by remember(heat) { mutableStateOf<Pair<Int, Int>?>(null) }
+    // Full weekday names for TalkBack ("Monday", not "Mon").
+    val weekdaysFull = remember(locale) {
+        java.time.DayOfWeek.entries.map { it.getDisplayName(TextStyle.FULL, locale).replaceFirstChar { c -> c.titlecase(locale) } }
+    }
+    val resources = LocalResources.current
 
     ChartCard(stringResource(R.string.best_time), modifier) {
         Row {
@@ -533,7 +582,11 @@ fun BestTimeToDrive(heat: List<List<Long>>, money: MoneyFormat, modifier: Modifi
                             .background(if (value == 0L) MaterialTheme.colorScheme.surface else lerp(low, high, (value.toFloat() / max).coerceIn(0.12f, 1f)))
                             .then(if (busiest) Modifier.border(2.dp, outline, RoundedCornerShape(4.dp)) else Modifier)
                             .then(if (value == 0L) Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp)) else Modifier)
-                            .clickable { picked = day to slot },
+                            .clickable { picked = day to slot }
+                            .semantics {
+                                val cell = resources.getString(R.string.heat_cell, weekdaysFull[day], slots[slot], money.format(value))
+                                contentDescription = if (busiest) resources.getString(R.string.heat_cell_busiest, cell) else cell
+                            },
                     )
                 }
             }

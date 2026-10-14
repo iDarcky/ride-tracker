@@ -371,7 +371,7 @@ fun VehicleScreen(
 /** One line of the month summary; a missing value shows as a dash, as the brief requires. */
 @Composable
 private fun Metric(label: String, value: String?) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         Text(value ?: "—", style = MaterialTheme.typography.titleMedium.tabular())
     }
@@ -433,7 +433,7 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
                         error = null
                     },
                     label = { Text(stringResource(R.string.odometer_reading_km)) },
-                    suffix = { Text("km") },
+                    suffix = { Text(stringResource(R.string.km_unit)) },
                     singleLine = true,
                     isError = error != null,
                     supportingText = error?.let { { Text(stringResource(it)) } },

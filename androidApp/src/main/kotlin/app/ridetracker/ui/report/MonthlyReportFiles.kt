@@ -234,13 +234,13 @@ private class ReportPage(
         private const val MARGIN = 40f
         private const val CARD_HEIGHT = 66f
 
-        // The cockpit colours on a light page.
-        private const val PRIMARY = 0xFF0A6C8B.toInt()
-        private const val POSITIVE = 0xFF146C3E.toInt()
-        private const val NEGATIVE = 0xFFBA1A1A.toInt()
-        private const val ON_SURFACE = 0xFF191C1E.toInt()
-        private const val MUTED = 0xFF40484C.toInt()
-        private const val OUTLINE = 0xFFC0C8CC.toInt()
-        private const val TRACK = 0xFFDCE4E8.toInt()
+        // The app's light theme (ui/theme/Theme.kt), so the report matches what the driver sees.
+        private const val PRIMARY = 0xFF136682.toInt() // primary
+        private const val POSITIVE = 0xFF146C3E.toInt() // positiveColor()
+        private const val NEGATIVE = 0xFFBA1A1A.toInt() // error
+        private const val ON_SURFACE = 0xFF171C1F.toInt() // onSurface
+        private const val MUTED = 0xFF40484C.toInt() // onSurfaceVariant
+        private const val OUTLINE = 0xFFC0C8CD.toInt() // outlineVariant
+        private const val TRACK = 0xFFDCE4E9.toInt() // surfaceVariant
     }
 }

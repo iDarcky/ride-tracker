@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.1
+- **Material 3 screen motion is back, done properly**: opening a screen and the back button use Material's shared
+  axis (a short slide with a fade, 250 ms); the back swipe is Material's **predictive back**: the screen shrinks,
+  rounds its corners and lifts off with a shadow, following your finger, with the previous screen behind it. Let go
+  to finish, or swipe back to cancel. Switching tabs stays instant.
+- **Large text** (phone font size up to 200%): Month / Week / Day / All no longer get cut; the kept / fees /
+  expenses labels, "Split by platform" and Money's total stack instead of breaking names or amounts; list notes
+  (like a document's date) aren't cut off.
+- **TalkBack**: the daily activity chart says what it is and which day is selected, with actions to move to the
+  previous or next day; every cell of "Best time to drive" reads its weekday, hours and fares; the navigation bar
+  reads as tabs with the selected one.
+- Smaller polish from the Material 3 audit: the few animations inside screens use the theme's Expressive motion,
+  spacing follows the 4 dp grid, the monthly report uses the app's own colours, "km" is translated.
+
 ## 0.16.0
 - **One month for the whole app**: the month you pick on Home is the one Income and Expenses show, and the other
   way round (a week or day on Home shows its month there). While another month is open, **This month** next to the

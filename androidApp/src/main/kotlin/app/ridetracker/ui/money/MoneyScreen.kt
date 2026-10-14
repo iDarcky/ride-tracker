@@ -1,5 +1,7 @@
 package app.ridetracker.ui.money
 
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.IconButton
 import app.ridetracker.ui.common.GlassDropdownMenu
 import androidx.compose.material.icons.outlined.Image
@@ -509,10 +511,16 @@ private fun TotalCard(
     onAdd: () -> Unit,
 ) {
     OutlinedCard(Modifier.fillMaxWidth().padding(16.dp)) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+        // With large text the Add button goes under the total, so the amount isn't broken mid-number ("RON 2, / 160.00").
+        FlowRow(
+            Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f).widthIn(min = 160.dp)) {
                 Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(money.format(totalMinor), style = MaterialTheme.typography.headlineMedium.tabular(), color = accent)
+                Text(money.format(totalMinor), style = MaterialTheme.typography.headlineMedium.tabular(), color = accent, softWrap = false)
                 if (previousMinor != null && previousMonth != null) {
                     val diff = totalMinor - previousMinor
                     val change = Comparisons.percentChange(totalMinor, previousMinor)
@@ -539,7 +547,7 @@ private fun TotalCard(
                 colors = ButtonDefaults.filledTonalButtonColors(containerColor = accentContainer, contentColor = onAccentContainer),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(addLabel)
             }
         }
@@ -585,11 +593,11 @@ internal fun ShareRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f, fill = false))
                 if (selected) {
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            LinearProgressIndicator(progress = { share }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp, end = 12.dp))
+            LinearProgressIndicator(progress = { share }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, end = 12.dp))
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(amount, style = MaterialTheme.typography.titleSmall.tabular())
@@ -600,7 +608,7 @@ internal fun ShareRow(
 
 @Composable
 internal fun TypeRow(label: String, amount: String, strong: Boolean = false) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
             label,
             Modifier.weight(1f),

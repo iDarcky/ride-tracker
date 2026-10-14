@@ -84,7 +84,7 @@ fun CategoryPicker(group: ExpenseGroup, category: ExpenseCategory, onGroup: (Exp
         Text(stringResource(R.string.category), style = MaterialTheme.typography.titleSmall)
         ConnectedChoice(ExpenseGroup.entries, group, onGroup) {
             Icon(it.icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(8.dp))
             Text(stringResource(it.label), maxLines = 1)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

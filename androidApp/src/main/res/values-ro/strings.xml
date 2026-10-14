@@ -220,6 +220,7 @@
     <string name="delete_reading_title">Ștergi această citire?</string>
     <string name="reading_deleted">Citire ștearsă</string>
     <string name="km_value">%1$s km</string>
+    <string name="km_unit">km</string>
     <string name="km_driven">Km parcurși</string>
     <string name="vehicle_costs">Costuri mașină</string>
     <string name="cost_per_km">Cost pe km</string>
@@ -461,6 +462,13 @@
     <string name="best_time">Când câștigi</string>
     <string name="best_time_caption">Tarifele curselor pe zile și ore: când ai condus și ai câștigat, nu cât plătește pe oră. Intervalul de top e conturat; atinge o căsuță pentru total.</string>
     <string name="heat_cell">%1$s, %2$s: %3$s din curse</string>
+    <string name="chart_bars_description">Grafic cu bare, o bară pe zi. Folosește acțiunile ca să treci de la o zi la alta.</string>
+    <string name="chart_bars_month_description">Grafic cu bare, o bară pe lună. Folosește acțiunile ca să treci de la o lună la alta.</string>
+    <string name="chart_previous_day">Ziua anterioară</string>
+    <string name="chart_next_day">Ziua următoare</string>
+    <string name="chart_previous_month">Luna anterioară</string>
+    <string name="chart_next_month">Luna următoare</string>
+    <string name="heat_cell_busiest">%1$s, cel mai bun interval</string>
     <string name="activity_money">Bani</string>
     <string name="activity_trips">Curse</string>
     <string name="best_day">cea mai bună %1$s %2$s</string>

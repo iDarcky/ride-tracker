@@ -98,7 +98,7 @@ fun TripDetailsScreen(
 
             // Uber's reports give what the driver earned on a trip (after Uber's fee), Bolt's what the rider paid.
             val afterFee = trip.importKind in uberTripKinds
-            Card(stringResource(R.string.trip_breakdown)) {
+            TripSection(stringResource(R.string.trip_breakdown)) {
                 Field(stringResource(R.string.trip_fare), if (afterFee) DASH else money.format(trip.fareMinor))
                 Field(stringResource(R.string.trip_platform_fee), DASH)
                 Field(stringResource(R.string.trip_driver_earnings), if (afterFee) money.format(trip.fareMinor) else DASH)
@@ -110,7 +110,7 @@ fun TripDetailsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Card(stringResource(R.string.trip_info)) {
+            TripSection(stringResource(R.string.trip_info)) {
                 Field(stringResource(R.string.trip_distance), trip.distanceMeters?.let { stringResource(R.string.km_value, "%.1f".format(locale, it / 1000.0)) } ?: DASH)
                 Field(stringResource(R.string.trip_duration), trip.durationSeconds?.let { stringResource(R.string.trip_minutes, (it / 60).toInt()) } ?: DASH)
                 Field(stringResource(R.string.trip_payment), stringResource(paymentName(trip.paymentMethod)))
@@ -137,9 +137,9 @@ private fun sourceName(kind: String): Int = when (ImportKind.fromId(kind)) {
 }
 
 @Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
+private fun TripSection(title: String, content: @Composable () -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             content()
         }
@@ -149,7 +149,7 @@ private fun Card(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun Field(label: String, value: String, divider: Boolean = true) {
     Column {
-        Row(Modifier.fillMaxWidth().padding(bottom = if (divider) 10.dp else 0.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = if (divider) 12.dp else 0.dp)) {
             Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
             Text(
                 value,

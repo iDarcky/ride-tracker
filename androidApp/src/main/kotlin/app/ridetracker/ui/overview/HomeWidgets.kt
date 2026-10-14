@@ -194,7 +194,7 @@ private fun ComparisonCardView(
                     row.metric == ComparisonMetric.TRIPS -> v.toString()
                     else -> money.format(v)
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(value(row.current), style = MaterialTheme.typography.titleMedium.tabular())
@@ -279,7 +279,7 @@ fun NeedsAttention(
     }
     var expanded by rememberSaveable { mutableStateOf(false) }
     OutlinedCard(modifier.fillMaxWidth()) {
-        Column(Modifier.padding(vertical = 8.dp).animateContentSize()) {
+        Column(Modifier.padding(vertical = 8.dp).animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec())) {
             Text(
                 stringResource(R.string.needs_attention),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -321,7 +321,7 @@ private fun AttentionRow(
     detailColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     actions: @Composable RowScope.() -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         leading()
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -416,7 +416,7 @@ private fun ExpenseGroups(state: OverviewUiState, money: MoneyFormat, percent: N
                     leadingContent = { ExpenseBadge(group.group.icon) },
                     headlineContent = { Text(stringResource(group.group.label)) },
                     supportingContent = {
-                        LinearProgressIndicator(progress = { share }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), color = MaterialTheme.colorScheme.tertiary)
+                        LinearProgressIndicator(progress = { share }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = MaterialTheme.colorScheme.tertiary)
                     },
                     trailingContent = {
                         Column(horizontalAlignment = Alignment.End) {

@@ -1,5 +1,26 @@
 package app.ridetracker.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NamedNavArgument
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.AnimatedContentScope
+import androidx.activity.BackEventCompat
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selectableGroup
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.mutableIntStateOf
 import app.ridetracker.ui.money.IncomeExpenseSwitch
 import androidx.compose.animation.AnimatedVisibility
@@ -161,20 +182,23 @@ fun AppNavigation() {
                 startDestination = Tab.HOME.route,
                 // The floating bar blurs whatever scrolls under it.
                 modifier = Modifier.hazeSource(haze),
-                // No screen animations (owner, 12 Oct 2026): every screen and tab changes instantly, going back too.
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None },
+                // Material 3 motion (owner, 14 Oct 2026, after 0.15.2 turned it off): screens open and close with
+                // the shared axis; swiping back is Material's predictive back. Tabs switch instantly.
+                enterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
+                exitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.openBehind },
+                popEnterTransition = { if (betweenTabs()) EnterTransition.None else ScreenMotion.backBehind },
+                popExitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.back },
+                predictivePopEnterTransition = { _ -> if (betweenTabs()) EnterTransition.None else ScreenMotion.predictiveBehind },
+                predictivePopExitTransition = { edge -> if (betweenTabs()) ExitTransition.None else ScreenMotion.predictiveBack(edge) },
             ) {
-                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
+                screen(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
                         onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
                     ) } }
-                composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
+                screen(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
                 } }
-                composable(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0, entries[Tab.MONEY] ?: 0) {
+                screen(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0, entries[Tab.MONEY] ?: 0) {
                     MoneyScreen(
                         tab = moneyTab,
                         onAddIncome = { nav.navigate("entry") },
@@ -185,14 +209,14 @@ fun AppNavigation() {
                         onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
                     )
                 } }
-                composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
+                screen(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
                     VehicleScreen(
                         onEditVehicle = { nav.navigate("vehicle/edit") },
                         onOpenDocument = { nav.navigate("vehicle/document/$it") },
                         onEditDocument = { nav.navigate("vehicle/document/$it/edit") },
                     )
                 } }
-                composable("menu") {
+                screen("menu") {
                     MenuScreen(
                         onClose = { nav.popBackStack() },
                         onManagePlatforms = { nav.navigate("platforms") },
@@ -201,18 +225,18 @@ fun AppNavigation() {
                         onSettings = { nav.navigate("settings") },
                     )
                 }
-                composable("settings") {
+                screen("settings") {
                     SettingsScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                 }
                 SettingsPage.entries.forEach { page ->
-                    composable(page.route) {
+                    screen(page.route) {
                         SettingsChoicePage(page, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                     }
                 }
-                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
-                composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
-                composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
-                composable(
+                screen("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
+                screen("export") { ExportScreen(onBack = { nav.popBackStack() }) }
+                screen("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
+                screen(
                     "vehicle/document/{id}?renew={renew}",
                     arguments = listOf(
                         navArgument("id") { type = NavType.LongType },
@@ -228,35 +252,35 @@ fun AppNavigation() {
                         onOpenExpense = { nav.navigate("expense?id=$it") },
                     )
                 }
-                composable("vehicle/document/{id}/edit", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                screen("vehicle/document/{id}/edit", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     DocumentEditScreen(documentId = entry.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
                 }
-                composable(
+                screen(
                     "entry?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     EntryScreen(onDone = { nav.popBackStack() }, onManagePlatforms = { nav.navigate("platforms") })
                 }
-                composable(
+                screen(
                     "expense?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     ExpenseScreen(onDone = { nav.popBackStack() }, onOpenDocument = { nav.navigate("vehicle/document/$it") })
                 }
-                composable("recurring") {
+                screen("recurring") {
                     RecurringListScreen(onBack = { nav.popBackStack() }, onEdit = { id -> nav.navigate("recurring/$id") })
                 }
-                composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                screen("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
-                composable("import") {
+                screen("import") {
                     ImportScreen(onDone = { nav.popBackStack() }, onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) }, sharedFiles = sharedFiles)
                 }
-                composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                screen("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
                 }
-                composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
-                composable(
+                screen("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
+                screen(
                     "platform-income/{id}/{month}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType }, navArgument("month") { type = NavType.LongType }),
                 ) { entry ->
@@ -270,9 +294,9 @@ fun AppNavigation() {
         }
         AnimatedVisibility(
             visible = currentTab != null,
-            // Instant, like the screens.
-            enter = EnterTransition.None,
-            exit = ExitTransition.None,
+            // The bar fades with its screen (tab switches keep it, so they stay instant).
+            enter = fadeIn(ScreenMotion.barFade),
+            exit = fadeOut(ScreenMotion.barFade),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             // The + is a circle exactly as tall as the bar.
@@ -283,8 +307,8 @@ fun AppNavigation() {
             Box(contentAlignment = Alignment.BottomCenter) {
                 AnimatedVisibility(
                     visible = lastTab == Tab.MONEY,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                    exit = fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
                     modifier = Modifier.navigationBarsPadding().padding(bottom = 16.dp + barHeight + 8.dp),
                 ) {
                     IncomeExpenseSwitch(tab = moneyTab, haze = haze, onSelect = { moneyTab = it })
@@ -321,6 +345,64 @@ fun AppNavigation() {
     }
 }
 
+/**
+ * Material 3 screen motion. Opening a screen and the back button use the shared axis (a short slide with a cross-fade);
+ * the back gesture is Material's predictive back: the screen shrinks to 90%, rounds its corners and follows the finger
+ * toward the side it's swiped from, with the previous screen still behind it. Released, it finishes leaving; cancelled,
+ * it springs back. Kept short: 300 ms felt slow (owner, 12 Oct 2026).
+ */
+private object ScreenMotion {
+    private const val DURATION = 250
+    private val easing = CubicBezierEasing(0.2f, 0f, 0f, 1f) // Material emphasized
+    private fun <T> slide() = tween<T>(DURATION, easing = easing)
+    private val fadeInLate = tween<Float>(DURATION * 2 / 3, delayMillis = DURATION / 3, easing = LinearEasing)
+    private val fadeOutEarly = tween<Float>(DURATION / 3, easing = LinearEasing)
+
+    val open: EnterTransition = slideInHorizontally(slide()) { it / 10 } + fadeIn(fadeInLate)
+    val openBehind: ExitTransition = slideOutHorizontally(slide()) { -it / 10 } + fadeOut(fadeOutEarly)
+    val back: ExitTransition = slideOutHorizontally(slide()) { it / 10 } + fadeOut(fadeOutEarly)
+    val backBehind: EnterTransition = slideInHorizontally(slide()) { -it / 10 } + fadeIn(fadeInLate)
+
+    /** The screen behind stays put while the one on top is swiped away. */
+    val predictiveBehind: EnterTransition = EnterTransition.None
+
+    /** Shrinks to 90% and drifts toward the swiped side; it only fades out in the last part, once back is committed. */
+    fun predictiveBack(swipeEdge: Int): ExitTransition {
+        val toRight = swipeEdge == BackEventCompat.EDGE_LEFT
+        return scaleOut(tween(DURATION, easing = LinearEasing), targetScale = 0.9f) +
+            slideOutHorizontally(tween(DURATION, easing = LinearEasing)) { width -> if (toRight) width / 12 else -width / 12 } +
+            fadeOut(tween(DURATION, easing = { t -> ((t - 0.7f) / 0.3f).coerceIn(0f, 1f) }))
+    }
+
+    /** Corners of a screen while it leaves, like a card. */
+    val corner = 28.dp
+    val shadow = 12.dp
+
+    val barFade = tween<Float>(DURATION / 2, easing = LinearEasing)
+}
+
+/** A destination that rounds its corners while it leaves (predictive back). */
+private fun NavGraphBuilder.screen(
+    route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
+) = composable(route, arguments) { entry ->
+    val leaving: (EnterExitState) -> Boolean = { it == EnterExitState.PostExit }
+    val corner by transition.animateDp(label = "screen corner") { if (leaving(it)) ScreenMotion.corner else 0.dp }
+    // A soft shadow so the card stands out from the screen behind, which has the same background.
+    val shadow by transition.animateDp(label = "screen shadow") { if (leaving(it)) ScreenMotion.shadow else 0.dp }
+    Box(
+        Modifier.fillMaxSize().graphicsLayer {
+            shape = RoundedCornerShape(corner)
+            clip = true
+            shadowElevation = shadow.toPx()
+        },
+    ) { content(entry) }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boolean =
+    Tab.entries.any { it.route == initialState.destination.route } && Tab.entries.any { it.route == targetState.destination.route }
+
 @Composable
 private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () -> Unit) {
     // Tab screens always keep room for the floating bar, so nothing jumps when the bar shows or hides.
@@ -350,17 +432,25 @@ private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Uni
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier
-            .animateContentSize()
+            // The selected tab's label grows with the theme's Expressive spring.
+            .animateContentSize(MaterialTheme.motionScheme.fastSpatialSpec())
             .clip(CircleShape)
+            .semantics { selectableGroup() }
             .hazeBlur(HazeInput.Sources(haze), glass)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = Color.Transparent),
     ) {
         Tab.entries.forEach { tab ->
             val label = stringResource(tab.label)
+            // TalkBack: "Money, tab, 2 of 4, selected", not just a button.
+            val tabSemantics = Modifier.semantics {
+                role = Role.Tab
+                selected = tab == current
+            }
             if (tab == current) {
                 FilledTonalButton(
                     onClick = { onSelect(tab) },
+                    modifier = tabSemantics,
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -371,7 +461,7 @@ private fun FloatingNavBar(current: Tab, haze: HazeState, onSelect: (Tab) -> Uni
                     Text(label, maxLines = 1)
                 }
             } else {
-                IconButton(onClick = { onSelect(tab) }) {
+                IconButton(onClick = { onSelect(tab) }, modifier = tabSemantics) {
                     Icon(tab.icon, contentDescription = label)
                 }
             }

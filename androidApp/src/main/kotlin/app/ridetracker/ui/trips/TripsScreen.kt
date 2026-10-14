@@ -241,7 +241,7 @@ private fun Summary(state: TripsUiState, money: MoneyFormat) {
 @Composable
 private fun DayHeader(day: TripDay, money: MoneyFormat, dates: DateFormats) {
     Row(
-        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(top = 12.dp, bottom = 6.dp, start = 4.dp, end = 4.dp),
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(top = 12.dp, bottom = 8.dp, start = 4.dp, end = 4.dp),
     ) {
         Text(
             dates.day(day.date),
