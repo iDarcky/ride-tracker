@@ -165,4 +165,38 @@ class UberScreensTest {
         assertNull(UberPaymentsParser.parse(earningsRows, taken))
         assertFalse(UberEarningsParser.recognises(listOf("Earnings breakdown", "Your earnings lei 10.00", "Bolt commission -lei 2.00")))
     }
+
+    /** Romanian Uber (made-up numbers, the layout of a real screen). */
+    private val romanianRows = listOf(
+        "12 oct. - 19 oct.",
+        "250,40 RON",
+        "310,20 RON",
+        "12 13 14 15 16 17 18",
+        "L Ma Mi J V S D",
+        "Statistici",
+        "Conectat(ă) Curse",
+        "6 h 12 m 17",
+        "Puncte",
+        "25",
+        "Cum calculăm statisticile",
+        "Detaliere",
+        "Tariful net",
+        "244,40 RON",
+        "Recompensa",
+        "6,00 RON",
+        "Câștiguri totale 250,40 RON",
+        "Vezi detalierea tarifului achitat de client",
+        "Afișează veniturile",
+    )
+
+    @Test
+    fun readsRomanianEarningsScreen() {
+        val e = assertNotNull(UberEarningsParser.parse(romanianRows, LocalDate(2026, 10, 15), selectedDayOfMonth = 14))
+        assertEquals(LocalDate(2026, 10, 14), e.day)
+        assertEquals(25040, e.earningsMinor)
+        assertEquals(6 * 60 + 12, e.onlineMinutes)
+        assertEquals(17, e.trips)
+        assertEquals(listOf(IncomeLineKind.FARE to 24440L, IncomeLineKind.BONUS to 600L), e.lines.map { it.kind to it.amountMinor })
+        assertTrue(e.addsUp)
+    }
 }

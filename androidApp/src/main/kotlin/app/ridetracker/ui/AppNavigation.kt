@@ -1,24 +1,7 @@
 package app.ridetracker.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.Easing
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NamedNavArgument
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.EnterExitState
-import androidx.compose.animation.AnimatedContentScope
-import androidx.activity.BackEventCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selectableGroup
 import androidx.compose.ui.semantics.selected
@@ -44,7 +27,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.annotation.StringRes
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeIn
@@ -90,7 +72,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -185,29 +166,25 @@ fun AppNavigation() {
                 startDestination = Tab.HOME.route,
                 // The floating bar blurs whatever scrolls under it.
                 modifier = Modifier.hazeSource(haze),
-                // Material 3 motion (owner, 14 Oct 2026, after 0.15.2 turned it off): screens open and close with
-                // the shared axis; swiping back is Material's predictive back. Tabs switch instantly.
-                enterTransition = { ScreenMotion.revealing = null; if (betweenTabs()) EnterTransition.None else ScreenMotion.open },
-                exitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.openBehind },
-                popEnterTransition = {
-                    ScreenMotion.revealing = targetState.id
-                    if (betweenTabs()) EnterTransition.None else ScreenMotion.backBehind
-                },
-                popExitTransition = { if (betweenTabs()) ExitTransition.None else ScreenMotion.back },
-                predictivePopEnterTransition = { _ ->
-                    ScreenMotion.revealing = targetState.id
-                    if (betweenTabs()) EnterTransition.None else ScreenMotion.predictiveBehind
-                },
-                predictivePopExitTransition = { edge -> if (betweenTabs()) ExitTransition.None else ScreenMotion.predictiveBack(edge) },
+                // No screen animations (owner, 14 Oct 2026, again after trying Material motion in 0.16.1–0.16.2):
+                // every screen and tab changes instantly, going back too.
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
+                // The back swipe too: without these, Navigation plays its own shrink animation while swiping (what
+                // 0.15.2 still showed). Now nothing moves until back is done; Android shows only its arrow.
+                predictivePopEnterTransition = { EnterTransition.None },
+                predictivePopExitTransition = { ExitTransition.None },
             ) {
-                screen(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
                         onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
                     ) } }
-                screen(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
+                composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
                 } }
-                screen(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0, entries[Tab.MONEY] ?: 0) {
+                composable(Tab.MONEY.route) { ReselectScope(reselects[Tab.MONEY] ?: 0, entries[Tab.MONEY] ?: 0) {
                     MoneyScreen(
                         tab = moneyTab,
                         onAddIncome = { nav.navigate("entry") },
@@ -218,14 +195,14 @@ fun AppNavigation() {
                         onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
                     )
                 } }
-                screen(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
+                composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
                     VehicleScreen(
                         onEditVehicle = { nav.navigate("vehicle/edit") },
                         onOpenDocument = { nav.navigate("vehicle/document/$it") },
                         onEditDocument = { nav.navigate("vehicle/document/$it/edit") },
                     )
                 } }
-                screen("menu") {
+                composable("menu") {
                     MenuScreen(
                         onClose = { nav.popBackStack() },
                         onManagePlatforms = { nav.navigate("platforms") },
@@ -234,18 +211,18 @@ fun AppNavigation() {
                         onSettings = { nav.navigate("settings") },
                     )
                 }
-                screen("settings") {
+                composable("settings") {
                     SettingsScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                 }
                 SettingsPage.entries.forEach { page ->
-                    screen(page.route) {
+                    composable(page.route) {
                         SettingsChoicePage(page, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                     }
                 }
-                screen("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
-                screen("export") { ExportScreen(onBack = { nav.popBackStack() }) }
-                screen("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
-                screen(
+                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
+                composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
+                composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
+                composable(
                     "vehicle/document/{id}?renew={renew}",
                     arguments = listOf(
                         navArgument("id") { type = NavType.LongType },
@@ -261,35 +238,35 @@ fun AppNavigation() {
                         onOpenExpense = { nav.navigate("expense?id=$it") },
                     )
                 }
-                screen("vehicle/document/{id}/edit", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                composable("vehicle/document/{id}/edit", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     DocumentEditScreen(documentId = entry.arguments?.getLong("id") ?: 0L, onDone = { nav.popBackStack() })
                 }
-                screen(
+                composable(
                     "entry?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     EntryScreen(onDone = { nav.popBackStack() }, onManagePlatforms = { nav.navigate("platforms") })
                 }
-                screen(
+                composable(
                     "expense?id={id}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
                 ) {
                     ExpenseScreen(onDone = { nav.popBackStack() }, onOpenDocument = { nav.navigate("vehicle/document/$it") })
                 }
-                screen("recurring") {
+                composable("recurring") {
                     RecurringListScreen(onBack = { nav.popBackStack() }, onEdit = { id -> nav.navigate("recurring/$id") })
                 }
-                screen("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
-                screen("import") {
+                composable("import") {
                     ImportScreen(onDone = { nav.popBackStack() }, onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) }, sharedFiles = sharedFiles)
                 }
-                screen("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
                 }
-                screen("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
-                screen(
+                composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
+                composable(
                     "platform-income/{id}/{month}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType }, navArgument("month") { type = NavType.LongType }),
                 ) { entry ->
@@ -303,9 +280,9 @@ fun AppNavigation() {
         }
         AnimatedVisibility(
             visible = currentTab != null,
-            // The bar fades with its screen (tab switches keep it, so they stay instant).
-            enter = fadeIn(ScreenMotion.barFade),
-            exit = fadeOut(ScreenMotion.barFade),
+            // Instant, like the screens.
+            enter = EnterTransition.None,
+            exit = ExitTransition.None,
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             // The + is a circle exactly as tall as the bar.
@@ -353,85 +330,6 @@ fun AppNavigation() {
         }
     }
 }
-
-/**
- * Material 3 screen motion. Opening a screen and the back button use the shared axis (a short slide with a cross-fade);
- * the back gesture matches Android's own predictive back (compared with Settings on the emulator, 14 Oct 2026): the
- * screen shrinks to 85%, rounds its corners, lifts with a shadow and drifts toward the side it's swiped from; the
- * screen behind waits dimmed and shifted to the left, and slides into place once back is committed. Cancelled, it all
- * springs back. Kept short: 300 ms felt slow (owner, 12 Oct 2026).
- */
-private object ScreenMotion {
-    private const val DURATION = 250
-    private val easing = CubicBezierEasing(0.2f, 0f, 0f, 1f) // Material emphasized
-    private fun <T> slide() = tween<T>(DURATION, easing = easing)
-    private val fadeInLate = tween<Float>(DURATION * 2 / 3, delayMillis = DURATION / 3, easing = LinearEasing)
-    private val fadeOutEarly = tween<Float>(DURATION / 3, easing = LinearEasing)
-
-    val open: EnterTransition = slideInHorizontally(slide()) { it / 10 } + fadeIn(fadeInLate)
-    val openBehind: ExitTransition = slideOutHorizontally(slide()) { -it / 10 } + fadeOut(fadeOutEarly)
-    val back: ExitTransition = slideOutHorizontally(slide()) { it / 10 } + fadeOut(fadeOutEarly)
-    val backBehind: EnterTransition = slideInHorizontally(slide()) { -it / 10 } + fadeIn(fadeInLate)
-
-    /** Most of the shrink in the first part of the swipe, like Android's own (the card is small almost at once). */
-    private val early = Easing { t -> 1f - (1f - t) * (1f - t) * (1f - t) }
-
-    /** Mostly still while the finger moves, then quickly into place: the gesture covers the start, the release the end. */
-    private val late = Easing { t -> t * t * t }
-
-    /** The screen behind waits a fifth of the width to the left (a parallax) and slides in once back is committed. */
-    val predictiveBehind: EnterTransition = slideInHorizontally(tween(DURATION, easing = late)) { -it / 5 }
-
-    /** Dims the screen being revealed, fading as it slides into place. */
-    const val REVEAL_SCRIM = 0.2f
-    val scrimSpec = tween<Float>(DURATION, easing = late)
-
-    /** The screen being revealed by going back (its back stack entry id), so it can wear the scrim. */
-    var revealing by mutableStateOf<String?>(null)
-
-    /** Shrinks to 85% and drifts toward the swiped side; it only fades out in the last part, once back is committed. */
-    fun predictiveBack(swipeEdge: Int): ExitTransition {
-        val toRight = swipeEdge == BackEventCompat.EDGE_LEFT
-        return scaleOut(tween(DURATION, easing = early), targetScale = 0.85f) +
-            slideOutHorizontally(tween(DURATION, easing = early)) { width -> if (toRight) width / 16 else -width / 16 } +
-            fadeOut(tween(DURATION, easing = { t -> ((t - 0.7f) / 0.3f).coerceIn(0f, 1f) }))
-    }
-
-    /** Corners of a screen while it leaves, like a card. */
-    val corner = 28.dp
-    val shadow = 12.dp
-
-    val barFade = tween<Float>(DURATION / 2, easing = LinearEasing)
-}
-
-/** A destination that rounds its corners while it leaves (predictive back). */
-private fun NavGraphBuilder.screen(
-    route: String,
-    arguments: List<NamedNavArgument> = emptyList(),
-    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
-) = composable(route, arguments) { entry ->
-    val leaving: (EnterExitState) -> Boolean = { it == EnterExitState.PostExit }
-    val corner by transition.animateDp(label = "screen corner") { if (leaving(it)) ScreenMotion.corner else 0.dp }
-    // A soft shadow so the card stands out from the screen behind, which has the same background.
-    val shadow by transition.animateDp(label = "screen shadow") { if (leaving(it)) ScreenMotion.shadow else 0.dp }
-    // The screen being revealed by back starts dimmed and brightens as it slides into place.
-    val scrim by transition.animateFloat(transitionSpec = { ScreenMotion.scrimSpec }, label = "screen scrim") {
-        if (it == EnterExitState.PreEnter && ScreenMotion.revealing == entry.id) ScreenMotion.REVEAL_SCRIM else 0f
-    }
-    Box(
-        Modifier.fillMaxSize().graphicsLayer {
-            shape = RoundedCornerShape(corner)
-            clip = true
-            shadowElevation = shadow.toPx()
-        },
-    ) {
-        content(entry)
-        if (scrim > 0f) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = scrim)))
-    }
-}
-
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs(): Boolean =
-    Tab.entries.any { it.route == initialState.destination.route } && Tab.entries.any { it.route == targetState.destination.route }
 
 @Composable
 private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () -> Unit) {

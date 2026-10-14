@@ -312,7 +312,11 @@ class ReportReader(private val context: Context) {
     }
 
     private companion object {
-        val WEEKDAYS = setOf("mon", "tue", "wed", "thu", "fri", "sat", "sun", "lun", "mar", "mie", "joi", "vin", "sam", "dum")
+        // Romanian Uber labels the days with one or two letters: L, Ma, Mi, J, V, S, D.
+        val WEEKDAYS = setOf(
+            "mon", "tue", "wed", "thu", "fri", "sat", "sun", "lun", "mar", "mie", "joi", "vin", "sam", "dum",
+            "l", "ma", "mi", "j", "v", "s", "d",
+        )
     }
 
     private fun sha256(bytes: ByteArray): String =

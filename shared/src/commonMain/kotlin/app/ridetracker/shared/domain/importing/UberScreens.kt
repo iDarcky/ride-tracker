@@ -118,11 +118,14 @@ object UberEarningsParser {
 
     private fun number(text: String): Int? = text.replace('l', '1').replace('i', '1').toIntOrNull()
 
-    /** Earnings screen, English (Romanian labels to be checked against real screenshots). */
+    /** "Online" in English; Romanian Uber says "Conectat(ă)" (checked against the owner's screenshot, 15 Oct 2026). */
+    private fun isOnlineLabel(row: String) = "online" in row || "conectat" in row
+
+    /** Earnings screen, English or Romanian. */
     fun recognises(rows: List<String>): Boolean {
         val plain = rows.map(ReportText::plain)
         val hasTotal = plain.any { it.startsWith("total earnings") || it.startsWith("castiguri totale") || it.startsWith("total castiguri") }
-        val hasStats = plain.any { "online" in it } && plain.any { it == "stats" || it == "statistici" || "trips" in it || "curse" in it }
+        val hasStats = plain.any(::isOnlineLabel) && plain.any { it == "stats" || it == "statistici" || "trips" in it || "curse" in it }
         return hasTotal && hasStats
     }
 
@@ -135,11 +138,11 @@ object UberEarningsParser {
         }
         val plain = rows.map(ReportText::plain)
 
-        // "Online Trips" over "2 h 20 m 8": time first, then the trip count, which text recognition sometimes puts
-        // on a row of its own. The stats end at "Points".
+        // "Online Trips" over "2 h 20 m 8" ("Conectat(ă) Curse" in Romanian): time first, then the trip count, which
+        // text recognition sometimes puts on a row of its own. The stats end at "Points" ("Puncte").
         var online: Int? = null
         var trips: Int? = null
-        val statsRow = plain.indexOfFirst { "online" in it }
+        val statsRow = plain.indexOfFirst(::isOnlineLabel)
         if (statsRow >= 0) {
             val values = plain.drop(statsRow + 1).takeWhile { "points" !in it && "puncte" !in it && "how we" !in it }.take(3)
             for (v in values) {
@@ -154,7 +157,7 @@ object UberEarningsParser {
         }
 
         // Breakdown: a label on one row, its amount on the next ("Net Fare" / "RON 120.00"), up to "Total Earnings".
-        val start = plain.indexOfFirst { it == "breakdown" || it == "defalcare" }
+        val start = plain.indexOfFirst { it == "breakdown" || it == "defalcare" || it == "detaliere" }
         val end = plain.indexOfFirst { it.startsWith("total earnings") || it.startsWith("castiguri totale") || it.startsWith("total castiguri") }
         if (end < 0) return null
         val total = ReportText.amountRow(rows[end])?.amountMinor ?: return null
@@ -181,7 +184,8 @@ object UberEarningsParser {
         return when {
             "fare" in l || "tarif" in l -> IncomeLineKind.FARE
             "tip" in l || "bacsis" in l -> IncomeLineKind.TIP
-            "quest" in l || "boost" in l || "promotion" in l || "promotie" in l || "incentive" in l || "surge" in l -> IncomeLineKind.BONUS
+            "quest" in l || "boost" in l || "promotion" in l || "promotie" in l || "incentive" in l || "surge" in l ||
+                "recompens" in l || "reward" in l -> IncomeLineKind.BONUS
             "cancel" in l || "anulare" in l -> IncomeLineKind.CANCELLATION_FEE
             "toll" in l -> IncomeLineKind.TOLL
             "airport" in l || "aeroport" in l -> IncomeLineKind.AIRPORT_FEE

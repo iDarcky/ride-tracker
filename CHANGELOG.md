@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.3
+- **No screen animations, really this time**: screens open and close instantly, and the back swipe no longer moves
+  anything while you swipe (only Android's arrow shows); the screen changes when you let go. 0.15.2 still had the
+  navigation library's own shrink-and-overlap animation during the swipe; that's gone too. The Material motion from
+  0.16.1–0.16.2 is removed.
+- **Uber in Romanian**: the Earnings screen in Romanian ("Conectat(ă)", "Curse", "Detaliere", "Recompensa") is now
+  read, with the day's hours online and number of rides; "Recompensa" counts as a bonus. Before, the Romanian screen
+  wasn't recognised at all.
+
 ## 0.16.2
 - **Back swipe now matches Android's own** (compared side by side with the Settings app): the screen behind waits
   dimmed and shifted a little to the left, then slides into place when you let go; the screen you're leaving
