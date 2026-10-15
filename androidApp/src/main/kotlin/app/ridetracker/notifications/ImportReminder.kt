@@ -111,7 +111,8 @@ class ImportReminderReceiver : BroadcastReceiver() {
                     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
                     val range = DateRange(today.minus(DatePeriod(days = ImportReminders.LOOKBACK_DAYS)), today)
                     val entries = container.incomeRepository.observeEntryDetails(range).first()
-                    if (ImportReminders.shouldRemind(today, entries)) ImportReminderScheduler.notify(context)
+                    val daysOff = container.importRepository.observeDaysOff().first()
+                    if (ImportReminders.shouldRemind(today, entries, daysOff)) ImportReminderScheduler.notify(context)
                 }
                 ImportReminderScheduler.reschedule(context)
             } finally {

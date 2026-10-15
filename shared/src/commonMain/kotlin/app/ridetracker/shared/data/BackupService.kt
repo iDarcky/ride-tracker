@@ -43,6 +43,8 @@ data class BackupFile(
     val periodSummaries: List<BackupPeriodSummary> = emptyList(),
     /** Added in format 8 (0.14.0). */
     val vehicleDocuments: List<BackupVehicleDocument> = emptyList(),
+    /** Added in format 10 (0.18.0): days marked "Didn't drive", as ISO dates. */
+    val daysOff: List<String> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "ridetracker-backup"
@@ -51,7 +53,8 @@ data class BackupFile(
          *  6: + income details, income lines, imports, trips and period summaries (0.1.0). */
         // 7: expenses can be tax deductible (an older app would drop the mark). 8: + car documents.
         // 9: expenses can be linked to a car document (an older app would drop the link).
-        const val FORMAT_VERSION = 9
+        // 10: + days off (an older app would drop them).
+        const val FORMAT_VERSION = 10
     }
 }
 
@@ -309,6 +312,7 @@ class BackupService(
                     it.fareMinor, it.paymentMethod, it.distanceMeters, it.durationSeconds,
                 )
             },
+            daysOff = database.dayOffDao().getAll().map { day(it.date) },
             periodSummaries = database.importDao().getAllSummaries().map {
                 BackupPeriodSummary(
                     it.id, it.platformId, it.importBatchId, day(it.periodStart), day(it.periodEnd), it.grossFareMinor,
@@ -428,6 +432,7 @@ class BackupService(
                 database.vehicleDao().insertReadings(readings)
                 database.vehicleDao().insertDocuments(documents)
                 database.recurringExpenseDao().insertAll(recurring)
+                database.dayOffDao().insertAll(file.daysOff.map { DayOffEntity(epochDay(it)) })
             }
         }
         val s = file.settings
@@ -478,6 +483,7 @@ class BackupService(
                 database.importDao().deleteAllLines()
                 database.incomeEntryDao().deleteAll()
                 database.importDao().deleteAllBatches()
+                database.dayOffDao().deleteAll()
             }
         }
     }
@@ -495,6 +501,7 @@ class BackupService(
         database.incomeEntryDao().deleteAll()
         database.importDao().deleteAllBatches()
         database.platformDao().deleteAll()
+        database.dayOffDao().deleteAll()
     }
 
     private fun day(epochDay: Long): String = LocalDate.fromEpochDays(epochDay).toString()

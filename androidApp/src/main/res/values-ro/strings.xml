@@ -306,31 +306,12 @@
     <string name="import_empty_body">Capturile și fișierele se citesc pe acest telefon; nu se încarcă nimic.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Importat</string>
-    <string name="checklist_monthly">Captura lunară</string>
-    <string name="checklist_monthly_later">Fă-o după ce se termină luna</string>
-    <string name="checklist_monthly_missing">Lipsește: bonusurile și totalul exact</string>
     <string name="checklist_monthly_how">În Bolt Driver: Câștiguri → Defalcarea câștigurilor → Lunar, alege luna și fă o captură de ecran. Doar aici apar bonusurile și totalul exact.</string>
-    <string name="checklist_daily">Capturi zilnice</string>
-    <string name="checklist_daily_optional">Opțional: totalul lunar e exact; acestea adaugă card și numerar pe zile</string>
-    <string name="checklist_daily_how">Defalcarea câștigurilor → Zilnic, câte o captură pe zi. Aduce ziua exact, cu card și numerar.</string>
     <string name="checklist_trips">Curse (facturi pasageri CSV)</string>
-    <string name="checklist_trips_missing">Lipsește: ora și plata fiecărei curse</string>
     <string name="checklist_trips_how">Din portalul Bolt pentru șoferi, pe web: descarcă facturile către pasageri pentru lună ca CSV, apoi Alege fișiere aici. Nu conține numele pasagerilor.</string>
     <string name="checklist_hours">Ore online</string>
-    <string name="checklist_hours_missing">Lipsește: cât câștigi pe oră</string>
     <string name="checklist_hours_how">În Bolt Driver: Activitate → Ore → În ultimele 3 luni, atinge bara lunii ca să apară orele, apoi fă o captură.</string>
     <string name="checklist_how">Cum o obții</string>
-    <string name="import_whats_missing">Datele tale din Bolt</string>
-    <plurals name="checklist_days_with">
-        <item quantity="one">%d zi cu captură</item>
-        <item quantity="few">%d zile cu captură</item>
-        <item quantity="other">%d de zile cu captură</item>
-    </plurals>
-    <plurals name="checklist_days_without">
-        <item quantity="one">%d fără</item>
-        <item quantity="few">%d fără</item>
-        <item quantity="other">%d fără</item>
-    </plurals>
     <string name="import_choose_screenshots">Alege capturi de ecran</string>
     <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ridely.</string>
     <string name="import_add_screenshots">Adaugă capturi</string>
@@ -585,27 +566,13 @@
         <item quantity="few">%d plătite cash</item>
         <item quantity="other">%d plătite cash</item>
     </plurals>
-    <string name="import_whats_missing_uber">Datele tale din Uber</string>
-    <string name="checklist_uber_intro">Pe supplier.uber.com → Rapoarte, descarcă aceste fișiere pentru toată luna. Uber îți dă mai multe; ai nevoie doar de aceste patru.</string>
     <string name="checklist_uber_title">Uber · %1$s</string>
     <string name="checklist_uber_payments">Plăți (payments_order)</string>
-    <string name="checklist_uber_payments_missing">Lipsește: venitul pe zile</string>
     <string name="checklist_uber_payments_how">Pe supplier.uber.com → Rapoarte, alege luna și descarcă raportul de plăți: numele fișierului conține payments_order. Are venitul fiecărei zile, bonusurile și numerarul.</string>
     <string name="checklist_uber_totals">Totaluri cu comisionul Uber (payments_organization)</string>
-    <string name="checklist_uber_totals_later">Descarcă-l după ce se termină luna</string>
-    <string name="checklist_uber_totals_missing">Lipsește: comisionul Uber</string>
-    <string name="checklist_uber_totals_how">Tot acolo, fișierul care are payments_organization în nume. Doar el are comisionul Uber și tarifele înainte de comision.</string>
     <string name="checklist_uber_trips">Curse (trip_activity)</string>
-    <string name="checklist_uber_trips_missing">Lipsește: ora, km și plata fiecărei curse</string>
     <string name="checklist_uber_trips_how">Fișierul care are trip_activity în nume. Adresele din el nu se salvează.</string>
     <string name="checklist_uber_hours">Timp și km (driver_time_and_distance)</string>
-    <string name="checklist_uber_hours_missing">Lipsește: câștigul pe oră și km</string>
-    <string name="checklist_uber_hours_how">Fișierul care are driver_time_and_distance în nume: orele online și km parcurși.</string>
-    <plurals name="checklist_uber_days">
-        <item quantity="one">%d zi cu venit</item>
-        <item quantity="few">%d zile cu venit</item>
-        <item quantity="other">%d de zile cu venit</item>
-    </plurals>
     <!-- Capturi Uber -->
     <string name="import_uber_day">Uber · zi</string>
     <string name="import_uber_week">Uber · săptămână</string>
@@ -779,11 +746,10 @@
     <string name="import_today_week">Ultimele 7 zile</string>
     <string name="import_day_done">%1$s: importată</string>
     <string name="import_day_missing">%1$s: neimportată</string>
-    <string name="import_month_intro">După ce se termină luna, acestea aduc totalul exact, comisioanele platformelor și orele, și completează zilele fără captură.</string>
     <string name="import_reminder_row">Amintește-mi în fiecare seară</string>
     <string name="import_reminder_row_on">Notificare în fiecare zi la %1$s</string>
     <string name="import_reminder_setting">Notificare pentru import</string>
-    <string name="import_reminder_intro">O notificare în fiecare seară ca să imporți capturile zilei din Bolt și Uber. Nu mai apare dacă ziua e deja importată.</string>
+    <string name="import_reminder_intro">O notificare în fiecare seară ca să imporți capturile zilei din Bolt și Uber. Nu mai apare dacă ziua e deja importată sau marcată ca zi liberă. Pe 1 ale lunii îți amintește și de fișierele lunii trecute.</string>
     <string name="import_reminder_channel">Notificare pentru import</string>
     <string name="import_reminder_channel_description">Notificare seara pentru importul capturilor zilei</string>
     <string name="import_reminder_title">Importă câștigurile de azi</string>
@@ -855,4 +821,81 @@
         <item quantity="few">%d zile adăugate până acum</item>
         <item quantity="other">%d de zile adăugate până acum</item>
     </plurals>
+
+    <!-- La final de lună (0.18.0) -->
+    <string name="month_intro">După ce se termină luna, două lucruri din fiecare aplicație o completează: totalul lunar al aplicației și orele tale online. Capturile zilnice rămân cum sunt.</string>
+    <string name="month_steps">%1$d din %2$d</string>
+    <string name="month_complete">Luna %1$s e completă</string>
+    <string name="month_complete_body">Fiecare aplicație are totalul lunar și orele. Cifrele lunii nu se mai schimbă.</string>
+    <string name="month_nothing">Nimic de completat pentru %1$s: nu ai importat nicio zi.</string>
+    <string name="month_total">Totalul lunar</string>
+    <string name="month_total_adds">Aduce bonusurile, campaniile și totalul exact</string>
+    <string name="month_hours_adds">Aduce câștigul pe oră</string>
+    <string name="month_uber_totals_adds">Aduce comisionul Uber și tarifele înainte de comision</string>
+    <string name="month_uber_totals_how">Pe supplier.uber.com → Rapoarte, alege luna și descarcă fișierul care are payments_organization în nume.</string>
+    <string name="month_uber_hours_adds">Aduce câștigul pe oră și pe km</string>
+    <string name="month_uber_hours_how">Tot acolo, fișierul care are driver_time_and_distance în nume. Le poți alege pe amândouă deodată.</string>
+    <string name="month_difference_more">Totalul lunar din %1$s e cu %2$s mai mare decât zilele tale (campanii, zile fără captură).</string>
+    <string name="month_difference_less">Totalul lunar din %1$s e cu %2$s mai mic decât zilele tale. Verifică zilele sau potrivește totalul.</string>
+    <string name="month_difference_add">Adaugă-l la lună</string>
+    <string name="month_difference_match">Potrivește totalul</string>
+    <string name="month_difference_added">Include %1$s din totalul lunar</string>
+    <string name="month_extras">Opționale</string>
+    <string name="month_extras_intro">Nu sunt necesare ca să închei luna; fiecare aduce ceva în plus.</string>
+    <string name="month_extras_bolt_trips">Ora și plata fiecărei curse</string>
+    <string name="month_extras_uber_payments">Venitul pe zile, dacă ai sărit peste capturi</string>
+    <string name="month_extras_uber_trips">Ora, km și plata fiecărei curse</string>
+    <string name="income_month_difference">Din totalul lunar</string>
+    <string name="days_off_title">N-ai condus?</string>
+    <string name="days_off_body">Marchează zilele libere, ca să nu mai apară ca lipsă.</string>
+    <string name="day_off_label">%1$s, zi liberă</string>
+    <plurals name="week_month_days">
+        <item quantity="one">%1$s: %2$d din %3$d zi</item>
+        <item quantity="few">%1$s: %2$d din %3$d zile</item>
+        <item quantity="other">%1$s: %2$d din %3$d de zile</item>
+    </plurals>
+    <plurals name="week_month_files">
+        <item quantity="one">Fișiere pentru %1$s: %2$d din %3$d aplicație</item>
+        <item quantity="few">Fișiere pentru %1$s: %2$d din %3$d aplicații</item>
+        <item quantity="other">Fișiere pentru %1$s: %2$d din %3$d de aplicații</item>
+    </plurals>
+    <string name="week_month_files_done">Fișierele pentru %1$s: toate importate</string>
+    <string name="may_still_change">Se poate schimba: lipsesc fișierele de la final de lună</string>
+    <string name="month_end_channel">Fișiere de final de lună</string>
+    <string name="month_end_channel_description">Pe 1 ale lunii, o notificare să imporți fișierele lunii trecute</string>
+    <string name="month_end_title">Luna %1$s s-a încheiat</string>
+    <string name="month_end_body">Ia totalul lunii și orele tale din Bolt și Uber.</string>
+
+    <!-- Copie de rezervă săptămânală (0.18.0) -->
+    <string name="auto_backup">Copie de rezervă săptămânală</string>
+    <string name="auto_backup_summary_off">Oprită: datele sunt doar pe acest telefon</string>
+    <string name="auto_backup_summary_on">Pornită: ultima copie %1$s</string>
+    <string name="auto_backup_summary_failed">Ultima copie nu s-a putut salva</string>
+    <string name="auto_backup_intro">O dată pe săptămână, Ridely salvează o copie de rezervă peste un fișier ales de tine. Alege Google Drive și nu pierzi datele dacă pierzi sau schimbi telefonul: instalezi Ridely, apoi Datele tale → Restaurează din copie și alegi fișierul.</string>
+    <string name="auto_backup_switch">Copie în fiecare săptămână</string>
+    <string name="auto_backup_file">Se salvează în</string>
+    <string name="auto_backup_change">Schimbă</string>
+    <string name="auto_backup_last">Ultima copie: %1$s</string>
+    <string name="auto_backup_never">Încă nicio copie</string>
+    <string name="auto_backup_failed">Ultima copie nu s-a putut salva. Poate fișierul a fost mutat sau șters: alege-l din nou.</string>
+    <string name="auto_backup_now">Fă o copie acum</string>
+    <string name="auto_backup_android">Și backupul Android păstrează datele Ridely în contul tău Google, dacă Backup e pornit în setările telefonului, și le aduce înapoi când configurezi un telefon nou.</string>
+
+    <!-- Plata săptămânii și bani pe oră (0.18.0) -->
+    <string name="widget_week_payout">Plata săptămânii</string>
+    <string name="payout_earned">Câștigat %1$s</string>
+    <string name="payout_cash">numerar încasat %1$s</string>
+    <string name="payout_to_account">vin în cont</string>
+    <string name="payout_owed">datorie către %1$s</string>
+    <string name="payout_total">Total în cont</string>
+    <string name="payout_note">Până acum în săptămâna asta. Aplicațiile plătesc după ce se încheie săptămâna.</string>
+    <string name="payout_note_fleet">Până acum în săptămâna asta. Flota ți-o plătește, după comisionul ei.</string>
+    <string name="widget_real_per_hour">Bani pe oră</string>
+    <string name="per_hour_value">%1$s/oră</string>
+    <string name="real_from_apps">De la aplicații</string>
+    <string name="real_after_fuel">După carburant</string>
+    <string name="real_after_expenses">După toate cheltuielile</string>
+    <string name="real_no_fuel">Adaugă carburantul ca să-l vezi</string>
+    <string name="real_hours">Din %1$s online</string>
+    <string name="real_partial">doar zilele și aplicațiile cu ore</string>
 </resources>

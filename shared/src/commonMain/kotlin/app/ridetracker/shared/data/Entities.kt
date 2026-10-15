@@ -305,3 +305,10 @@ data class VehicleDocumentEntity(
     val notifiedStage: Int? = null,
     val createdAt: Long,
 )
+
+/** A day the driver didn't drive (marked on Import), so it counts as done without a screenshot. Since 0.18.0. */
+@Entity(tableName = "day_off")
+data class DayOffEntity(
+    /** Epoch day. */
+    @PrimaryKey val date: Long,
+)

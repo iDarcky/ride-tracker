@@ -55,9 +55,19 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import app.ridetracker.shared.domain.IncomeSource
+import app.ridetracker.shared.domain.MonthEnd
+import app.ridetracker.shared.domain.DrivingType
+import app.ridetracker.shared.domain.RealHourly
+import app.ridetracker.shared.domain.RealHourlyCalculator
+import app.ridetracker.shared.domain.WeekPayout
+import app.ridetracker.shared.domain.WeekPayouts
+import app.ridetracker.shared.domain.MonthEndStatus
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
+
+/** Expenses that count as fuel for money per hour. */
+private val fuelCategories = setOf(ExpenseCategory.FUEL, ExpenseCategory.CHARGING)
 
 data class GroupTotal(val group: ExpenseGroup, val totalMinor: Long)
 
@@ -93,7 +103,16 @@ data class OverviewUiState(
     val comparisonCard: ComparisonCard? = null,
     /** This week's screenshots, whatever period is shown; null when no app was used lately. */
     val week: WeekLog? = null,
+    /** Fuel and charging expenses in the period, for money per hour after fuel. */
+    val fuelMinor: Long = 0,
+    /** This week's payout so far, whatever period is shown; null with nothing in this week. */
+    val payout: WeekPayout? = null,
+    /** Drives through a fleet (Romania): the fleet pays, not the apps. */
+    val fleet: Boolean = false,
 ) {
+    /** Money per hour, after fuel and after all expenses; null without hours. */
+    val realHourly: RealHourly? get() = stats?.let { RealHourlyCalculator.compute(it, fuelMinor, expenseMinor) }
+
     val keptMinor: Long get() = totalMinor - expenseMinor
 
     /** The headline number: money kept once expenses are tracked, otherwise income. */
@@ -110,10 +129,17 @@ data class WeekLog(
     val today: LocalDate,
     val apps: List<PlatformEntity>,
     val logged: Map<LocalDate, Set<Long>>,
+    /** Days marked "Didn't drive": they count as in. */
+    val daysOff: Set<LocalDate> = emptySet(),
+    /** This month so far: days in (or off) and days gone, for "October: 13 of 15 days in". */
+    val month: Period.Month? = null,
+    val monthDays: Pair<Int, Int> = 0 to 0,
+    /** Last month's files, in the first days of a month (see [MonthEnd.statusMonth]); null otherwise. */
+    val files: MonthEndStatus? = null,
 ) {
-    /** Days so far with at least one app in. */
-    val daysIn: Int get() = days.count { it <= today && !logged[it].isNullOrEmpty() }
-    val todayIn: Boolean get() = !logged[today].isNullOrEmpty()
+    /** Days so far with at least one app in, or marked as a day off. */
+    val daysIn: Int get() = days.count { it <= today && (!logged[it].isNullOrEmpty() || it in daysOff) }
+    val todayIn: Boolean get() = !logged[today].isNullOrEmpty() || today in daysOff
 }
 
 /** What "Needs attention" on Home lists. */
@@ -185,8 +211,9 @@ class OverviewViewModel(
     val uiState: StateFlow<OverviewUiState> = combine(selected, settingsRepository.settings) { period, settings ->
         // Re-align weeks when the first-day-of-week setting changes.
         val aligned = if (period is Period.Week) Period.Week.containing(period.start, settings.firstDayOfWeek) else period
-        Triple(aligned, settings.currencyCode, settings.homeWidgets)
-    }.flatMapLatest { (period, currencyCode, widgets) ->
+        Triple(aligned, settings.currencyCode, settings.homeWidgets to (settings.drivingType == DrivingType.FLEET))
+    }.flatMapLatest { (period, currencyCode, widgetsAndFleet) ->
+        val (widgets, fleet) = widgetsAndFleet
         val comparison = Comparisons.of(period, today())
         val previousFlow: Flow<PreviousTotals?> = if (comparison == null) {
             flowOf(null)
@@ -233,6 +260,8 @@ class OverviewViewModel(
                 totals = totals,
                 entryCount = entries.size,
                 expenseMinor = expenses.sumOf { it.amountMinor },
+                fuelMinor = expenses.filter { ExpenseCategory.fromId(it.category) in fuelCategories }.sumOf { it.amountMinor },
+                fleet = fleet,
                 expenseGroups = expenses
                     .groupBy { ExpenseCategory.fromId(it.category).group }
                     .map { (group, list) -> GroupTotal(group, list.sumOf { it.amountMinor }) }
@@ -247,27 +276,43 @@ class OverviewViewModel(
         OverviewUiState(period = selected.value, today = today(), currencyCode = null),
     )
 
+    /** Last month's files from Bolt and Uber (End of month), for Home's files line and "May still change". */
+    val monthEnd: StateFlow<MonthEndStatus?> = importRepository.observeMonthEnd(Period.Month.containing(today()).previous())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val week: StateFlow<WeekLog?> = settingsRepository.settings.map { it.firstDayOfWeek }.distinctUntilChanged().flatMapLatest { first ->
         val today = today()
         val week = Period.Week.containing(today, first)
+        val month = Period.Month.containing(today)
         val recent = DateRange(today.minus(DatePeriod(days = 27)), today)
         combine(
             incomeRepository.observeEntries(week.range),
             incomeRepository.observeEntries(recent),
             incomeRepository.observePlatforms(),
-        ) { entries, lately, platforms ->
-            val used = lately.filter { it.source != IncomeSource.ESTIMATE.id }.map { it.platformId }.toSet()
+            combine(incomeRepository.observeEntryDetails(month.range), importRepository.observeDaysOff()) { m, off -> m to off },
+            monthEnd,
+        ) { entries, lately, platforms, (monthEntries, daysOff), files ->
+            val used = lately.filter { IncomeSource.countsAsDay(it.source) }.map { it.platformId }.toSet()
             val apps = platforms.filter { it.id in used }
             if (apps.isEmpty()) return@combine null
             WeekLog(
                 days = (0..6).map { week.start.plus(DatePeriod(days = it)) },
                 today = today,
                 apps = apps,
-                logged = entries.filter { it.source != IncomeSource.ESTIMATE.id }
+                logged = entries.filter { IncomeSource.countsAsDay(it.source) }
                     .groupBy({ LocalDate.fromEpochDays(it.date) }, { it.platformId })
                     .mapValues { it.value.toSet() },
+                daysOff = daysOff.map(LocalDate::fromEpochDays).toSet(),
+                month = month,
+                monthDays = MonthEnd.daysIn(month.range, today, monthEntries, daysOff),
+                files = files?.takeIf { MonthEnd.statusMonth(today) != null && it.apps.isNotEmpty() },
             )
         }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** This week's payout so far, whatever period Home shows. */
+    val payout: StateFlow<WeekPayout?> = settingsRepository.settings.map { it.firstDayOfWeek }.distinctUntilChanged().flatMapLatest { first ->
+        incomeRepository.observeEntryDetails(Period.Week.containing(today(), first).range).map(WeekPayouts::compute)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Recurring expenses waiting for Add or Skip, documents running out, Raportul Z and suggestions. */
@@ -421,3 +466,4 @@ class OverviewViewModel(
         }
     }
 }
+

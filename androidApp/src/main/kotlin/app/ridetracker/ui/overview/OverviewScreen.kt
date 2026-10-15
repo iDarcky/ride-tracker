@@ -74,6 +74,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -142,6 +145,7 @@ import kotlin.math.abs
 @Composable
 fun OverviewScreen(
     onImport: () -> Unit,
+    onImportMonth: () -> Unit,
     onOpenZReport: () -> Unit,
     onOpenTarget: () -> Unit,
     onRenewDocument: (Long) -> Unit,
@@ -163,7 +167,9 @@ fun OverviewScreen(
     val target by viewModel.target.collectAsStateWithLifecycle()
     val comparisonCard by viewModel.comparisonCard.collectAsStateWithLifecycle()
     val week by viewModel.week.collectAsStateWithLifecycle()
-    val state = baseState.copy(target = target, comparisonCard = comparisonCard, week = week)
+    val monthEnd by viewModel.monthEnd.collectAsStateWithLifecycle()
+    val payout by viewModel.payout.collectAsStateWithLifecycle()
+    val state = baseState.copy(target = target, comparisonCard = comparisonCard, week = week, payout = payout)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
@@ -336,7 +342,9 @@ fun OverviewScreen(
                 }
             }
             item {
-                TotalCard(state, money, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
+                // Last month's numbers can still change until its month-end files are in.
+                val mayChange = monthEnd?.let { !it.complete && state.period == it.month } == true
+                TotalCard(state, money, mayChange, onImportMonth, Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
             }
             val shown = if (editing) order else state.widgets.filter { it.hasContent(state, attention) }
             items(shown, key = { it.id }) { widget ->
@@ -350,6 +358,7 @@ fun OverviewScreen(
                                     onOpenTarget = onOpenTarget,
                                     onCompareWhole = viewModel::setCompareWhole,
                                     onImport = onImport,
+                                    onImportMonth = onImportMonth,
                                 )
                             } else {
                                 WidgetPlaceholder()
@@ -472,7 +481,7 @@ private fun PeriodNavigator(
 }
 
 @Composable
-private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modifier = Modifier) {
+private fun TotalCard(state: OverviewUiState, money: MoneyFormat, mayChange: Boolean, onImportMonth: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth().animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
         colors = CardDefaults.cardColors(
@@ -510,6 +519,7 @@ private fun TotalCard(state: OverviewUiState, money: MoneyFormat, modifier: Modi
             state.stats?.estimatedMinor?.takeIf { it > 0 }?.let {
                 Text(stringResource(R.string.includes_estimated, money.format(it)), style = MaterialTheme.typography.bodySmall)
             }
+            if (mayChange) MayStillChangeChip(onImportMonth, Modifier.padding(top = 8.dp))
         }
     }
 }
@@ -626,4 +636,17 @@ private fun WrappedCard(range: DateRange, yearly: Boolean, onClick: () -> Unit, 
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }
     }
+}
+
+/** "May still change: month-end files missing", on last month's numbers until its files are in; opens End of month. */
+@Composable
+fun MayStillChangeChip(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(stringResource(R.string.may_still_change)) },
+        leadingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) },
+        colors = AssistChipDefaults.assistChipColors(labelColor = LocalContentColor.current, leadingIconContentColor = LocalContentColor.current),
+        border = AssistChipDefaults.assistChipBorder(enabled = true, borderColor = LocalContentColor.current.copy(alpha = 0.4f)),
+        modifier = modifier,
+    )
 }

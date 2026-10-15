@@ -1,5 +1,6 @@
 package app.ridetracker.ui.money
 
+import app.ridetracker.shared.domain.MonthEndStatus
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.shared.data.EntryWithPlatform
@@ -52,6 +53,11 @@ class IncomeListViewModel(
     /** App-wide, shared with Home: this list shows its month. */
     private val period: MutableStateFlow<Period>,
 ) : ViewModel() {
+
+    /** Last month's files: until they're in, its numbers may still change. */
+    val monthEnd: StateFlow<MonthEndStatus?> =
+        importRepository.observeMonthEnd(Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault())).previous())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val state: StateFlow<IncomeListState> = combine(
         incomeRepository.observeAllEntries(),

@@ -8,8 +8,9 @@ import app.ridetracker.importing.ReadReport
 import app.ridetracker.importing.ReportReader
 import app.ridetracker.shared.data.SettingsRepository
 import app.ridetracker.shared.domain.DateRange
-import app.ridetracker.shared.domain.ImportChecklist
-import app.ridetracker.shared.domain.ImportChecklists
+import app.ridetracker.shared.domain.MonthEnd
+import app.ridetracker.shared.domain.MonthEndStatus
+import app.ridetracker.shared.data.PlatformEntity
 import app.ridetracker.shared.domain.ImportKind
 import app.ridetracker.shared.domain.ImportReminderSettings
 import app.ridetracker.shared.domain.ImportReminders
@@ -69,10 +70,11 @@ data class ImportUiState(
     val saving: Boolean = false,
     /** Set once saving finished: how many items were saved. */
     val savedCount: Int? = null,
-    /** What last month and this month have from Bolt, newest first. */
-    val checklists: List<ImportChecklist> = emptyList(),
-    /** The same for Uber. */
-    val uberChecklists: List<ImportChecklist> = emptyList(),
+    /** Last month's files from Bolt and Uber (End of month). */
+    val monthEnd: MonthEndStatus? = null,
+    val platforms: List<PlatformEntity> = emptyList(),
+    /** Days marked "Didn't drive", as epoch days. */
+    val daysOff: Set<Long> = emptySet(),
     /** The last 7 days, oldest first, and which of them have a day imported from each app. */
     val recentDays: List<LocalDate> = emptyList(),
     val boltDays: Set<LocalDate> = emptySet(),
@@ -101,23 +103,23 @@ class ImportViewModel(
         }
         viewModelScope.launch {
             val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            val current = Period.Month.containing(today)
-            val months = listOf(current, current.previous() as Period.Month)
-            val range = DateRange(months.last().range.start, current.range.endInclusive)
+            val last = Period.Month.containing(today).previous()
+            val range = DateRange(last.range.start, today)
             combine(
                 incomeRepository.observePlatforms(),
                 incomeRepository.observeEntryDetails(range),
-                importRepository.observeTrips(range),
-                importRepository.observeSummaries(range),
-            ) { platforms, entries, trips, summaries ->
+                importRepository.observeSummaries(last.range),
+                importRepository.observeDaysOff(),
+            ) { platforms, entries, summaries, daysOff ->
                 fun id(name: String) = platforms.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.id ?: -1L
                 val bolt = id(BOLT)
                 val uber = id(UBER)
                 val days = (6 downTo 0).map { today.minus(DatePeriod(days = it)) }
                 val change: (ImportUiState) -> ImportUiState = { s ->
                     s.copy(
-                        checklists = months.map { ImportChecklists.compute(it, bolt, entries, trips, summaries, today) },
-                        uberChecklists = months.map { ImportChecklists.compute(it, uber, entries, trips, summaries, today) },
+                        monthEnd = MonthEnd.compute(last, entries, summaries, MonthEnd.platformIds(platforms)),
+                        platforms = platforms,
+                        daysOff = daysOff,
                         recentDays = days,
                         boltDays = ImportReminders.daysWithEntries(bolt, entries, days),
                         uberDays = ImportReminders.daysWithEntries(uber, entries, days),
@@ -182,6 +184,18 @@ class ImportViewModel(
         viewModelScope.launch {
             val replaces = replaces(report)
             replace(uri) { it.copy(replaces = replaces) }
+        }
+    }
+
+    fun toggleDayOff(day: LocalDate) {
+        viewModelScope.launch { importRepository.setDayOff(day, day.toEpochDays() !in _state.value.daysOff) }
+    }
+
+    /** Adds what the platform's monthly total has beyond last month's days (one tap on End of month). */
+    fun addMonthDifference(platformId: Long, differenceMinor: Long) {
+        val month = _state.value.monthEnd?.month ?: return
+        viewModelScope.launch {
+            importRepository.addMonthDifference(platformId, month, differenceMinor, Clock.System.now().toEpochMilliseconds())
         }
     }
 

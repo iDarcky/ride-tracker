@@ -3,6 +3,11 @@ package app.ridetracker.ui.importing
 import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -152,6 +157,8 @@ fun ImportScreen(
     onDone: () -> Unit,
     onOpenReminder: () -> Unit,
     sharedFiles: MutableStateFlow<List<Uri>>,
+    /** Open on "End of month" (from Home's files line or the reminder on the 1st). */
+    startOnMonth: Boolean = false,
     viewModel: ImportViewModel = viewModel {
         ImportViewModel(container.reportReader, container.importRepository, container.incomeRepository, container.settingsRepository)
     },
@@ -218,7 +225,12 @@ fun ImportScreen(
             state.items.isEmpty() && state.savedCount != null ->
                 DoneState(state.savedCount!!, onMore = viewModel::startOver, onDone = onDone, modifier = Modifier.padding(padding))
             state.items.isEmpty() ->
-                EmptyState(state, dates, onScreenshots = chooseScreenshots, onFiles = chooseFiles, onOpenReminder = onOpenReminder, modifier = Modifier.padding(padding))
+                EmptyState(
+                    state, money, dates, startOnMonth,
+                    onScreenshots = chooseScreenshots, onFiles = chooseFiles, onOpenReminder = onOpenReminder,
+                    onToggleDayOff = viewModel::toggleDayOff, onAddDifference = viewModel::addMonthDifference,
+                    modifier = Modifier.padding(padding),
+                )
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
@@ -258,13 +270,17 @@ private enum class ImportGuide { TODAY, MONTH }
 @Composable
 private fun EmptyState(
     state: ImportUiState,
+    money: MoneyFormat,
     dates: DateFormats,
+    startOnMonth: Boolean,
     onScreenshots: () -> Unit,
     onFiles: () -> Unit,
     onOpenReminder: () -> Unit,
+    onToggleDayOff: (LocalDate) -> Unit,
+    onAddDifference: (Long, Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var guide by rememberSaveable { mutableStateOf(ImportGuide.TODAY) }
+    var guide by rememberSaveable { mutableStateOf(if (startOnMonth) ImportGuide.MONTH else ImportGuide.TODAY) }
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -281,8 +297,8 @@ private fun EmptyState(
         }
         Spacer(Modifier.height(16.dp))
         when (guide) {
-            ImportGuide.TODAY -> TodayGuide(state, dates, onScreenshots, onOpenReminder)
-            ImportGuide.MONTH -> MonthGuide(state, dates, onScreenshots, onFiles)
+            ImportGuide.TODAY -> TodayGuide(state, dates, onScreenshots, onOpenReminder, onToggleDayOff)
+            ImportGuide.MONTH -> MonthGuide(state, money, dates, onScreenshots, onFiles, onAddDifference)
         }
         Spacer(Modifier.height(16.dp))
         Text(
@@ -295,7 +311,13 @@ private fun EmptyState(
 }
 
 @Composable
-private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: () -> Unit, onOpenReminder: () -> Unit) {
+private fun TodayGuide(
+    state: ImportUiState,
+    dates: DateFormats,
+    onScreenshots: () -> Unit,
+    onOpenReminder: () -> Unit,
+    onToggleDayOff: (LocalDate) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.import_today_intro), style = MaterialTheme.typography.bodyLarge)
         GuideCard("Bolt", BOLT_COLOR, stringResource(R.string.import_today_bolt_how)) {
@@ -315,6 +337,7 @@ private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: 
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.import_choose_screenshots))
         }
+        DaysOff(state, dates, onToggleDayOff)
         OutlinedCard(Modifier.fillMaxWidth()) {
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenReminder),
@@ -331,6 +354,38 @@ private fun TodayGuide(state: ImportUiState, dates: DateFormats, onScreenshots: 
                 },
                 trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
             )
+        }
+    }
+}
+
+/**
+ * "Didn't drive?": the last week's days that have nothing from any app, as chips to mark a day off, so it counts as
+ * done on Home and the evening reminder stays quiet. Days already marked stay listed so they can be unmarked.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DaysOff(state: ImportUiState, dates: DateFormats, onToggle: (LocalDate) -> Unit) {
+    val days = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays }
+    if (days.isEmpty()) return
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.days_off_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.days_off_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                days.forEach { day ->
+                    val off = day.toEpochDays() in state.daysOff
+                    FilterChip(
+                        selected = off,
+                        onClick = { onToggle(day) },
+                        label = { Text(dates.shortWeekday(day)) },
+                        leadingIcon = if (off) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }
+                        } else {
+                            null
+                        },
+                    )
+                }
+            }
         }
     }
 }
@@ -386,10 +441,36 @@ private fun WeekStrip(days: List<LocalDate>, done: Set<LocalDate>, dates: DateFo
 }
 
 @Composable
-private fun MonthGuide(state: ImportUiState, dates: DateFormats, onScreenshots: () -> Unit, onFiles: () -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.import_month_intro), style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(12.dp))
+private fun MonthGuide(
+    state: ImportUiState,
+    money: MoneyFormat,
+    dates: DateFormats,
+    onScreenshots: () -> Unit,
+    onFiles: () -> Unit,
+    onAddDifference: (Long, Long) -> Unit,
+) {
+    val status = state.monthEnd ?: return
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.month_intro), style = MaterialTheme.typography.bodyLarge)
+        when {
+            status.apps.isEmpty() -> Text(
+                stringResource(R.string.month_nothing, dates.monthName(status.month)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            status.complete -> OutlinedCard(Modifier.fillMaxWidth()) {
+                ListItem(
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    leadingContent = { Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    headlineContent = { Text(stringResource(R.string.month_complete, dates.monthName(status.month))) },
+                    supportingContent = { Text(stringResource(R.string.month_complete_body)) },
+                )
+            }
+        }
+        status.apps.forEach { app ->
+            val platform = state.platforms.firstOrNull { it.id == app.platformId } ?: return@forEach
+            MonthEndCard(app, platform, status, money, dates, onAddDifference = { onAddDifference(app.platformId, it) })
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onScreenshots, modifier = Modifier.weight(1f).height(56.dp)) {
                 Icon(Icons.Outlined.Image, contentDescription = null)
@@ -402,23 +483,7 @@ private fun MonthGuide(state: ImportUiState, dates: DateFormats, onScreenshots: 
                 Text(stringResource(R.string.import_add_files))
             }
         }
-        if (state.checklists.isNotEmpty()) {
-            Spacer(Modifier.height(24.dp))
-            Text(stringResource(R.string.import_whats_missing), style = MaterialTheme.typography.titleMedium)
-            // The finished month first: that's the one these files are for.
-            state.checklists.sortedByDescending { it.monthOver }.forEach { ImportChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
-        }
-        if (state.uberChecklists.isNotEmpty()) {
-            Spacer(Modifier.height(24.dp))
-            Text(stringResource(R.string.import_whats_missing_uber), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.checklist_uber_intro),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            state.uberChecklists.sortedByDescending { it.monthOver }.forEach { UberChecklistCard(it, dates, Modifier.padding(top = 12.dp)) }
-        }
+        MonthEndExtras()
     }
 }
 

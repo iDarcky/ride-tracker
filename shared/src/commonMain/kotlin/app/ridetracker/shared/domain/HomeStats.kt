@@ -47,6 +47,8 @@ data class HomeStats(
     val onlineMinutes: Int?,
     /** Income per hour online, from the entries that have online time; null without any. */
     val perHourMinor: Long?,
+    /** The income [perHourMinor] is worked out from (the days and apps that have hours). */
+    val hourIncomeMinor: Long = 0,
     /** Paid km: trip distances, or a platform's own monthly total when the period is exactly that month. */
     val distanceMeters: Long?,
     /** Income per paid km of the platforms that have km; null without any. */
@@ -217,6 +219,7 @@ object HomeStatsCalculator {
             averageFareMinor = if (trips.isEmpty()) null else trips.sumOf { it.fareMinor } / trips.size,
             onlineMinutes = minutes.takeIf { it > 0 },
             perHourMinor = if (minutes > 0 && timedIncome > 0) (timedIncome * 60 + minutes / 2) / minutes else null,
+            hourIncomeMinor = timedIncome,
             distanceMeters = meters.takeIf { it > 0 },
             perKmMinor = if (meters > 0 && kmIncome > 0) (kmIncome * 1000 + meters / 2) / meters else null,
             incomePlatformIds = entries.filter { it.amountMinor != 0L }.map { it.platformId }.toSet(),

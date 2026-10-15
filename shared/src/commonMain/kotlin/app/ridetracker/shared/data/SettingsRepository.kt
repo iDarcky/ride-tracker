@@ -74,6 +74,30 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[IMPORT_REMINDER_MINUTE] = minuteOfDay.coerceIn(0, 24 * 60 - 1) }
     }
 
+    /** The weekly backup to a file the driver chose (on Google Drive or the phone). Belongs to this phone, like reminders. */
+    val autoBackup: Flow<AutoBackupSettings> = dataStore.data.map { prefs ->
+        AutoBackupSettings(
+            fileUri = prefs[AUTO_BACKUP_URI],
+            lastBackupEpochMillis = prefs[AUTO_BACKUP_LAST],
+            lastFailed = prefs[AUTO_BACKUP_FAILED] ?: false,
+        )
+    }
+
+    /** Turns the weekly backup on with [fileUri], or off with null. */
+    suspend fun setAutoBackupFile(fileUri: String?) {
+        dataStore.edit {
+            if (fileUri == null) it.remove(AUTO_BACKUP_URI) else it[AUTO_BACKUP_URI] = fileUri
+            it.remove(AUTO_BACKUP_FAILED)
+        }
+    }
+
+    suspend fun setAutoBackupResult(success: Boolean, epochMillis: Long) {
+        dataStore.edit {
+            it[AUTO_BACKUP_FAILED] = !success
+            if (success) it[AUTO_BACKUP_LAST] = epochMillis
+        }
+    }
+
     val zReport: Flow<ZReportReminder> = dataStore.data.map { prefs ->
         ZReportReminder(
             enabled = prefs[Z_ENABLED] ?: false,
@@ -191,6 +215,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             val zLongs = listOf(Z_DONE_THROUGH, Z_ENABLED_FROM).associateWith { prefs[it] }
             val zMinute = prefs[Z_MINUTE]
             val importMinute = prefs[IMPORT_REMINDER_MINUTE]
+            val backupUri = prefs[AUTO_BACKUP_URI]
+            val backupLast = prefs[AUTO_BACKUP_LAST]
+            val backupFailed = prefs[AUTO_BACKUP_FAILED]
             val targetStrings = listOf(TARGET_AMOUNTS, TARGET_BASIS, TARGET_DAYS, TARGET_NOTIFIED).associateWith { prefs[it] }
             val targetDismissed = prefs[TARGET_SUGGESTION_DISMISSED]
             prefs.clear()
@@ -200,6 +227,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             zLongs.forEach { (key, value) -> if (value != null) prefs[key] = value }
             if (zMinute != null) prefs[Z_MINUTE] = zMinute
             if (importMinute != null) prefs[IMPORT_REMINDER_MINUTE] = importMinute
+            if (backupUri != null) prefs[AUTO_BACKUP_URI] = backupUri
+            if (backupLast != null) prefs[AUTO_BACKUP_LAST] = backupLast
+            if (backupFailed != null) prefs[AUTO_BACKUP_FAILED] = backupFailed
             settings.country?.let { prefs[COUNTRY] = it.id }
             settings.otherCurrencyCode?.let { prefs[CURRENCY] = it }
             prefs[FIRST_DAY_OF_WEEK] = settings.firstDayOfWeek.isoDayNumber
@@ -227,6 +257,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")
         private val IMPORT_REMINDER_ENABLED = booleanPreferencesKey("import_reminder_enabled")
         private val IMPORT_REMINDER_MINUTE = intPreferencesKey("import_reminder_minute")
+        private val AUTO_BACKUP_URI = stringPreferencesKey("auto_backup_uri")
+        private val AUTO_BACKUP_LAST = longPreferencesKey("auto_backup_last")
+        private val AUTO_BACKUP_FAILED = booleanPreferencesKey("auto_backup_failed")
         private val Z_ENABLED = booleanPreferencesKey("z_report_enabled")
         private val Z_MINUTE = intPreferencesKey("z_report_minute")
         private val Z_DONE_THROUGH = longPreferencesKey("z_report_done_through")
@@ -241,4 +274,14 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         fun create(absolutePath: String): SettingsRepository =
             SettingsRepository(PreferenceDataStoreFactory.createWithPath(produceFile = { absolutePath.toPath() }))
     }
+}
+
+/** The weekly backup: [fileUri] is the file it overwrites (null = off). */
+data class AutoBackupSettings(
+    val fileUri: String? = null,
+    val lastBackupEpochMillis: Long? = null,
+    /** The last try couldn't write the file (moved, deleted, or no longer allowed). */
+    val lastFailed: Boolean = false,
+) {
+    val enabled: Boolean get() = fileUri != null
 }

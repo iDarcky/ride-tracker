@@ -36,7 +36,7 @@ object ImportChecklists {
         val start = month.range.start.toEpochDays()
         val end = month.range.endInclusive.toEpochDays()
         val mine = entries.filter { it.platformId == platformId && it.date in start..end }
-        val exact = mine.filter { it.source != IncomeSource.ESTIMATE.id }.map { it.date }.toSet()
+        val exact = mine.filter { IncomeSource.countsAsDay(it.source) }.map { it.date }.toSet()
         val other = (mine.filter { it.source == IncomeSource.ESTIMATE.id }.map { it.date } +
             trips.filter { it.platformId == platformId && it.date in start..end }.map { it.date }).toSet() - exact
         val own = summaries.filter { it.platformId == platformId }

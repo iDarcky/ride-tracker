@@ -36,4 +36,10 @@ class ImportReminderTest {
         val entries = listOf(entry(1, LocalDate(2026, 10, 6)), entry(1, LocalDate(2026, 10, 7), IncomeSource.ESTIMATE), entry(2, LocalDate(2026, 10, 8)))
         assertEquals(setOf(LocalDate(2026, 10, 6)), ImportReminders.daysWithEntries(1, entries, days))
     }
+
+    @Test
+    fun quietOnADayOff() {
+        val week = listOf(entry(1, LocalDate(2026, 10, 9)))
+        assertFalse(ImportReminders.shouldRemind(today, week, daysOff = setOf(today.toEpochDays())))
+    }
 }

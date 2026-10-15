@@ -176,4 +176,22 @@ class BackupFormatTest {
         """.trimIndent()
         assertEquals(null, json.decodeFromString(BackupFile.serializer(), text).expenses.single().documentId)
     }
+
+    @Test
+    fun readsVersion10DaysOff() {
+        val text = """
+            {
+              "format": "ridetracker-backup", "formatVersion": 10, "appVersion": "0.18.0",
+              "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [],
+              "daysOff": [ "2026-10-05", "2026-10-12" ]
+            }
+        """.trimIndent()
+        assertEquals(listOf("2026-10-05", "2026-10-12"), json.decodeFromString(BackupFile.serializer(), text).daysOff)
+    }
+
+    @Test
+    fun version9HasNoDaysOff() {
+        val text = """{ "format": "ridetracker-backup", "formatVersion": 9, "appVersion": "0.17.0", "createdAtEpochMillis": 1, "settings": {}, "platforms": [], "incomeEntries": [] }"""
+        assertEquals(emptyList(), json.decodeFromString(BackupFile.serializer(), text).daysOff)
+    }
 }

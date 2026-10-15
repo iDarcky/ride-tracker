@@ -306,29 +306,12 @@
     <string name="import_empty_body">Screenshots and files are read on this phone; nothing is uploaded.</string>
     <string name="checklist_title">Bolt · %1$s</string>
     <string name="checklist_done">Imported</string>
-    <string name="checklist_monthly">Monthly screenshot</string>
-    <string name="checklist_monthly_later">Take it once the month is over</string>
-    <string name="checklist_monthly_missing">Missing: bonuses and the exact total</string>
     <string name="checklist_monthly_how">In Bolt Driver: Earnings → Earnings breakdown → Monthly, pick the month, take a screenshot. It’s the only place with bonuses and the exact total.</string>
-    <string name="checklist_daily">Daily screenshots</string>
-    <string name="checklist_daily_optional">Optional: the monthly total is exact; these add card and cash per day</string>
-    <string name="checklist_daily_how">Earnings breakdown → Daily, one screenshot per day. Gives that day exactly, with card and cash.</string>
     <string name="checklist_trips">Trips (rider invoices CSV)</string>
-    <string name="checklist_trips_missing">Missing: each trip’s time and payment</string>
     <string name="checklist_trips_how">From Bolt’s driver portal on the web: download the rider invoices for the month as CSV, then Choose files here. It has no rider names.</string>
     <string name="checklist_hours">Online hours</string>
-    <string name="checklist_hours_missing">Missing: money per hour</string>
     <string name="checklist_hours_how">In Bolt Driver: Activity → Hours → Past 3 months, tap the month’s bar so its hours show, take a screenshot.</string>
     <string name="checklist_how">How to get it</string>
-    <string name="import_whats_missing">Your Bolt data</string>
-    <plurals name="checklist_days_with">
-        <item quantity="one">%d day with a screenshot</item>
-        <item quantity="other">%d days with a screenshot</item>
-    </plurals>
-    <plurals name="checklist_days_without">
-        <item quantity="one">%d without</item>
-        <item quantity="other">%d without</item>
-    </plurals>
     <string name="import_choose_screenshots">Choose screenshots</string>
     <string name="import_share_hint">You can also share screenshots to Ridely from your gallery.</string>
     <string name="import_add_screenshots">Add screenshots</string>
@@ -570,26 +553,13 @@
         <item quantity="one">%d paid in cash</item>
         <item quantity="other">%d paid in cash</item>
     </plurals>
-    <string name="import_whats_missing_uber">Your Uber data</string>
-    <string name="checklist_uber_intro">On supplier.uber.com → Reports, download these for the whole month. Uber gives you more files; you only need these four.</string>
     <string name="checklist_uber_title">Uber · %1$s</string>
     <string name="checklist_uber_payments">Payments (payments_order)</string>
-    <string name="checklist_uber_payments_missing">Missing: your income per day</string>
     <string name="checklist_uber_payments_how">On supplier.uber.com → Reports, choose the month and download the payments report: its file name contains payments_order. It has each day’s income, bonuses and cash.</string>
     <string name="checklist_uber_totals">Totals with Uber’s fee (payments_organization)</string>
-    <string name="checklist_uber_totals_later">Download it once the month is over</string>
-    <string name="checklist_uber_totals_missing">Missing: Uber’s fee</string>
-    <string name="checklist_uber_totals_how">Same place, the file whose name contains payments_organization. It’s the only one with Uber’s fee and the fares before it.</string>
     <string name="checklist_uber_trips">Trips (trip_activity)</string>
-    <string name="checklist_uber_trips_missing">Missing: each trip’s time, km and payment</string>
     <string name="checklist_uber_trips_how">The file whose name contains trip_activity. The addresses in it are not saved.</string>
     <string name="checklist_uber_hours">Time and km (driver_time_and_distance)</string>
-    <string name="checklist_uber_hours_missing">Missing: money per hour and km</string>
-    <string name="checklist_uber_hours_how">The file whose name contains driver_time_and_distance: hours online and km driven.</string>
-    <plurals name="checklist_uber_days">
-        <item quantity="one">%d day with income</item>
-        <item quantity="other">%d days with income</item>
-    </plurals>
     <!-- Uber screenshots -->
     <string name="import_uber_day">Uber · day</string>
     <string name="import_uber_week">Uber · week</string>
@@ -758,11 +728,10 @@
     <string name="import_today_week">Last 7 days</string>
     <string name="import_day_done">%1$s: imported</string>
     <string name="import_day_missing">%1$s: not imported</string>
-    <string name="import_month_intro">When a month is over, these give its exact total, the platforms’ fees and your hours, and fill in days without a screenshot.</string>
     <string name="import_reminder_row">Remind me every evening</string>
     <string name="import_reminder_row_on">Reminder every day at %1$s</string>
     <string name="import_reminder_setting">Import reminder</string>
-    <string name="import_reminder_intro">A reminder every evening to import the day’s screenshots from Bolt and Uber. It stays quiet once the day is imported.</string>
+    <string name="import_reminder_intro">A reminder every evening to import the day’s screenshots from Bolt and Uber. It stays quiet once the day is imported or marked as a day off. On the 1st of the month, it also reminds you to get last month’s files.</string>
     <string name="import_reminder_channel">Import reminder</string>
     <string name="import_reminder_channel_description">Evening reminder to import the day’s screenshots</string>
     <string name="import_reminder_title">Import today’s earnings</string>
@@ -830,4 +799,79 @@
         <item quantity="one">%d day in so far</item>
         <item quantity="other">%d days in so far</item>
     </plurals>
+
+    <!-- End of month (0.18.0) -->
+    <string name="month_intro">When a month is over, two things from each app finish it: the app’s own monthly total and your hours online. Daily screenshots stay as they are.</string>
+    <string name="month_steps">%1$d of %2$d</string>
+    <string name="month_complete">%1$s is complete</string>
+    <string name="month_complete_body">Every app has its monthly total and hours. Its numbers won’t change any more.</string>
+    <string name="month_nothing">Nothing to finish for %1$s: no days were imported.</string>
+    <string name="month_total">Monthly total</string>
+    <string name="month_total_adds">Adds bonuses, campaigns and the exact total</string>
+    <string name="month_hours_adds">Adds money per hour</string>
+    <string name="month_uber_totals_adds">Adds Uber’s fee and the fares before it</string>
+    <string name="month_uber_totals_how">On supplier.uber.com → Reports, choose the month and download the file whose name contains payments_organization.</string>
+    <string name="month_uber_hours_adds">Adds money per hour and per km</string>
+    <string name="month_uber_hours_how">Same place, the file whose name contains driver_time_and_distance. You can pick both files at once.</string>
+    <string name="month_difference_more">%1$s’s monthly total is %2$s more than your days (campaigns, days without a screenshot).</string>
+    <string name="month_difference_less">%1$s’s monthly total is %2$s less than your days. Check the days, or match the total.</string>
+    <string name="month_difference_add">Add it to the month</string>
+    <string name="month_difference_match">Match the total</string>
+    <string name="month_difference_added">Includes %1$s from the monthly total</string>
+    <string name="month_extras">Extras</string>
+    <string name="month_extras_intro">Not needed to finish the month; each adds a bit more.</string>
+    <string name="month_extras_bolt_trips">Each trip’s time and payment</string>
+    <string name="month_extras_uber_payments">Each day’s income, if you skipped screenshots</string>
+    <string name="month_extras_uber_trips">Each trip’s time, km and payment</string>
+    <string name="income_month_difference">From the monthly total</string>
+    <string name="days_off_title">Didn’t drive?</string>
+    <string name="days_off_body">Mark your days off so they don’t show as missing.</string>
+    <string name="day_off_label">%1$s, day off</string>
+    <plurals name="week_month_days">
+        <item quantity="one">%1$s: %2$d of %3$d day in</item>
+        <item quantity="other">%1$s: %2$d of %3$d days in</item>
+    </plurals>
+    <plurals name="week_month_files">
+        <item quantity="one">%1$s’s files: %2$d of %3$d app</item>
+        <item quantity="other">%1$s’s files: %2$d of %3$d apps</item>
+    </plurals>
+    <string name="week_month_files_done">%1$s’s files: all in</string>
+    <string name="may_still_change">May still change: month-end files missing</string>
+    <string name="month_end_channel">Month-end files</string>
+    <string name="month_end_channel_description">On the 1st, a reminder to import last month’s files</string>
+    <string name="month_end_title">%1$s is over</string>
+    <string name="month_end_body">Get the month’s total and your hours from Bolt and Uber.</string>
+
+    <!-- Weekly backup (0.18.0) -->
+    <string name="auto_backup">Weekly backup</string>
+    <string name="auto_backup_summary_off">Off: your data is only on this phone</string>
+    <string name="auto_backup_summary_on">On: last backup %1$s</string>
+    <string name="auto_backup_summary_failed">The last backup couldn’t be saved</string>
+    <string name="auto_backup_intro">Once a week, Ridely saves a backup over one file you choose. Pick Google Drive, and a lost or new phone won’t lose your data: install Ridely, then Your data → Restore from backup and choose that file.</string>
+    <string name="auto_backup_switch">Back up every week</string>
+    <string name="auto_backup_file">Saved to</string>
+    <string name="auto_backup_change">Change</string>
+    <string name="auto_backup_last">Last backup: %1$s</string>
+    <string name="auto_backup_never">No backup yet</string>
+    <string name="auto_backup_failed">The last backup couldn’t be saved. The file may have been moved or deleted: choose it again.</string>
+    <string name="auto_backup_now">Back up now</string>
+    <string name="auto_backup_android">Android’s own backup also keeps Ridely’s data in your Google account when Backup is on in the phone’s settings, and brings it back when you set up a new phone.</string>
+
+    <!-- This week's payout and money per hour (0.18.0) -->
+    <string name="widget_week_payout">This week’s payout</string>
+    <string name="payout_earned">Earned %1$s</string>
+    <string name="payout_cash">cash in hand %1$s</string>
+    <string name="payout_to_account">to your account</string>
+    <string name="payout_owed">owed to %1$s</string>
+    <string name="payout_total">To your account in all</string>
+    <string name="payout_note">So far this week. The apps pay it after the week ends.</string>
+    <string name="payout_note_fleet">So far this week. Your fleet pays it, after its cut.</string>
+    <string name="widget_real_per_hour">Money per hour</string>
+    <string name="per_hour_value">%1$s/h</string>
+    <string name="real_from_apps">From the apps</string>
+    <string name="real_after_fuel">After fuel</string>
+    <string name="real_after_expenses">After all expenses</string>
+    <string name="real_no_fuel">Add your fuel to see it</string>
+    <string name="real_hours">Over %1$s online</string>
+    <string name="real_partial">only days and apps with hours</string>
 </resources>

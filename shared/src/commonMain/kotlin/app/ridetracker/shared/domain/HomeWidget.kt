@@ -25,11 +25,19 @@ enum class HomeWidget(val id: String) {
 
     /** This week's days, each app ticked once its day is in (owner, 15 Oct 2026: screenshots first, see it weekly). */
     WEEK_SCREENSHOTS("week_screenshots"),
+
+    /** This week so far per app: earned, cash in hand, coming to the account (0.18.0). */
+    WEEK_PAYOUT("week_payout"),
+
+    /** Money per hour online, after fuel and after all expenses (0.18.0). */
+    REAL_PER_HOUR("real_per_hour"),
     ;
 
     companion object {
         /** What a new install shows, in order. "When you earn" is off until the driver adds it. */
-        val DEFAULT: List<HomeWidget> = listOf(TARGET, WEEK_SCREENSHOTS, BREAKDOWN, COMPARISON, METRICS, SPLIT, CASH_CARD, ACTIVITY, EXPENSE_GROUPS)
+        val DEFAULT: List<HomeWidget> = listOf(
+            TARGET, WEEK_SCREENSHOTS, WEEK_PAYOUT, BREAKDOWN, COMPARISON, METRICS, REAL_PER_HOUR, SPLIT, CASH_CARD, ACTIVITY, EXPENSE_GROUPS,
+        )
 
         /** The cards the driver can move, add or remove in Customise. */
         val MOVABLE: List<HomeWidget> get() = entries - NEEDS_ATTENTION

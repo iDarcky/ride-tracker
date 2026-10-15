@@ -116,6 +116,7 @@ import app.ridetracker.ui.settings.SettingsChoicePage
 import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
 import app.ridetracker.ui.settings.YourDataScreen
+import app.ridetracker.ui.settings.AutoBackupScreen
 import app.ridetracker.ui.vehicle.DocumentEditScreen
 import app.ridetracker.ui.vehicle.DocumentScreen
 import app.ridetracker.ui.vehicle.VehicleEditScreen
@@ -140,7 +141,7 @@ fun AppNavigation() {
     val shared by sharedFiles.collectAsState()
     // Files shared to the app open the Import screen, which takes them from sharedFiles.
     LaunchedEffect(shared) {
-        if (shared.isNotEmpty() && backStack?.destination?.route != "import") nav.navigate("import")
+        if (shared.isNotEmpty() && backStack?.destination?.route?.startsWith("import") != true) nav.navigate("import")
     }
     val openImportFlow = (LocalContext.current.applicationContext as RideTrackerApplication).container.openImport
     val openImport by openImportFlow.collectAsState()
@@ -148,7 +149,7 @@ fun AppNavigation() {
     LaunchedEffect(openImport, backStack != null) {
         if (openImport && backStack != null) {
             openImportFlow.value = false
-            if (backStack?.destination?.route != "import") nav.navigate("import")
+            if (backStack?.destination?.route?.startsWith("import") != true) nav.navigate("import")
         }
     }
     // A quick-actions widget button: open its screen (import, a new expense or income).
@@ -198,7 +199,7 @@ fun AppNavigation() {
                 predictivePopEnterTransition = { EnterTransition.None },
                 predictivePopExitTransition = { ExitTransition.None },
             ) {
-                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onImportMonth = { nav.navigate("import?month=true") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
                         onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
                         onOpenWrapped = { range, yearly -> nav.navigate(wrappedRoute(range, yearly)) },
@@ -216,6 +217,7 @@ fun AppNavigation() {
                         onOpenRecurring = { nav.navigate("recurring") },
                         onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
                         onOpenWrapped = { range, yearly -> nav.navigate(wrappedRoute(range, yearly)) },
+                        onImportMonth = { nav.navigate("import?month=true") },
                     )
                 } }
                 composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
@@ -242,7 +244,8 @@ fun AppNavigation() {
                         SettingsChoicePage(page, onBack = { nav.popBackStack() }, onOpen = { nav.navigate(it.route) })
                     }
                 }
-                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }) }
+                composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }, onAutoBackup = { nav.navigate("auto-backup") }) }
+                composable("auto-backup") { AutoBackupScreen(onBack = { nav.popBackStack() }) }
                 composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
                 composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
                 composable(
@@ -286,8 +289,16 @@ fun AppNavigation() {
                 composable("recurring/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     RecurringEditScreen(ruleId = entry.arguments?.getLong("id") ?: -1L, onDone = { nav.popBackStack() })
                 }
-                composable("import") {
-                    ImportScreen(onDone = { nav.popBackStack() }, onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) }, sharedFiles = sharedFiles)
+                composable(
+                    "import?month={month}",
+                    arguments = listOf(navArgument("month") { type = NavType.BoolType; defaultValue = false }),
+                ) { entry ->
+                    ImportScreen(
+                        onDone = { nav.popBackStack() },
+                        onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) },
+                        sharedFiles = sharedFiles,
+                        startOnMonth = entry.arguments?.getBoolean("month") ?: false,
+                    )
                 }
                 composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })

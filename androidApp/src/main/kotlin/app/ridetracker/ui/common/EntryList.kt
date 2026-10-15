@@ -117,10 +117,10 @@ fun EntryRow(
     ActionRow(
         leading = { PlatformBadge(entry.platformName, entry.platformColorArgb) },
         title = entry.platformName,
-        note = if (entry.source == IncomeSource.ESTIMATE.id) {
-            listOfNotNull(stringResource(R.string.estimated), entry.note).joinToString(" · ")
-        } else {
-            entry.note
+        note = when (entry.source) {
+            IncomeSource.ESTIMATE.id -> listOfNotNull(stringResource(R.string.estimated), entry.note).joinToString(" · ")
+            IncomeSource.MONTH_DIFFERENCE.id -> listOfNotNull(stringResource(R.string.income_month_difference), entry.note).joinToString(" · ")
+            else -> entry.note
         },
         amount = money.format(entry.amountMinor),
         onClick = onClick,

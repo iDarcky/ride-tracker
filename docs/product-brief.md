@@ -161,6 +161,8 @@ See the README for build, versioning and signing rules.
    files no longer fill missing days. The monthly side needs reworking ("monthly is overcomplicated, we need to help
    with that soon"). Different sources contain different things (Bolt's PDF has no campaigns): each figure should
    come only from sources that have it, and differences be shown, not silently applied.
+   **0.18.0 (owner, 15 Oct 2026):** End of month reworked (two steps per app: monthly total and hours; difference added
+   with one tap; "Didn't drive" days; month status on Home; "May still change"; reminder on the 1st).
    **Then (owner, 11 Oct 2026, in this order):** a readability check of every Home widget, branding directions.
    **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
    maybe "See customer fare breakdown" per day; then the list below.
@@ -168,11 +170,11 @@ See the README for build, versioning and signing rules.
 ### After Uber (owner, 9 Oct 2026: "add all the ideas and the GTM to a to-do list")
 Product:
 - [ ] Fleet drivers: check the fleet's weekly payout against Bolt/Uber's numbers (fleet cut, what was paid).
-- [ ] The week first: this week's payout prominent on Home (Bolt pays weekly).
-- [ ] Real profit per hour: after fuel (km × consumption × fuel price from the car) and commission.
+- [x] The week first: "This week's payout" Home card (0.18.0).
+- [x] Real money per hour (0.18.0): after fuel (fuel expenses entered, no estimates) and after all expenses.
 - [x] Monthly target (0.10.0): income or money kept, per driving day, pace, notification when reached.
 - [x] Import reminders: an evening reminder for the day's screenshots (0.15.0); End of month opens first early in a month.
-- [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
+- [x] Backup off the phone (0.18.0): weekly backup over one chosen file (Google Drive or the phone); Android backup checked.
 - [x] Wrapped (monthly and yearly story cards, share as image) and the km / miles setting: done in 0.17.0. Money stays
       in one currency per app, no conversion.
 - [ ] Scan fuel receipts (owner, 15 Oct 2026: to-do): a photo of a receipt becomes an expense with litres and price

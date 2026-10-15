@@ -66,9 +66,20 @@ class DateFormats(private val locale: Locale) {
     private val day = DateTimeFormatter.ofPattern("EEE, d MMM yyyy", locale)
     private val shortDay = DateTimeFormatter.ofPattern("d MMM", locale)
     private val month = DateTimeFormatter.ofPattern("LLLL yyyy", locale)
+    private val weekdayDay = DateTimeFormatter.ofPattern("EEE d", locale)
+    private val monthOnly = DateTimeFormatter.ofPattern("LLLL", locale)
     private val medium = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
 
     fun day(date: LocalDate): String = date.toJavaLocalDate().format(day).capitalized()
+
+    /** "Mon 13", for day chips. */
+    fun shortWeekday(date: LocalDate): String = date.toJavaLocalDate().format(weekdayDay).capitalized()
+
+    /** "September" (Romanian: "septembrie", as written inside a sentence). */
+    fun monthName(month: Period.Month): String = month.range.start.toJavaLocalDate().format(monthOnly)
+
+    /** "September" / "Septembrie", to start a sentence. */
+    fun monthTitle(month: Period.Month): String = monthName(month).capitalized()
 
     /** "M", one letter for a day of the week. */
     fun weekdayNarrow(date: LocalDate): String =

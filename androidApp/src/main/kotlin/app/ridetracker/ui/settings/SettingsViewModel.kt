@@ -1,5 +1,6 @@
 package app.ridetracker.ui.settings
 
+import app.ridetracker.shared.data.AutoBackupSettings
 import app.ridetracker.shared.domain.DistanceUnit
 import app.ridetracker.shared.domain.DemoData
 import app.ridetracker.AppContainer
@@ -78,6 +79,9 @@ class SettingsViewModel(
     fun setZReportTime(hour: Int, minute: Int) {
         viewModelScope.launch { settingsRepository.setZReportTime(hour * 60 + minute) }
     }
+
+    val autoBackup: StateFlow<AutoBackupSettings> = settingsRepository.autoBackup
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AutoBackupSettings())
 
     val importReminder: StateFlow<ImportReminderSettings> = settingsRepository.importReminder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ImportReminderSettings())

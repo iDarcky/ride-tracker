@@ -71,6 +71,7 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.TableView
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -633,8 +634,9 @@ private fun CurrencyPage(selected: String?, onSelect: (String) -> Unit, onBack: 
 
 /** Back up, restore and erase, on one page. */
 @Composable
-fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
+fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit, onAutoBackup: () -> Unit) {
     val viewModel = settingsViewModel()
+    val autoBackup by viewModel.autoBackup.collectAsStateWithLifecycle()
     val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val locale = currentLocale()
@@ -689,6 +691,20 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
     }
 
     SettingsFrame(stringResource(R.string.section_data), onBack, snackbar) {
+        item {
+            val last = autoBackup.lastBackupEpochMillis?.let { DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(Date(it)) }
+            Row(
+                Icons.Outlined.CloudUpload,
+                stringResource(R.string.auto_backup),
+                when {
+                    !autoBackup.enabled -> stringResource(R.string.auto_backup_summary_off)
+                    autoBackup.lastFailed -> stringResource(R.string.auto_backup_summary_failed)
+                    else -> stringResource(R.string.auto_backup_summary_on, last ?: "–")
+                },
+                tint = if (autoBackup.enabled && autoBackup.lastFailed) MaterialTheme.colorScheme.error else Color.Unspecified,
+                onClick = onAutoBackup,
+            )
+        }
         item {
             Row(Icons.Outlined.Save, stringResource(R.string.backup), stringResource(R.string.backup_summary)) {
                 createBackup.launch("ridetracker-backup-${LocalDate.now()}.json")

@@ -21,6 +21,8 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AssistChipDefaults
@@ -97,6 +99,8 @@ val HomeWidget.title: Int
         HomeWidget.NEEDS_ATTENTION -> R.string.needs_attention
         HomeWidget.CASH_CARD -> R.string.card_and_cash
         HomeWidget.WEEK_SCREENSHOTS -> R.string.week_title
+        HomeWidget.WEEK_PAYOUT -> R.string.widget_week_payout
+        HomeWidget.REAL_PER_HOUR -> R.string.widget_real_per_hour
     }
 
 /** Whether the card has something to show for this period (empty cards are left out, except while customising). */
@@ -115,6 +119,8 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.COMPARISON -> state.comparisonCard != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
         HomeWidget.WEEK_SCREENSHOTS -> state.week != null
+        HomeWidget.WEEK_PAYOUT -> state.payout != null
+        HomeWidget.REAL_PER_HOUR -> state.realHourly != null
     }
 }
 
@@ -131,6 +137,7 @@ fun WidgetBody(
     onOpenTarget: () -> Unit,
     onCompareWhole: (Boolean) -> Unit = {},
     onImport: () -> Unit = {},
+    onImportMonth: () -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -155,7 +162,9 @@ fun WidgetBody(
         }
         HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
         HomeWidget.COMPARISON -> state.comparisonCard?.let { ComparisonCardView(it, state, money, dates, percent, onCompareWhole) }
-        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport) }
+        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport, onImportMonth) }
+        HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, money) }
+        HomeWidget.REAL_PER_HOUR -> state.realHourly?.let { RealHourlyCard(it, money) }
         HomeWidget.NEEDS_ATTENTION -> Unit
     }
 }
@@ -165,7 +174,7 @@ fun WidgetBody(
  * Days still to come are faint. Tapping the card (or the button, while today is missing) opens Import.
  */
 @Composable
-private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit) {
+private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, onImportMonth: () -> Unit) {
     OutlinedCard(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.week_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
@@ -179,12 +188,18 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit) {
                 week.days.forEach { day ->
                     val future = day > week.today
                     val isToday = day == week.today
+                    val off = day in week.daysOff
+                    val dayOffLabel = stringResource(R.string.day_off_label, dates.weekdayFull(day))
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.semantics(mergeDescendants = true) {
-                            contentDescription = dates.weekdayFull(day) + ": " +
-                                week.apps.joinToString { app -> app.name + " " + if (app.id in week.logged[day].orEmpty()) "✓" else "–" }
+                            contentDescription = if (off) {
+                                dayOffLabel
+                            } else {
+                                dates.weekdayFull(day) + ": " +
+                                    week.apps.joinToString { app -> app.name + " " + if (app.id in week.logged[day].orEmpty()) "✓" else "–" }
+                            }
                         },
                     ) {
                         Text(
@@ -197,6 +212,11 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit) {
                             val inDay = app.id in week.logged[day].orEmpty()
                             val colour = Color(app.colorArgb.toInt())
                             Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                              // A day off: a dash instead of the app's dot, so it reads as done, not missing.
+                              if (off && !inDay) {
+                                  Box(Modifier.width(10.dp).height(2.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
+                                  return@Box
+                              }
                               Box(
                                 Modifier.size(14.dp).clip(CircleShape)
                                     .then(
@@ -215,13 +235,40 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit) {
               }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    pluralStringResource(R.plurals.week_days_in, week.daysIn, week.daysIn),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        pluralStringResource(R.plurals.week_days_in, week.daysIn, week.daysIn),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    week.month?.let { month ->
+                        val (inDays, soFar) = week.monthDays
+                        Text(
+                            pluralStringResource(R.plurals.week_month_days, soFar, dates.monthTitle(month), inDays, soFar),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 if (!week.todayIn) {
                     FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
+                }
+            }
+            // Early in a month: how last month's files are coming in, until every app has them.
+            week.files?.let { files ->
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (files.complete) {
+                            stringResource(R.string.week_month_files_done, dates.monthName(files.month))
+                        } else {
+                            pluralStringResource(R.plurals.week_month_files, files.apps.size, dates.monthName(files.month), files.appsDone, files.apps.size)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!files.complete) {
+                        TextButton(onClick = onImportMonth) { Text(stringResource(R.string.import_title)) }
+                    }
                 }
             }
         }

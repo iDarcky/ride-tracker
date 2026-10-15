@@ -8,10 +8,15 @@ enum class IncomeSource(val id: String) {
     PDF("pdf"),
     /** Filled in from the platform's monthly totals or trips for a day without a screenshot. */
     ESTIMATE("estimate"),
+    /** What a platform's monthly total adds to the month's days (campaigns, missed days), added by the driver. */
+    MONTH_DIFFERENCE("month_difference"),
     ;
 
     companion object {
         fun fromId(id: String?): IncomeSource = entries.firstOrNull { it.id == id } ?: MANUAL
+
+        /** Whether an entry with this source means that day is in (estimates and month differences don't). */
+        fun countsAsDay(id: String): Boolean = id != ESTIMATE.id && id != MONTH_DIFFERENCE.id
     }
 }
 

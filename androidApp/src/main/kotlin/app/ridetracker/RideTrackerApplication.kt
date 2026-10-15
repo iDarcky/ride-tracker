@@ -4,10 +4,12 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import app.ridetracker.importing.ReportReader
+import app.ridetracker.backup.AutoBackup
 import app.ridetracker.notifications.DocumentNotifier
 import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
 import app.ridetracker.notifications.ImportReminderScheduler
+import app.ridetracker.notifications.MonthEndWorker
 import app.ridetracker.notifications.ZReportReminderScheduler
 import app.ridetracker.notifications.TargetNotifier
 import app.ridetracker.widget.GoalWidget
@@ -78,6 +80,8 @@ class RideTrackerApplication : Application() {
         DueExpensesWorker.schedule(this)
         ZReportReminderScheduler.createChannel(this)
         ImportReminderScheduler.createChannel(this)
+        MonthEndWorker.createChannel(this)
+        MonthEndWorker.schedule(this)
         TargetNotifier.createChannel(this)
         @OptIn(DelicateCoroutinesApi::class)
         TargetNotifier.watch(this, container, GlobalScope)
@@ -94,6 +98,12 @@ class RideTrackerApplication : Application() {
         GlobalScope.launch {
             container.settingsRepository.importReminder.distinctUntilChanged()
                 .collect { ImportReminderScheduler.schedule(this@RideTrackerApplication, it) }
+        }
+        // The weekly backup follows its setting (also after Android restores the app onto a new phone).
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch {
+            container.settingsRepository.autoBackup.map { it.enabled }.distinctUntilChanged()
+                .collect { AutoBackup.schedule(this@RideTrackerApplication, it) }
         }
         // Fix breakdown lines imported before the reader recognised their label, and days saved with a misread total.
         @OptIn(DelicateCoroutinesApi::class)

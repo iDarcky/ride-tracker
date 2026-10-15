@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.18.0
+- **End of month, simpler.** Import's "End of month" page now shows only the month that just ended, one card per app
+  with two steps: the app's own monthly total (Bolt: Monthly screenshot; Uber: payments_organization) and your hours
+  (Bolt: Activity → Hours; Uber: driver_time_and_distance). Each step says where to find it and what it adds, and is
+  ticked once it's in. Trips files and Uber's other files moved to "Extras", folded away.
+- **The monthly total vs your days, in one tap.** When an app's monthly total differs from the month's daily
+  screenshots (campaigns, a day without a screenshot), the card says by how much; "Add it to the month" adds the
+  difference as one entry on the month's last day, marked "From the monthly total". It doesn't count as a day in,
+  and later screenshots of that day don't replace it.
+- **"Didn't drive?"** on Import's Today page: the last week's days with nothing from any app, as chips to mark a day
+  off. A day off counts as done on Home and the evening reminder stays quiet that day.
+- **Screenshots this week** also shows the month so far ("October: 13 of 15 days"), and in the first 10 days of a
+  month, how last month's files are coming in ("September's files: 1 of 2 apps", with Import).
+- **"May still change"** on last month's numbers (Home and Money) until its month-end files are in; it opens End of
+  month.
+- **A reminder on the 1st** (and the 3rd if still needed), around 10:00: "September is over", to get last month's
+  files. It goes with the evening import reminder.
+- **Weekly backup** (Your data → Weekly backup): pick one file once, on Google Drive or the phone, and Ridely saves the
+  backup over it every week (and "Back up now"). It never overwrites a backup while the app is empty, and says so in
+  red when it couldn't save. Android's own backup (Google account) also includes Ridely: checked on the emulator,
+  data, settings and target came back.
+- **This week's payout** (new Home card): per app, what it paid this week, the cash already in hand, and what's coming
+  to your account (or owed to Bolt when cash is more than earned), with the total. Fleet drivers see that the fleet
+  pays it, after its cut.
+- **Money per hour** (new Home card): what the apps paid per hour online, then after fuel and after all expenses.
+  Fuel is the fuel and charging expenses you entered (no estimates); with hours for only some apps or days, costs are
+  shared out by income.
+- Database 10 (days off), backup format 10 (older apps would drop days off).
+
 ## 0.17.0
 - **New name and icon: Ridely** (a working name, owner 15 Oct 2026). The icon is a ring that is almost closed, with a
   light green dot where it starts, the same shape as the target widget; it has a one-colour version for themed icons,

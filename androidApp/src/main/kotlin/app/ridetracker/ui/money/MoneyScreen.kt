@@ -93,6 +93,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ridetracker.R
 import app.ridetracker.ui.common.MonthTitle
+import app.ridetracker.ui.overview.MayStillChangeChip
 import app.ridetracker.ui.common.ScrollToTopOnReselect
 import app.ridetracker.shared.domain.Comparisons
 import app.ridetracker.shared.domain.Period
@@ -134,6 +135,7 @@ fun MoneyScreen(
     onOpenRecurring: () -> Unit,
     onOpenPlatform: (Long, Period.Month) -> Unit,
     onOpenWrapped: (DateRange, Boolean) -> Unit,
+    onImportMonth: () -> Unit,
     viewModel: IncomeListViewModel = viewModel {
         IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository, container.period)
     },
@@ -159,7 +161,7 @@ fun MoneyScreen(
     ) { padding ->
         val modifier = Modifier.padding(top = padding.calculateTopPadding())
         when (tab) {
-            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, modifier)
+            0 -> IncomeTab(viewModel, snackbar, onAddIncome, onEditIncome, onOpenPlatform, onImportMonth, modifier)
             else -> ExpenseTab(expenseViewModel, snackbar, onAddExpense, onEditExpense, onOpenRecurring, modifier)
         }
     }
@@ -252,9 +254,11 @@ private fun IncomeTab(
     onAdd: () -> Unit,
     onEdit: (Long) -> Unit,
     onOpenPlatform: (Long, Period.Month) -> Unit,
+    onImportMonth: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val monthEnd by viewModel.monthEnd.collectAsStateWithLifecycle()
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
@@ -281,6 +285,9 @@ private fun IncomeTab(
                 current = state.currentMonth,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
+        }
+        if (monthEnd?.let { !it.complete && it.month == state.month } == true) {
+            item { MayStillChangeChip(onImportMonth, Modifier.padding(horizontal = 16.dp)) }
         }
         item {
             TotalCard(

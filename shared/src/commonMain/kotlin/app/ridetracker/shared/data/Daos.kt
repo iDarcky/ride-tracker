@@ -90,7 +90,8 @@ interface IncomeEntryDao {
     )
     suspend fun firstDay(): Long?
 
-    @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date = :epochDay ORDER BY id")
+    /** The day's entries an import replaces: a month difference (dated on the month's last day) stays. */
+    @Query("SELECT * FROM income_entry WHERE platformId = :platformId AND date = :epochDay AND source != 'month_difference' ORDER BY id")
     suspend fun getForDay(platformId: Long, epochDay: Long): List<IncomeEntryEntity>
 
     @Insert
@@ -277,6 +278,9 @@ interface ImportDao {
     @Query("DELETE FROM income_entry WHERE source = 'estimate' AND platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
     suspend fun deleteEstimates(platformId: Long, startEpochDay: Long, endEpochDay: Long)
 
+    @Query("DELETE FROM income_entry WHERE source = 'month_difference' AND platformId = :platformId AND date BETWEEN :startEpochDay AND :endEpochDay")
+    suspend fun deleteMonthDifferences(platformId: Long, startEpochDay: Long, endEpochDay: Long)
+
     @Query("SELECT platformId, date FROM income_entry WHERE source = 'estimate'")
     suspend fun getEstimateDays(): List<PlatformDay>
 
@@ -428,4 +432,22 @@ interface ImportDao {
 
     @Query("DELETE FROM period_summary")
     suspend fun deleteAllSummaries()
+}
+
+@Dao
+interface DayOffDao {
+    @Query("SELECT date FROM day_off ORDER BY date")
+    fun observeAll(): Flow<List<Long>>
+
+    @Query("SELECT * FROM day_off ORDER BY date")
+    suspend fun getAll(): List<DayOffEntity>
+
+    @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
+    suspend fun insertAll(days: List<DayOffEntity>)
+
+    @Query("DELETE FROM day_off WHERE date = :epochDay")
+    suspend fun delete(epochDay: Long)
+
+    @Query("DELETE FROM day_off")
+    suspend fun deleteAll()
 }

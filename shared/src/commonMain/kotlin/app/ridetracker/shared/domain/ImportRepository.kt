@@ -5,6 +5,7 @@ import kotlinx.datetime.toLocalDateTime
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import app.ridetracker.shared.data.AppDatabase
+import app.ridetracker.shared.data.DayOffEntity
 import app.ridetracker.shared.data.ImportBatchEntity
 import app.ridetracker.shared.data.IncomeEntryEntity
 import app.ridetracker.shared.data.IncomeLineEntity
@@ -36,6 +37,7 @@ sealed interface ImportOutcome {
 class ImportRepository(private val database: AppDatabase) {
     private val imports = database.importDao()
     private val entries = database.incomeEntryDao()
+    private val daysOff = database.dayOffDao()
 
     fun observeBatches(): Flow<List<ImportBatchEntity>> = imports.observeBatches()
 
@@ -78,6 +80,40 @@ class ImportRepository(private val database: AppDatabase) {
         }
 
     suspend fun getLines(entryId: Long): List<IncomeLineEntity> = imports.getLines(entryId)
+
+    /** [month]'s files from Bolt and Uber, for End of month, Home and Money. */
+    fun observeMonthEnd(month: Period.Month): Flow<MonthEndStatus> = combine(
+        database.platformDao().observeAll(),
+        entries.observeDetailsInRange(month.range.start.toEpochDays(), month.range.endInclusive.toEpochDays()),
+        observeSummaries(month.range),
+    ) { platforms, monthEntries, summaries -> MonthEnd.compute(month, monthEntries, summaries, MonthEnd.platformIds(platforms)) }
+
+    /** Days marked "Didn't drive", as epoch days. */
+    fun observeDaysOff(): Flow<Set<Long>> = daysOff.observeAll().map { it.toSet() }
+
+    suspend fun setDayOff(day: LocalDate, off: Boolean) {
+        if (off) daysOff.insertAll(listOf(DayOffEntity(day.toEpochDays()))) else daysOff.delete(day.toEpochDays())
+    }
+
+    /**
+     * Adds what [platformId]'s monthly total has beyond the month's days ([differenceMinor], from [MonthEnd]) as one
+     * entry on the month's last day, so the month matches the platform. A difference added before is folded in.
+     */
+    suspend fun addMonthDifference(platformId: Long, month: Period.Month, differenceMinor: Long, nowEpochMillis: Long) = transaction {
+        val start = month.range.start.toEpochDays()
+        val end = month.range.endInclusive.toEpochDays()
+        val before = imports.getEntries(platformId, start, end).filter { it.source == IncomeSource.MONTH_DIFFERENCE.id }.sumOf { it.amountMinor }
+        imports.deleteMonthDifferences(platformId, start, end)
+        val total = before + differenceMinor
+        if (total != 0L) {
+            entries.insert(
+                IncomeEntryEntity(
+                    platformId = platformId, amountMinor = total, date = end, createdAt = nowEpochMillis,
+                    source = IncomeSource.MONTH_DIFFERENCE.id,
+                ),
+            )
+        }
+    }
 
     /** How many entries already exist for [platformId] on the day of [day] (they are replaced on save). */
     suspend fun existingEntries(platformId: Long, day: ParsedDay): Int =
@@ -427,7 +463,7 @@ class ImportRepository(private val database: AppDatabase) {
     /** What each day has from exact entries (screenshots, reports, typed in), estimates left out. */
     private suspend fun exactByDay(platformId: Long, from: Long, to: Long): Map<LocalDate, Long> =
         imports.getEntries(platformId, from, to)
-            .filter { it.source != IncomeSource.ESTIMATE.id }
+            .filter { IncomeSource.countsAsDay(it.source) }
             .groupBy { LocalDate.fromEpochDays(it.date) }
             .mapValues { (_, list) -> list.sumOf { it.amountMinor } }
 
