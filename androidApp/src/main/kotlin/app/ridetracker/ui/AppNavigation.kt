@@ -117,6 +117,8 @@ import app.ridetracker.ui.settings.SettingsPage
 import app.ridetracker.ui.settings.SettingsScreen
 import app.ridetracker.ui.settings.YourDataScreen
 import app.ridetracker.ui.settings.AutoBackupScreen
+import app.ridetracker.ui.summary.SummariesScreen
+import app.ridetracker.ui.summary.SummaryScreen
 import app.ridetracker.ui.vehicle.DocumentEditScreen
 import app.ridetracker.ui.vehicle.DocumentScreen
 import app.ridetracker.ui.vehicle.VehicleEditScreen
@@ -199,7 +201,7 @@ fun AppNavigation() {
                 predictivePopEnterTransition = { EnterTransition.None },
                 predictivePopExitTransition = { ExitTransition.None },
             ) {
-                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onImportMonth = { nav.navigate("import?month=true") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
+                composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onImportMonth = { nav.navigate("import?month=true") }, onOpenSummary = { nav.navigate(summaryRoute(it)) }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
                         onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
                         onOpenWrapped = { range, yearly -> nav.navigate(wrappedRoute(range, yearly)) },
@@ -234,6 +236,7 @@ fun AppNavigation() {
                         onImport = { nav.navigate("import") },
                         onYourData = { nav.navigate("data") },
                         onSettings = { nav.navigate("settings") },
+                        onSummaries = { nav.navigate("summaries") },
                     )
                 }
                 composable("settings") {
@@ -246,6 +249,25 @@ fun AppNavigation() {
                 }
                 composable("data") { YourDataScreen(onBack = { nav.popBackStack() }, onExport = { nav.navigate("export") }, onAutoBackup = { nav.navigate("auto-backup") }) }
                 composable("auto-backup") { AutoBackupScreen(onBack = { nav.popBackStack() }) }
+                composable("summaries") {
+                    SummariesScreen(onBack = { nav.popBackStack() }, onOpen = { nav.navigate(summaryRoute(it)) })
+                }
+                composable(
+                    "summary/{start}/{end}",
+                    arguments = listOf(navArgument("start") { type = NavType.LongType }, navArgument("end") { type = NavType.LongType }),
+                ) { entry ->
+                    val range = DateRange(
+                        LocalDate.fromEpochDays(entry.arguments?.getLong("start") ?: 0),
+                        LocalDate.fromEpochDays(entry.arguments?.getLong("end") ?: 0),
+                    )
+                    SummaryScreen(
+                        range = range,
+                        onBack = { nav.popBackStack() },
+                        onOpenWrapped = { nav.navigate(wrappedRoute(it, false)) },
+                        onImport = { nav.navigate("import") },
+                        onImportMonth = { nav.navigate("import?month=true") },
+                    )
+                }
                 composable("export") { ExportScreen(onBack = { nav.popBackStack() }) }
                 composable("vehicle/edit") { VehicleEditScreen(onDone = { nav.popBackStack() }) }
                 composable(
@@ -298,6 +320,7 @@ fun AppNavigation() {
                         onOpenReminder = { nav.navigate(SettingsPage.IMPORT_REMINDER.route) },
                         sharedFiles = sharedFiles,
                         startOnMonth = entry.arguments?.getBoolean("month") ?: false,
+                        onOpenSummary = { nav.navigate(summaryRoute(it)) },
                     )
                 }
                 composable("trip/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
@@ -383,6 +406,8 @@ fun AppNavigation() {
         }
     }
 }
+
+fun summaryRoute(range: DateRange) = "summary/${range.start.toEpochDays()}/${range.endInclusive.toEpochDays()}"
 
 private fun wrappedRoute(range: DateRange, yearly: Boolean) =
     "wrapped/${range.start.toEpochDays()}/${range.endInclusive.toEpochDays()}/$yearly"

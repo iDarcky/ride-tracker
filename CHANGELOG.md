@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.19.0
+- **Weekly summary**: on Monday around 10:00 (the day after your week ends), "Last week: RON 1,840 kept" opens a page with
+  the week: money kept and the change from the week before, money per hour from the apps, after fuel and after all
+  expenses, days driven and days off, the best day, each app (income and per hour), and the week's payout. Days with
+  nothing in and not marked as a day off are listed as missing, with Import.
+- **Monthly summary**: the same page for a month, with "Play your Wrapped" at the top. It's announced once the month's
+  files are all in ("Your September is ready"), or on the 10th anyway, marked "may still change". End of month shows
+  "See your September" once the month is complete. Home's card for last month now opens this page (from the moment the
+  month is complete, or the 10th, to the end of the month); the year's Wrapped is as before.
+- **Summaries** in the menu: every finished month and the last 12 weeks.
+- **Import, tidier**: Bolt's and Uber's cards are smaller (where to find the screenshot opens with the arrow), days off
+  show as a dash in the week strip, and the actions sit in a floating toolbar at the bottom: Screenshots, Files and
+  Day off (a menu of the last week's days with nothing in).
+
 ## 0.18.0
 - **End of month, simpler.** Import's "End of month" page now shows only the month that just ended, one card per app
   with two steps: the app's own monthly total (Bolt: Monthly screenshot; Uber: payments_organization) and your hours

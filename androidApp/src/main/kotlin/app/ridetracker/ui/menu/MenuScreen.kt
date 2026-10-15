@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,7 @@ fun MenuScreen(
     onImport: () -> Unit,
     onYourData: () -> Unit,
     onSettings: () -> Unit,
+    onSummaries: () -> Unit,
 ) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -63,6 +65,7 @@ fun MenuScreen(
             Group(
                 listOf(
                     MenuEntry(Icons.Outlined.UploadFile, stringResource(R.string.import_title), stringResource(R.string.import_menu_summary), onImport),
+                    MenuEntry(Icons.Outlined.CalendarMonth, stringResource(R.string.summaries), stringResource(R.string.summaries_summary), onSummaries),
                     MenuEntry(Icons.Outlined.Apps, stringResource(R.string.apps), stringResource(R.string.apps_summary), onManagePlatforms),
                 ),
             )

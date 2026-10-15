@@ -98,6 +98,23 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    /** The month (its first day, epoch days) whose summary the driver opened, so it isn't announced again. */
+    suspend fun summarySeenMonth(): Long? = dataStore.data.first()[SUMMARY_SEEN_MONTH]
+
+    suspend fun setSummarySeenMonth(monthStart: Long) {
+        dataStore.edit { it[SUMMARY_SEEN_MONTH] = monthStart }
+    }
+
+    /** The last week (its first day) and month (its first day) whose summary was announced. */
+    suspend fun summaryNotified(): Pair<Long?, Long?> = dataStore.data.first().let { it[SUMMARY_NOTIFIED_WEEK] to it[SUMMARY_NOTIFIED_MONTH] }
+
+    suspend fun setSummaryNotified(weekStart: Long? = null, monthStart: Long? = null) {
+        dataStore.edit {
+            if (weekStart != null) it[SUMMARY_NOTIFIED_WEEK] = weekStart
+            if (monthStart != null) it[SUMMARY_NOTIFIED_MONTH] = monthStart
+        }
+    }
+
     val zReport: Flow<ZReportReminder> = dataStore.data.map { prefs ->
         ZReportReminder(
             enabled = prefs[Z_ENABLED] ?: false,
@@ -257,6 +274,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")
         private val IMPORT_REMINDER_ENABLED = booleanPreferencesKey("import_reminder_enabled")
         private val IMPORT_REMINDER_MINUTE = intPreferencesKey("import_reminder_minute")
+        private val SUMMARY_SEEN_MONTH = longPreferencesKey("summary_seen_month")
+        private val SUMMARY_NOTIFIED_WEEK = longPreferencesKey("summary_notified_week")
+        private val SUMMARY_NOTIFIED_MONTH = longPreferencesKey("summary_notified_month")
         private val AUTO_BACKUP_URI = stringPreferencesKey("auto_backup_uri")
         private val AUTO_BACKUP_LAST = longPreferencesKey("auto_backup_last")
         private val AUTO_BACKUP_FAILED = booleanPreferencesKey("auto_backup_failed")

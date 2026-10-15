@@ -312,7 +312,6 @@
     <string name="checklist_hours">Ore online</string>
     <string name="checklist_hours_how">În Bolt Driver: Activitate → Ore → În ultimele 3 luni, atinge bara lunii ca să apară orele, apoi fă o captură.</string>
     <string name="checklist_how">Cum o obții</string>
-    <string name="import_choose_screenshots">Alege capturi de ecran</string>
     <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ridely.</string>
     <string name="import_add_screenshots">Adaugă capturi</string>
     <string name="import_add_files">Adaugă fișiere</string>
@@ -846,7 +845,6 @@
     <string name="month_extras_uber_payments">Venitul pe zile, dacă ai sărit peste capturi</string>
     <string name="month_extras_uber_trips">Ora, km și plata fiecărei curse</string>
     <string name="income_month_difference">Din totalul lunar</string>
-    <string name="days_off_title">N-ai condus?</string>
     <string name="days_off_body">Marchează zilele libere, ca să nu mai apară ca lipsă.</string>
     <string name="day_off_label">%1$s, zi liberă</string>
     <plurals name="week_month_days">
@@ -898,4 +896,47 @@
     <string name="real_no_fuel">Adaugă carburantul ca să-l vezi</string>
     <string name="real_hours">Din %1$s online</string>
     <string name="real_partial">doar zilele și aplicațiile cu ore</string>
+
+    <string name="toolbar_screenshots">Capturi</string>
+    <string name="toolbar_files">Fișiere</string>
+    <string name="toolbar_day_off">Zi liberă</string>
+
+    <!-- Rezumate (0.19.0) -->
+    <string name="summaries">Rezumate</string>
+    <string name="summaries_summary">Săptămânile și lunile tale</string>
+    <string name="summaries_weeks">Săptămâni</string>
+    <string name="summaries_months">Luni</string>
+    <string name="summaries_empty">Primul rezumat apare după prima săptămână întreagă.</string>
+    <string name="summary_week_title">Săptămâna %1$s</string>
+    <string name="summary_vs_week">față de săptămâna dinainte</string>
+    <string name="summary_vs_month">față de %1$s</string>
+    <plurals name="summary_missing">
+        <item quantity="one">Lipsește: %1$s</item>
+        <item quantity="few">Lipsesc: %1$s</item>
+        <item quantity="other">Lipsesc: %1$s</item>
+    </plurals>
+    <plurals name="summary_days_driven">
+        <item quantity="one">O zi de condus</item>
+        <item quantity="few">%d zile de condus</item>
+        <item quantity="other">%d de zile de condus</item>
+    </plurals>
+    <plurals name="summary_days_off">
+        <item quantity="one">o zi liberă</item>
+        <item quantity="few">%d zile libere</item>
+        <item quantity="other">%d de zile libere</item>
+    </plurals>
+    <string name="summary_best_day">Cea mai bună zi: %1$s · %2$s</string>
+    <string name="summary_days">Zile</string>
+    <string name="summary_by_app">Pe aplicații</string>
+    <string name="summary_payout">Plata săptămânii</string>
+    <string name="summary_wrapped">Vezi Wrapped-ul</string>
+    <string name="summary_month_ready">Luna %1$s e gata</string>
+    <string name="summary_month_ready_body">Cifrele tale și Wrapped-ul de trimis</string>
+    <string name="month_see">Vezi luna %1$s</string>
+    <string name="summary_channel">Rezumate</string>
+    <string name="summary_channel_description">Săptămâna ta lunea, luna ta când e completă</string>
+    <string name="summary_week_notification">Săptămâna trecută: %1$s rămași</string>
+    <string name="summary_week_notification_body">Vezi săptămâna: pe oră, zilele și fiecare aplicație.</string>
+    <string name="summary_month_notification_body">Toate fișierele de final de lună sunt importate. Vezi luna și Wrapped-ul.</string>
+    <string name="summary_month_notification_body_partial">Lipsesc câteva fișiere de final de lună, așa că se poate schimba.</string>
 </resources>

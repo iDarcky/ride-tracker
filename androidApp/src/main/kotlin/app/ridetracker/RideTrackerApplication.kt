@@ -10,6 +10,7 @@ import app.ridetracker.notifications.DueExpenseNotifier
 import app.ridetracker.notifications.DueExpensesWorker
 import app.ridetracker.notifications.ImportReminderScheduler
 import app.ridetracker.notifications.MonthEndWorker
+import app.ridetracker.notifications.SummaryNotifier
 import app.ridetracker.notifications.ZReportReminderScheduler
 import app.ridetracker.notifications.TargetNotifier
 import app.ridetracker.widget.GoalWidget
@@ -81,6 +82,7 @@ class RideTrackerApplication : Application() {
         ZReportReminderScheduler.createChannel(this)
         ImportReminderScheduler.createChannel(this)
         MonthEndWorker.createChannel(this)
+        SummaryNotifier.createChannel(this)
         MonthEndWorker.schedule(this)
         TargetNotifier.createChannel(this)
         @OptIn(DelicateCoroutinesApi::class)

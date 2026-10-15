@@ -312,7 +312,6 @@
     <string name="checklist_hours">Online hours</string>
     <string name="checklist_hours_how">In Bolt Driver: Activity → Hours → Past 3 months, tap the month’s bar so its hours show, take a screenshot.</string>
     <string name="checklist_how">How to get it</string>
-    <string name="import_choose_screenshots">Choose screenshots</string>
     <string name="import_share_hint">You can also share screenshots to Ridely from your gallery.</string>
     <string name="import_add_screenshots">Add screenshots</string>
     <string name="import_add_files">Add files</string>
@@ -824,7 +823,6 @@
     <string name="month_extras_uber_payments">Each day’s income, if you skipped screenshots</string>
     <string name="month_extras_uber_trips">Each trip’s time, km and payment</string>
     <string name="income_month_difference">From the monthly total</string>
-    <string name="days_off_title">Didn’t drive?</string>
     <string name="days_off_body">Mark your days off so they don’t show as missing.</string>
     <string name="day_off_label">%1$s, day off</string>
     <plurals name="week_month_days">
@@ -874,4 +872,44 @@
     <string name="real_no_fuel">Add your fuel to see it</string>
     <string name="real_hours">Over %1$s online</string>
     <string name="real_partial">only days and apps with hours</string>
+
+    <string name="toolbar_screenshots">Screenshots</string>
+    <string name="toolbar_files">Files</string>
+    <string name="toolbar_day_off">Day off</string>
+
+    <!-- Summaries (0.19.0) -->
+    <string name="summaries">Summaries</string>
+    <string name="summaries_summary">Your weeks and months</string>
+    <string name="summaries_weeks">Weeks</string>
+    <string name="summaries_months">Months</string>
+    <string name="summaries_empty">Your first summary comes after your first full week.</string>
+    <string name="summary_week_title">Week of %1$s</string>
+    <string name="summary_vs_week">vs the week before</string>
+    <string name="summary_vs_month">vs %1$s</string>
+    <plurals name="summary_missing">
+        <item quantity="one">Missing: %1$s</item>
+        <item quantity="other">Missing: %1$s</item>
+    </plurals>
+    <plurals name="summary_days_driven">
+        <item quantity="one">%d day driven</item>
+        <item quantity="other">%d days driven</item>
+    </plurals>
+    <plurals name="summary_days_off">
+        <item quantity="one">%d day off</item>
+        <item quantity="other">%d days off</item>
+    </plurals>
+    <string name="summary_best_day">Best day: %1$s · %2$s</string>
+    <string name="summary_days">Days</string>
+    <string name="summary_by_app">By app</string>
+    <string name="summary_payout">The week’s payout</string>
+    <string name="summary_wrapped">Play your Wrapped</string>
+    <string name="summary_month_ready">Your %1$s is ready</string>
+    <string name="summary_month_ready_body">Your numbers, and your Wrapped to share</string>
+    <string name="month_see">See your %1$s</string>
+    <string name="summary_channel">Summaries</string>
+    <string name="summary_channel_description">Your week on Monday, your month when it’s complete</string>
+    <string name="summary_week_notification">Last week: %1$s kept</string>
+    <string name="summary_week_notification_body">See your week: per hour, days and each app.</string>
+    <string name="summary_month_notification_body">Every month-end file is in. See your month and your Wrapped.</string>
+    <string name="summary_month_notification_body_partial">Some month-end files are missing, so it may still change.</string>
 </resources>

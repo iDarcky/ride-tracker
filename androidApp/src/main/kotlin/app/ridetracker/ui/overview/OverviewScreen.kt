@@ -146,6 +146,7 @@ import kotlin.math.abs
 fun OverviewScreen(
     onImport: () -> Unit,
     onImportMonth: () -> Unit,
+    onOpenSummary: (DateRange) -> Unit,
     onOpenZReport: () -> Unit,
     onOpenTarget: () -> Unit,
     onRenewDocument: (Long) -> Unit,
@@ -314,7 +315,7 @@ fun OverviewScreen(
             }
             wrappedOffer?.let { (range, yearly) ->
                 item(key = "wrapped") {
-                    WrappedCard(range, yearly, onClick = { onOpenWrapped(range, yearly) }, modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
+                    WrappedCard(range, yearly, onClick = { if (yearly) onOpenWrapped(range, true) else onOpenSummary(range) }, modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
                 }
             }
             // Things waiting for the driver, pinned above everything else; only when there are some.
@@ -630,8 +631,12 @@ private fun WrappedCard(range: DateRange, yearly: Boolean, onClick: () -> Unit, 
             Icon(Icons.Outlined.AutoAwesome, contentDescription = null)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.wrapped_ready, name).replaceFirstChar { it.titlecase(locale) }, style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.wrapped_ready_body), style = MaterialTheme.typography.bodyMedium)
+                // The year opens its Wrapped; a month opens its summary, with its Wrapped inside.
+                Text(
+                    stringResource(if (yearly) R.string.wrapped_ready else R.string.summary_month_ready, name).replaceFirstChar { it.titlecase(locale) },
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(stringResource(if (yearly) R.string.wrapped_ready_body else R.string.summary_month_ready_body), style = MaterialTheme.typography.bodyMedium)
             }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }

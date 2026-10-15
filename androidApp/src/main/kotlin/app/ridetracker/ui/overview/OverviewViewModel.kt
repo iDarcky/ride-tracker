@@ -339,12 +339,13 @@ class OverviewViewModel(
      * Last month's or the year's Wrapped, while Home offers it (see [WrappedCalculator.offered]) and it has at least
      * two days driven; null otherwise.
      */
-    val wrappedOffer: StateFlow<Pair<DateRange, Boolean>?> = run {
-        val offer = WrappedCalculator.offered(today()) ?: return@run MutableStateFlow(null)
-        incomeRepository.observeEntryDetails(offer.first)
-            .map { entries -> offer.takeIf { entries.filter { it.amountMinor > 0 }.map { it.date }.distinct().size >= 2 } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-    }
+    val wrappedOffer: StateFlow<Pair<DateRange, Boolean>?> =
+        monthEnd.flatMapLatest { status ->
+            val offer = WrappedCalculator.offered(today(), lastMonthComplete = status?.let { it.complete && it.apps.isNotEmpty() } == true)
+                ?: return@flatMapLatest flowOf(null)
+            incomeRepository.observeEntryDetails(offer.first)
+                .map { entries -> offer.takeIf { entries.filter { it.amountMinor > 0 }.map { it.date }.distinct().size >= 2 } }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The target of the month shown (the month the period starts in; this month for "All"). */
     val target: StateFlow<TargetProgress?> = combine(selected, settingsRepository.target) { period, settings ->

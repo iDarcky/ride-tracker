@@ -140,13 +140,14 @@ object WrappedCalculator {
     }
 
     /**
-     * Which Wrapped Home offers today: last month's during the first 10 days of a month; the year's from 1 December to
-     * 15 January (the year just ended, in January). Null otherwise.
+     * Which Wrapped Home offers today: last month's once its month-end files are all in ([lastMonthComplete]), or from
+     * the 10th anyway (it may still change), to the end of the month (owner, 15 Oct 2026); the year's from 1 December
+     * to 15 January (the year just ended, in January). Null otherwise.
      */
-    fun offered(today: LocalDate): Pair<DateRange, Boolean>? = when {
+    fun offered(today: LocalDate, lastMonthComplete: Boolean = false): Pair<DateRange, Boolean>? = when {
         today.month == kotlinx.datetime.Month.DECEMBER -> yearRange(today.year) to true
         today.month == kotlinx.datetime.Month.JANUARY && today.day <= 15 -> yearRange(today.year - 1) to true
-        today.day <= 10 -> (Period.Month.containing(today).previous() as Period.Month).range to false
+        lastMonthComplete || today.day >= MonthEnd.STATUS_DAYS -> Period.Month.containing(today).previous().range to false
         else -> null
     }
 }

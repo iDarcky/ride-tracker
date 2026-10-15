@@ -1,5 +1,28 @@
 package app.ridetracker.ui.importing
 
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.RemoveCircleOutline
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.runtime.CompositionLocalProvider
+import app.ridetracker.ui.common.GlassDropdownMenu
+import app.ridetracker.ui.common.LocalHaze
+import app.ridetracker.ui.common.glass
+import app.ridetracker.ui.common.glassContainer
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.CheckCircle
@@ -159,6 +182,8 @@ fun ImportScreen(
     sharedFiles: MutableStateFlow<List<Uri>>,
     /** Open on "End of month" (from Home's files line or the reminder on the 1st). */
     startOnMonth: Boolean = false,
+    /** A finished month's summary (End of month, once the month is complete). */
+    onOpenSummary: (DateRange) -> Unit = {},
     viewModel: ImportViewModel = viewModel {
         ImportViewModel(container.reportReader, container.importRepository, container.incomeRepository, container.settingsRepository)
     },
@@ -228,7 +253,7 @@ fun ImportScreen(
                 EmptyState(
                     state, money, dates, startOnMonth,
                     onScreenshots = chooseScreenshots, onFiles = chooseFiles, onOpenReminder = onOpenReminder,
-                    onToggleDayOff = viewModel::toggleDayOff, onAddDifference = viewModel::addMonthDifference,
+                    onToggleDayOff = viewModel::toggleDayOff, onAddDifference = viewModel::addMonthDifference, onOpenSummary = onOpenSummary,
                     modifier = Modifier.padding(padding),
                 )
             else -> LazyColumn(
@@ -267,6 +292,7 @@ private enum class ImportGuide { TODAY, MONTH }
  * "End of month" (what a finished month needs from each app, ticked as it comes in). Screenshots come first (owner,
  * 13 Oct 2026): it always opens on Today; the month is there when the driver wants it.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun EmptyState(
     state: ImportUiState,
@@ -278,66 +304,129 @@ private fun EmptyState(
     onOpenReminder: () -> Unit,
     onToggleDayOff: (LocalDate) -> Unit,
     onAddDifference: (Long, Long) -> Unit,
+    onOpenSummary: (DateRange) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var guide by rememberSaveable { mutableStateOf(if (startOnMonth) ImportGuide.MONTH else ImportGuide.TODAY) }
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    // The page scrolls under the floating toolbar, which blurs it like the navigation bar does.
+    val haze = rememberHazeState()
+    Box(modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 112.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                stringResource(R.string.import_empty_body),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            ConnectedChoice(ImportGuide.entries, guide, { guide = it }) {
+                Text(stringResource(if (it == ImportGuide.TODAY) R.string.import_tab_today else R.string.import_tab_month))
+            }
+            Spacer(Modifier.height(16.dp))
+            when (guide) {
+                ImportGuide.TODAY -> TodayGuide(state, dates, onOpenReminder)
+                ImportGuide.MONTH -> MonthGuide(state, money, dates, onAddDifference, onOpenSummary)
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                stringResource(R.string.import_share_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+        CompositionLocalProvider(LocalHaze provides haze) {
+            ImportToolbar(
+                state, dates,
+                onScreenshots = onScreenshots,
+                onFiles = onFiles,
+                onToggleDayOff = onToggleDayOff,
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The start page's actions in one floating toolbar (Material 3 Expressive, frosted glass like the navigation bar):
+ * screenshots first, then files, then "Day off", whose menu lists the last week's days with nothing in.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ImportToolbar(
+    state: ImportUiState,
+    dates: DateFormats,
+    onScreenshots: () -> Unit,
+    onFiles: () -> Unit,
+    onToggleDayOff: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var dayOffMenu by remember { mutableStateOf(false) }
+    val emptyDays = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays }.reversed()
+    HorizontalFloatingToolbar(
+        expanded = true,
+        modifier = modifier.clip(CircleShape).glass().border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = glassContainer()),
     ) {
-        Text(
-            stringResource(R.string.import_empty_body),
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(16.dp))
-        ConnectedChoice(ImportGuide.entries, guide, { guide = it }) {
-            Text(stringResource(if (it == ImportGuide.TODAY) R.string.import_tab_today else R.string.import_tab_month))
+        Button(onClick = onScreenshots) {
+            Icon(Icons.Outlined.Image, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text(stringResource(R.string.toolbar_screenshots), maxLines = 1)
         }
-        Spacer(Modifier.height(16.dp))
-        when (guide) {
-            ImportGuide.TODAY -> TodayGuide(state, dates, onScreenshots, onOpenReminder, onToggleDayOff)
-            ImportGuide.MONTH -> MonthGuide(state, money, dates, onScreenshots, onFiles, onAddDifference)
+        TextButton(onClick = onFiles) {
+            Icon(Icons.Outlined.Description, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text(stringResource(R.string.toolbar_files), maxLines = 1)
         }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            stringResource(R.string.import_share_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        if (emptyDays.isNotEmpty()) {
+            Box {
+                TextButton(onClick = { dayOffMenu = true }) {
+                    Icon(Icons.Outlined.EventBusy, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.toolbar_day_off), maxLines = 1)
+                }
+                GlassDropdownMenu(expanded = dayOffMenu, onDismissRequest = { dayOffMenu = false }) {
+                    Text(
+                        stringResource(R.string.days_off_body),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).widthIn(max = 260.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    emptyDays.forEach { day ->
+                        val off = day.toEpochDays() in state.daysOff
+                        DropdownMenuItem(
+                            text = { Text(dates.shortWeekday(day)) },
+                            onClick = { onToggleDayOff(day) },
+                            leadingIcon = {
+                                Icon(
+                                    if (off) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (off) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                )
+                            },
+                            modifier = Modifier.semantics { if (off) stateDescription = "✓" },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun TodayGuide(
-    state: ImportUiState,
-    dates: DateFormats,
-    onScreenshots: () -> Unit,
-    onOpenReminder: () -> Unit,
-    onToggleDayOff: (LocalDate) -> Unit,
-) {
+private fun TodayGuide(state: ImportUiState, dates: DateFormats, onOpenReminder: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.import_today_intro), style = MaterialTheme.typography.bodyLarge)
         GuideCard("Bolt", BOLT_COLOR, stringResource(R.string.import_today_bolt_how)) {
-            if (state.recentDays.isNotEmpty()) {
-                StripLabel(stringResource(R.string.import_today_week))
-                WeekStrip(state.recentDays, state.boltDays, dates)
-            }
+            if (state.recentDays.isNotEmpty()) WeekStrip(state.recentDays, state.boltDays, state.daysOff, dates)
         }
         GuideCard("Uber", UBER_COLOR, stringResource(R.string.import_today_uber_how)) {
-            if (state.recentDays.isNotEmpty()) {
-                StripLabel(stringResource(R.string.import_today_week))
-                WeekStrip(state.recentDays, state.uberDays, dates)
-            }
+            if (state.recentDays.isNotEmpty()) WeekStrip(state.recentDays, state.uberDays, state.daysOff, dates)
         }
-        Button(onClick = onScreenshots, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Icon(Icons.Outlined.Image, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.import_choose_screenshots))
-        }
-        DaysOff(state, dates, onToggleDayOff)
         OutlinedCard(Modifier.fillMaxWidth()) {
             ListItem(
                 modifier = Modifier.clickable(onClick = onOpenReminder),
@@ -359,66 +448,52 @@ private fun TodayGuide(
 }
 
 /**
- * "Didn't drive?": the last week's days that have nothing from any app, as chips to mark a day off, so it counts as
- * done on Home and the evening reminder stays quiet. Days already marked stay listed so they can be unmarked.
+ * One app's screenshots, compact: its name and the last week's days; where to find the screenshot opens with the
+ * arrow (owner, 15 Oct 2026: smaller cards, the how-to hidden).
  */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun DaysOff(state: ImportUiState, dates: DateFormats, onToggle: (LocalDate) -> Unit) {
-    val days = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays }
-    if (days.isEmpty()) return
-    OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.days_off_title), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(R.string.days_off_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                days.forEach { day ->
-                    val off = day.toEpochDays() in state.daysOff
-                    FilterChip(
-                        selected = off,
-                        onClick = { onToggle(day) },
-                        label = { Text(dates.shortWeekday(day)) },
-                        leadingIcon = if (off) {
-                            { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }
-                        } else {
-                            null
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** One app's screenshots: where to find them, then [progress] (which recent days or weeks are in). */
 @Composable
 private fun GuideCard(name: String, color: Long, how: String, progress: @Composable () -> Unit) {
+    var open by rememberSaveable(name) { mutableStateOf(false) }
     OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                PlatformBadge(name, color, size = 32.dp)
+        Column(Modifier.animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).clickable { open = !open },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlatformBadge(name, color, size = 28.dp)
                 Spacer(Modifier.width(12.dp))
-                Text(name, style = MaterialTheme.typography.titleMedium)
+                Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(
+                    stringResource(R.string.import_today_week),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Icon(
+                    if (open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = stringResource(R.string.checklist_how),
+                    modifier = Modifier.padding(start = 8.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text(how, style = MaterialTheme.typography.bodyMedium)
+            if (open) Text(how, style = MaterialTheme.typography.bodyMedium)
             progress()
         }
     }
 }
 
-@Composable
-private fun StripLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
 /** The last 7 days as weekday letters, each ticked when that day is imported. */
 @Composable
-private fun WeekStrip(days: List<LocalDate>, done: Set<LocalDate>, dates: DateFormats) {
+private fun WeekStrip(days: List<LocalDate>, done: Set<LocalDate>, daysOff: Set<Long>, dates: DateFormats) {
     val locale = currentLocale()
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         days.forEach { day ->
             val imported = day in done
-            val label = stringResource(if (imported) R.string.import_day_done else R.string.import_day_missing, dates.day(day))
+            val off = !imported && day.toEpochDays() in daysOff
+            val label = if (off) {
+                stringResource(R.string.day_off_label, dates.day(day))
+            } else {
+                stringResource(if (imported) R.string.import_day_done else R.string.import_day_missing, dates.day(day))
+            }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
@@ -430,7 +505,11 @@ private fun WeekStrip(days: List<LocalDate>, done: Set<LocalDate>, dates: DateFo
                 )
                 Spacer(Modifier.height(4.dp))
                 Icon(
-                    if (imported) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
+                    when {
+                        imported -> Icons.Filled.CheckCircle
+                        off -> Icons.Outlined.RemoveCircleOutline
+                        else -> Icons.Outlined.RadioButtonUnchecked
+                    },
                     contentDescription = null,
                     tint = if (imported) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )
@@ -445,9 +524,8 @@ private fun MonthGuide(
     state: ImportUiState,
     money: MoneyFormat,
     dates: DateFormats,
-    onScreenshots: () -> Unit,
-    onFiles: () -> Unit,
     onAddDifference: (Long, Long) -> Unit,
+    onOpenSummary: (DateRange) -> Unit,
 ) {
     val status = state.monthEnd ?: return
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -465,23 +543,15 @@ private fun MonthGuide(
                     headlineContent = { Text(stringResource(R.string.month_complete, dates.monthName(status.month))) },
                     supportingContent = { Text(stringResource(R.string.month_complete_body)) },
                 )
+                Button(
+                    onClick = { onOpenSummary(status.month.range) },
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                ) { Text(stringResource(R.string.month_see, dates.monthName(status.month))) }
             }
         }
         status.apps.forEach { app ->
             val platform = state.platforms.firstOrNull { it.id == app.platformId } ?: return@forEach
             MonthEndCard(app, platform, status, money, dates, onAddDifference = { onAddDifference(app.platformId, it) })
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onScreenshots, modifier = Modifier.weight(1f).height(56.dp)) {
-                Icon(Icons.Outlined.Image, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.import_add_screenshots))
-            }
-            OutlinedButton(onClick = onFiles, modifier = Modifier.weight(1f).height(56.dp)) {
-                Icon(Icons.Outlined.Description, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.import_add_files))
-            }
         }
         MonthEndExtras()
     }

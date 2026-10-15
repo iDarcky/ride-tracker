@@ -47,8 +47,11 @@ class WrappedTest {
 
     @Test
     fun whichWrappedHomeOffers() {
-        assertEquals(september.range to false, WrappedCalculator.offered(LocalDate(2026, 10, 3)))
-        assertNull(WrappedCalculator.offered(LocalDate(2026, 10, 15)))
+        // Last month once its files are in, or from the 10th anyway, to the end of the month.
+        assertNull(WrappedCalculator.offered(LocalDate(2026, 10, 3)))
+        assertEquals(september.range to false, WrappedCalculator.offered(LocalDate(2026, 10, 3), lastMonthComplete = true))
+        assertEquals(september.range to false, WrappedCalculator.offered(LocalDate(2026, 10, 10)))
+        assertEquals(september.range to false, WrappedCalculator.offered(LocalDate(2026, 10, 31)))
         assertEquals(WrappedCalculator.yearRange(2026) to true, WrappedCalculator.offered(LocalDate(2026, 12, 2)))
         assertEquals(WrappedCalculator.yearRange(2026) to true, WrappedCalculator.offered(LocalDate(2027, 1, 10)))
     }

@@ -31,10 +31,18 @@ import kotlin.math.abs
  * back, when the cash is more than earned). The week, whatever period Home shows.
  */
 @Composable
-fun WeekPayoutCard(payout: WeekPayout, platforms: List<PlatformEntity>, fleet: Boolean, money: MoneyFormat) {
+fun WeekPayoutCard(
+    payout: WeekPayout,
+    platforms: List<PlatformEntity>,
+    fleet: Boolean,
+    money: MoneyFormat,
+    title: String = stringResource(R.string.widget_week_payout),
+    /** "So far this week…": off for a finished week (Summary). */
+    showNote: Boolean = true,
+) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.widget_week_payout), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             payout.apps.forEach { app ->
                 val platform = platforms.firstOrNull { it.id == app.platformId } ?: return@forEach
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -77,11 +85,13 @@ fun WeekPayoutCard(payout: WeekPayout, platforms: List<PlatformEntity>, fleet: B
                     )
                 }
             }
-            Text(
-                stringResource(if (fleet) R.string.payout_note_fleet else R.string.payout_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (showNote) {
+                Text(
+                    stringResource(if (fleet) R.string.payout_note_fleet else R.string.payout_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

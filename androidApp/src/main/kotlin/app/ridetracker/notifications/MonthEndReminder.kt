@@ -21,6 +21,8 @@ import app.ridetracker.R
 import app.ridetracker.RideTrackerApplication
 import app.ridetracker.shared.domain.MonthEnd
 import app.ridetracker.shared.domain.Period
+import app.ridetracker.shared.domain.SummaryCalculator
+import app.ridetracker.shared.domain.SummaryRepository
 import app.ridetracker.ui.common.DateFormats
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
@@ -32,19 +34,41 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
 
 /**
- * On the 1st (and the 3rd, if still needed) around 10:00: "September is over", to import last month's files from Bolt
- * and Uber. It goes with the evening import reminder: on when that one is on, quiet once every app has its files.
+ * Every day around 10:00, three things:
+ * - On the 1st (and the 3rd, if still needed): "September is over", to import last month's files from Bolt and Uber.
+ *   It goes with the evening import reminder: on when that one is on, quiet once every app has its files.
+ * - The day after a week ends (Monday for most): last week's summary.
+ * - Once last month is complete (or from the 10th anyway): its summary, unless already opened.
  */
 class MonthEndWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val app = applicationContext as RideTrackerApplication
+        val container = app.container
+        val settings = container.settingsRepository
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        if (today.day !in MonthEnd.REMINDER_DAYS) return Result.success()
-        if (!app.container.settingsRepository.importReminder.first().enabled) return Result.success()
         val last = Period.Month.containing(today).previous()
-        val status = app.container.importRepository.observeMonthEnd(last).first()
-        if (status.apps.isNotEmpty() && !status.complete) notify(app, last)
+        val status = container.importRepository.observeMonthEnd(last).first()
+        if (today.day in MonthEnd.REMINDER_DAYS && settings.importReminder.first().enabled && status.apps.isNotEmpty() && !status.complete) {
+            notify(app, last)
+        }
+        val summaries = SummaryRepository(container.incomeRepository, container.expenseRepository, container.importRepository)
+        val (notifiedWeek, notifiedMonth) = settings.summaryNotified()
+        val firstDay = settings.settings.first().firstDayOfWeek
+        if (SummaryCalculator.isWeeklyDay(today, firstDay)) {
+            val week = SummaryCalculator.lastWeek(today, firstDay)
+            if (notifiedWeek != week.start.toEpochDays()) {
+                val summary = summaries.summary(week.range, today)
+                if (summary.incomeMinor > 0) SummaryNotifier.week(app, summary, settings.settings.first().currencyCode)
+                settings.setSummaryNotified(weekStart = week.start.toEpochDays())
+            }
+        }
+        val monthStart = last.range.start.toEpochDays()
+        val ready = status.apps.isNotEmpty() && (status.complete || today.day >= MonthEnd.STATUS_DAYS)
+        if (ready && notifiedMonth != monthStart && settings.summarySeenMonth() != monthStart) {
+            SummaryNotifier.month(app, last, complete = status.complete)
+            settings.setSummaryNotified(monthStart = monthStart)
+        }
         return Result.success()
     }
 
