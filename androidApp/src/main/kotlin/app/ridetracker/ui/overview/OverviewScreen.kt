@@ -1,5 +1,7 @@
 package app.ridetracker.ui.overview
 
+import java.time.format.TextStyle
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.foundation.text.TextAutoSize
@@ -143,6 +145,7 @@ fun OverviewScreen(
     onOpenZReport: () -> Unit,
     onOpenTarget: () -> Unit,
     onRenewDocument: (Long) -> Unit,
+    onOpenWrapped: (DateRange, Boolean) -> Unit,
     viewModel: OverviewViewModel = viewModel {
         OverviewViewModel(
             container.incomeRepository,
@@ -156,9 +159,11 @@ fun OverviewScreen(
     },
 ) {
     val baseState by viewModel.uiState.collectAsStateWithLifecycle()
+    val wrappedOffer by viewModel.wrappedOffer.collectAsStateWithLifecycle()
     val target by viewModel.target.collectAsStateWithLifecycle()
     val comparisonCard by viewModel.comparisonCard.collectAsStateWithLifecycle()
-    val state = baseState.copy(target = target, comparisonCard = comparisonCard)
+    val week by viewModel.week.collectAsStateWithLifecycle()
+    val state = baseState.copy(target = target, comparisonCard = comparisonCard, week = week)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
@@ -301,6 +306,11 @@ fun OverviewScreen(
             } else {
                 item { Spacer(Modifier.height(12.dp)) }
             }
+            wrappedOffer?.let { (range, yearly) ->
+                item(key = "wrapped") {
+                    WrappedCard(range, yearly, onClick = { onOpenWrapped(range, yearly) }, modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
+                }
+            }
             // Things waiting for the driver, pinned above everything else; only when there are some.
             if (!editing && !attention.isEmpty()) {
                 item(key = "attention") {
@@ -339,6 +349,7 @@ fun OverviewScreen(
                                     onOpenDay = viewModel::openDay,
                                     onOpenTarget = onOpenTarget,
                                     onCompareWhole = viewModel::setCompareWhole,
+                                    onImport = onImport,
                                 )
                             } else {
                                 WidgetPlaceholder()
@@ -590,5 +601,29 @@ private fun RangePickerDialog(initial: DateRange, onDismiss: () -> Unit, onConfi
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     ) {
         DateRangePicker(colors = DatePickerDefaults.colors(containerColor = glassContainer()), state = pickerState, modifier = Modifier.weight(1f))
+    }
+}
+
+/** "Your September, wrapped": opens the story (Home offers it early in a month, and in December for the year). */
+@Composable
+private fun WrappedCard(range: DateRange, yearly: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val locale = currentLocale()
+    val name = if (yearly) range.start.year.toString()
+    else java.time.Month.of(range.start.month.ordinal + 1).getDisplayName(TextStyle.FULL_STANDALONE, locale)
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.AutoAwesome, contentDescription = null)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.wrapped_ready, name).replaceFirstChar { it.titlecase(locale) }, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.wrapped_ready_body), style = MaterialTheme.typography.bodyMedium)
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
     }
 }

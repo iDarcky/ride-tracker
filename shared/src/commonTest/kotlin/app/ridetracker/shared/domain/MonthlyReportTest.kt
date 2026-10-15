@@ -33,7 +33,7 @@ class MonthlyReportTest {
             expense(ExpenseCategory.FUEL, LocalDate(2026, 10, 5), 5000),
             expense(ExpenseCategory.PARKING, LocalDate(2026, 10, 5), 1000),
         )
-        val r = MonthlyReports.build(october, income, expenses, today = LocalDate(2026, 10, 13))
+        val r = MonthlyReports.build(october, income, expenses, today = LocalDate(2026, 11, 2))
         assertEquals(80000, r.incomeMinor)
         assertEquals(21000, r.expensesMinor)
         assertEquals(59000, r.profitMinor)
@@ -41,7 +41,7 @@ class MonthlyReportTest {
         assertEquals(0.75, r.platforms.first().share)
         assertEquals(listOf(ReportCategory(ExpenseCategory.FUEL, 20000), ReportCategory(ExpenseCategory.PARKING, 1000)), r.categories)
         assertEquals(2, r.daysWithIncome)
-        assertEquals(13, r.daysSoFar)
+        assertEquals(31, r.daysSoFar)
         assertEquals(50000, r.previousProfitMinor)
         assertEquals(0.18, r.profitChange)
     }
@@ -52,5 +52,17 @@ class MonthlyReportTest {
         assertNull(r.previousProfitMinor)
         assertNull(r.profitChange)
         assertEquals(31, r.daysSoFar)
+    }
+
+    @Test
+    fun aRunningMonthIsComparedWithTheSameDays() {
+        val income = listOf(
+            income(1, "Bolt", LocalDate(2026, 10, 2), 10000),
+            income(1, "Bolt", LocalDate(2026, 9, 5), 8000), // counted: 1–13 Sep
+            income(1, "Bolt", LocalDate(2026, 9, 25), 50000), // not: after the 13th
+        )
+        val r = MonthlyReports.build(october, income, emptyList(), today = LocalDate(2026, 10, 13))
+        assertEquals(8000, r.previousProfitMinor)
+        assertEquals(13, r.daysSoFar)
     }
 }

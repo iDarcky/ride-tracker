@@ -1,5 +1,6 @@
 package app.ridetracker.ui.trips
 
+import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -111,7 +112,7 @@ fun TripDetailsScreen(
                 )
             }
             TripSection(stringResource(R.string.trip_info)) {
-                Field(stringResource(R.string.trip_distance), trip.distanceMeters?.let { stringResource(R.string.km_value, "%.1f".format(locale, it / 1000.0)) } ?: DASH)
+                Field(stringResource(R.string.trip_distance), trip.distanceMeters?.let { distanceFormat().meters(it, decimals = 1) } ?: DASH)
                 Field(stringResource(R.string.trip_duration), trip.durationSeconds?.let { stringResource(R.string.trip_minutes, (it / 60).toInt()) } ?: DASH)
                 Field(stringResource(R.string.trip_payment), stringResource(paymentName(trip.paymentMethod)))
                 Field(stringResource(R.string.trip_source), stringResource(sourceName(trip.importKind)), divider = false)

@@ -82,7 +82,7 @@ object ImportReminderScheduler {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_car)
+            .setSmallIcon(R.drawable.ic_stat_ring)
             .setContentTitle(context.getString(R.string.import_reminder_title))
             .setContentText(context.getString(R.string.import_reminder_body))
             .setContentIntent(open)

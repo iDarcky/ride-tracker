@@ -65,7 +65,7 @@ object DueExpenseNotifier {
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                 )
                 val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_stat_car)
+                    .setSmallIcon(R.drawable.ic_stat_ring)
                     .setContentTitle(context.getString(R.string.notification_due_title, name))
                     .setContentText(context.getString(R.string.notification_due_body, money.format(rule.amountMinor)))
                     .setContentIntent(open)

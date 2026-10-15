@@ -1,5 +1,8 @@
 package app.ridetracker.ui.settings
 
+import app.ridetracker.shared.domain.DistanceUnit
+import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.Button
@@ -132,6 +135,7 @@ enum class SettingsPage(val route: String) {
     LANGUAGE("settings/language"),
     THEME("settings/theme"),
     WEEK_START("settings/week"),
+    DISTANCE("settings/distance"),
     Z_REPORT("settings/z-report"),
     IMPORT_REMINDER("settings/import-reminder"),
     TARGET("settings/target"),
@@ -144,7 +148,7 @@ val languageOptions = listOf("", "en", "ro")
 
 @Composable
 private fun settingsViewModel(): SettingsViewModel =
-    viewModel { SettingsViewModel(container.settingsRepository, container.backupService) }
+    viewModel { SettingsViewModel(container.settingsRepository, container.backupService, container) }
 
 /** Shared frame: back arrow, large title that collapses into the bar on scroll, same colour throughout. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -247,6 +251,11 @@ fun SettingsScreen(onBack: () -> Unit, onOpen: (SettingsPage) -> Unit) {
                 stringResource(R.string.first_day_of_week),
                 dayName(settings?.firstDayOfWeek ?: DayOfWeek.MONDAY, locale),
             ) { onOpen(SettingsPage.WEEK_START) }
+        }
+        item {
+            Row(Icons.Outlined.Straighten, stringResource(R.string.distance_unit), distanceUnitName(settings?.distanceUnit ?: DistanceUnit.KM)) {
+                onOpen(SettingsPage.DISTANCE)
+            }
         }
     }
 }
@@ -351,6 +360,14 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
             )
         }
         SettingsPage.TARGET -> TargetPage(viewModel, resolveCurrency(settings?.currencyCode), onBack)
+        SettingsPage.DISTANCE -> ChoicePage(
+            title = stringResource(R.string.distance_unit),
+            options = DistanceUnit.entries,
+            selected = settings?.distanceUnit,
+            label = { distanceUnitName(it) },
+            onSelect = viewModel::setDistanceUnit,
+            onBack = onBack,
+        )
         SettingsPage.WEEK_START -> ChoicePage(
             title = stringResource(R.string.first_day_of_week),
             options = weekStartOptions,
@@ -361,6 +378,10 @@ fun SettingsChoicePage(page: SettingsPage, onBack: () -> Unit, onOpen: (Settings
         )
     }
 }
+
+@Composable
+fun distanceUnitName(unit: DistanceUnit): String =
+    stringResource(if (unit == DistanceUnit.MILES) R.string.distance_miles else R.string.distance_km)
 
 @Composable
 fun targetBasisName(basis: TargetBasis): String = stringResource(
@@ -622,6 +643,9 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
     val snackbar = remember { SnackbarHostState() }
     var confirmErase by rememberSaveable { mutableStateOf(false) }
     var confirmEraseIncome by rememberSaveable { mutableStateOf(false) }
+    var confirmDemo by rememberSaveable { mutableStateOf(false) }
+    // Demo data is for screenshots, in the Beta app only (never the driver's real app).
+    val isBeta = context.packageName.endsWith(".beta")
 
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -653,6 +677,7 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
                 SettingsMessage.RESTORE_INVALID -> R.string.restore_invalid
                 SettingsMessage.RESTORE_NEWER -> R.string.restore_newer
                 SettingsMessage.INCOME_ERASED -> R.string.erase_income_done
+                SettingsMessage.DEMO_FILLED -> R.string.demo_filled
             },
         )
     }
@@ -693,6 +718,11 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
                 tint = MaterialTheme.colorScheme.error,
             ) { confirmErase = true }
         }
+        if (isBeta) {
+            item {
+                Row(Icons.Outlined.AutoAwesome, stringResource(R.string.demo_fill), stringResource(R.string.demo_fill_summary)) { confirmDemo = true }
+            }
+        }
     }
 
     pendingRestore?.let { file ->
@@ -704,6 +734,18 @@ fun YourDataScreen(onBack: () -> Unit, onExport: () -> Unit) {
             confirmLabel = stringResource(R.string.restore_action),
             onDismiss = viewModel::cancelRestore,
             onConfirm = viewModel::confirmRestore,
+        )
+    }
+    if (confirmDemo) {
+        ConfirmDialog(
+            title = stringResource(R.string.demo_confirm_title),
+            body = stringResource(R.string.demo_confirm_body),
+            confirmLabel = stringResource(R.string.demo_confirm_action),
+            onDismiss = { confirmDemo = false },
+            onConfirm = {
+                confirmDemo = false
+                viewModel.fillDemo()
+            },
         )
     }
     if (confirmEraseIncome) {

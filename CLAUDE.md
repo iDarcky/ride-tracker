@@ -9,8 +9,9 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 - Design: Material 3 **Expressive** components only (no hand-built components), "Rideshare cockpit"
   colours (seed #0A6C8B), Google Health style settings (each setting its own page), floating nav bar.
 
-## Where we are (13 October 2026)
-- App **0.16.0** (live and beta), database version **9**, backup format **9**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+## Where we are (15 October 2026)
+- Name: **Ridely** (owner 15 Oct, "for now"; ring icon). Code, package and repo keep `ridetracker`.
+- Live app **0.16.0**, Beta **0.17.0**; database version **9**, backup format **9**. What each version added: [CHANGELOG.md](CHANGELOG.md).
 - Direction (owner, 13 Oct): **screenshots first**: after each driving day, one screenshot per app (Bolt Daily,
   Uber's day). A missing day counts as 0; no estimates (the estimating code is kept but not called). PDF/CSV import
   still works from Import's "End of month" page, which needs a rework ("monthly is overcomplicated"). Parsers in

@@ -10,6 +10,7 @@ import app.ridetracker.notifications.DueExpensesWorker
 import app.ridetracker.notifications.ImportReminderScheduler
 import app.ridetracker.notifications.ZReportReminderScheduler
 import app.ridetracker.notifications.TargetNotifier
+import app.ridetracker.widget.GoalWidget
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -52,6 +53,12 @@ class AppContainer(context: Context) {
     /** The import reminder was tapped: AppNavigation opens the Import screen. */
     val openImport = MutableStateFlow(false)
 
+    /** A quick-actions widget button was tapped: AppNavigation opens this route ("import", "expense?category=fuel"…). */
+    val openRoute = MutableStateFlow<String?>(null)
+
+    /** The target widget was tapped without a target set: AppNavigation opens the target page. */
+    val openTarget = MutableStateFlow(false)
+
     /** The period Home shows; Income and Expenses show its month. Back to this month when the app is reopened. */
     val period = MutableStateFlow<Period>(Period.Month.containing(Clock.System.todayIn(TimeZone.currentSystemDefault())))
 }
@@ -74,6 +81,8 @@ class RideTrackerApplication : Application() {
         TargetNotifier.createChannel(this)
         @OptIn(DelicateCoroutinesApi::class)
         TargetNotifier.watch(this, container, GlobalScope)
+        @OptIn(DelicateCoroutinesApi::class)
+        GoalWidget.watch(this, container, GlobalScope)
         // The Raportul Z alarm follows its settings (on/off, time) and the country, whatever changes them.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {

@@ -32,7 +32,7 @@ class HomeWidgetTest {
         val custom = listOf(HomeWidget.TARGET, HomeWidget.SPLIT, HomeWidget.BREAKDOWN)
         // Saved before cards were tracked: the comparison card is new and goes after Breakdown, its place in the default.
         assertEquals(
-            listOf(HomeWidget.TARGET, HomeWidget.SPLIT, HomeWidget.BREAKDOWN, HomeWidget.COMPARISON),
+            listOf(HomeWidget.TARGET, HomeWidget.WEEK_SCREENSHOTS, HomeWidget.SPLIT, HomeWidget.BREAKDOWN, HomeWidget.COMPARISON),
             HomeWidget.withNew(custom, seen = null),
         )
         // Once the driver saves a layout with every card seen, a removed card stays removed.

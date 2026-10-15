@@ -1,5 +1,6 @@
 package app.ridetracker.ui.importing
 
+import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -625,7 +626,7 @@ private fun Details(
             s.cancellationMinor?.let { Figure(stringResource(R.string.line_cancellation_fee), money.format(it)) }
             s.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
             s.platformFeeMinor?.let { Figure(stringResource(R.string.line_commission), money.format(it)) }
-            s.distanceMeters?.let { Figure(stringResource(R.string.import_distance), stringResource(R.string.km_value, "%.1f".format(currentLocale(), it / 1000.0))) }
+            s.distanceMeters?.let { Figure(stringResource(R.string.import_distance), distanceFormat().meters(it, decimals = 1)) }
             Note(Icons.Outlined.Info, stringResource(R.string.import_summary_not_income))
         }
         is ReadReport.BoltActivity -> {
@@ -657,7 +658,7 @@ private fun Details(
             val cash = trips.count { it.paymentMethod == PaymentMethod.CASH }
             Figure(pluralStringResource(R.plurals.import_rides, trips.size, trips.size), pluralStringResource(R.plurals.import_cash_trips, cash, cash), big = true)
             trips.sumOf { it.distanceMeters ?: 0 }.takeIf { it > 0 }?.let {
-                Figure(stringResource(R.string.import_distance), stringResource(R.string.km_value, "%.1f".format(currentLocale(), it / 1000.0)))
+                Figure(stringResource(R.string.import_distance), distanceFormat().meters(it, decimals = 1))
             }
             Note(Icons.Outlined.Info, stringResource(R.string.import_no_personal_data))
             Note(Icons.Outlined.Info, stringResource(R.string.import_uber_trips_note))
@@ -677,7 +678,7 @@ private fun Details(
             val t = report.time
             Figure(stringResource(R.string.import_online), stringResource(R.string.hours_minutes, t.onlineMinutes / 60, t.onlineMinutes % 60), big = true)
             if (t.distanceMeters > 0) {
-                Figure(stringResource(R.string.import_distance_driven), stringResource(R.string.km_value, "%.1f".format(currentLocale(), t.distanceMeters / 1000.0)))
+                Figure(stringResource(R.string.import_distance_driven), distanceFormat().meters(t.distanceMeters, decimals = 1))
             }
             Note(Icons.Outlined.Info, stringResource(R.string.import_uber_hours_note))
         }

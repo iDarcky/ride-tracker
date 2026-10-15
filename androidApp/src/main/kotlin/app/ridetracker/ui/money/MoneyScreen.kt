@@ -1,5 +1,7 @@
 package app.ridetracker.ui.money
 
+import app.ridetracker.shared.domain.DateRange
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.IconButton
@@ -131,6 +133,7 @@ fun MoneyScreen(
     onEditExpense: (Long) -> Unit,
     onOpenRecurring: () -> Unit,
     onOpenPlatform: (Long, Period.Month) -> Unit,
+    onOpenWrapped: (DateRange, Boolean) -> Unit,
     viewModel: IncomeListViewModel = viewModel {
         IncomeListViewModel(container.incomeRepository, container.importRepository, container.settingsRepository, container.period)
     },
@@ -147,7 +150,7 @@ fun MoneyScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.nav_money)) },
                 actions = {
-                    ReportButton(month = { viewModel.state.value.month }, snackbar = snackbar)
+                    ReportButton(month = { viewModel.state.value.month }, snackbar = snackbar, onWrapped = { onOpenWrapped(it.range, false) })
                     MenuButton()
                 },
             )
@@ -164,7 +167,7 @@ fun MoneyScreen(
 
 /** The month shown (same on Income and Expenses) as a shareable report: PDF or image. */
 @Composable
-private fun ReportButton(month: () -> Period.Month?, snackbar: SnackbarHostState) {
+private fun ReportButton(month: () -> Period.Month?, snackbar: SnackbarHostState, onWrapped: (Period.Month) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locale = currentLocale()
@@ -193,6 +196,11 @@ private fun ReportButton(month: () -> Period.Month?, snackbar: SnackbarHostState
                 text = { Text(stringResource(R.string.report_share_image)) },
                 leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
                 onClick = { share(ReportFormat.IMAGE) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.wrapped_menu)) },
+                leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = null) },
+                onClick = { open = false; month()?.let(onWrapped) },
             )
         }
     }

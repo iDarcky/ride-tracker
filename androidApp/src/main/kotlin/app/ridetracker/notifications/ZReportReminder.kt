@@ -85,7 +85,7 @@ object ZReportReminderScheduler {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_car)
+            .setSmallIcon(R.drawable.ic_stat_ring)
             .setContentTitle(context.getString(R.string.z_notification_title))
             .setContentText(context.getString(R.string.z_notification_body))
             .setContentIntent(open)

@@ -1,5 +1,6 @@
 package app.ridetracker.shared.data
 
+import app.ridetracker.shared.domain.DistanceUnit
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -35,6 +36,7 @@ data class AppSettings(
     val drivingType: DrivingType? = null,
     /** Cards shown on Home, in order (see [HomeWidget]). */
     val homeWidgets: List<HomeWidget> = HomeWidget.DEFAULT,
+    val distanceUnit: DistanceUnit = DistanceUnit.KM,
 ) {
     /** The app currency, or null when the platform default should be used. */
     val currencyCode: String? get() = country?.currencyCode ?: otherCurrencyCode
@@ -52,6 +54,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             homeWidgets = prefs[HOME_WIDGETS]?.let { stored ->
                 HomeWidget.withNew(HomeWidget.parse(stored), prefs[HOME_WIDGETS_SEEN]?.split(',')?.toSet())
             } ?: HomeWidget.DEFAULT,
+            distanceUnit = DistanceUnit.fromId(prefs[DISTANCE_UNIT]),
         )
     }
 
@@ -170,6 +173,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[FIRST_DAY_OF_WEEK] = day.isoDayNumber }
     }
 
+    suspend fun setDistanceUnit(unit: DistanceUnit) {
+        dataStore.edit { it[DISTANCE_UNIT] = unit.id }
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME] = mode.id }
     }
@@ -199,6 +206,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[THEME] = settings.themeMode.id
             settings.drivingType?.let { prefs[DRIVING_TYPE] = it.id }
             prefs[HOME_WIDGETS] = HomeWidget.format(settings.homeWidgets)
+            prefs[DISTANCE_UNIT] = settings.distanceUnit.id
         }
     }
 
@@ -213,6 +221,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val CURRENCY = stringPreferencesKey("currency_code")
         private val FIRST_DAY_OF_WEEK = intPreferencesKey("first_day_of_week")
         private val THEME = stringPreferencesKey("theme_mode")
+        private val DISTANCE_UNIT = stringPreferencesKey("distance_unit")
         private val DRIVING_TYPE = stringPreferencesKey("driving_type")
         private val HOME_WIDGETS = stringPreferencesKey("home_widgets")
         private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")

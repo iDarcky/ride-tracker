@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Ride Tracker</string>
+    <string name="app_name" translatable="false">Ridely</string>
 
     <!-- Common -->
     <string name="back">Back</string>
@@ -20,7 +20,7 @@
     <string name="nav_expenses">Expenses</string>
 
     <!-- Welcome -->
-    <string name="welcome_title">Welcome to Ride Tracker</string>
+    <string name="welcome_title">Welcome to Ridely</string>
     <string name="welcome_body">Track what you earn across Uber, Bolt and other platforms. Your data stays on this device.</string>
     <string name="welcome_country_question">Where do you drive?</string>
     <string name="welcome_continue">Continue</string>
@@ -112,7 +112,7 @@
     <string name="restore_confirm_body">Everything in the app will be replaced with this backup from %1$s (%2$s).</string>
     <string name="restore_action">Restore</string>
     <string name="restore_done">Backup restored</string>
-    <string name="restore_invalid">This file isn’t a Ride Tracker backup</string>
+    <string name="restore_invalid">This file isn’t a Ridely backup</string>
     <string name="restore_newer">This backup is from a newer version. Update the app first.</string>
     <string name="erase">Erase all data</string>
     <string name="erase_summary">Delete all entries, platforms and settings</string>
@@ -171,7 +171,7 @@
     <string name="report_share_pdf">Share as PDF</string>
     <string name="report_share_image">Share as image</string>
     <string name="report_failed">Couldn’t make the report</string>
-    <string name="report_brand">Ride Tracker</string>
+    <string name="report_brand">Ridely</string>
     <string name="report_income">Income</string>
     <string name="report_expenses">Expenses</string>
     <string name="report_profit">Profit</string>
@@ -182,7 +182,7 @@
     <string name="report_no_expenses">No expenses this month</string>
     <string name="report_days">Days with income: %1$d of %2$d</string>
     <string name="report_made">Made on %1$s</string>
-    <string name="report_file">Ride Tracker %1$s</string>
+    <string name="report_file">Ridely %1$s</string>
     <string name="csv_date">Date</string>
     <string name="csv_type">Type</string>
     <string name="csv_item">Platform or category</string>
@@ -220,8 +220,17 @@
     <string name="odometer_history">Odometer history</string>
     <string name="delete_reading_title">Delete this reading?</string>
     <string name="reading_deleted">Reading deleted</string>
-    <string name="km_value">%1$s km</string>
     <string name="km_unit">km</string>
+    <string name="mi_unit">mi</string>
+    <string name="miles_driven">Miles driven</string>
+    <string name="cost_per_mile">Cost per mile</string>
+    <string name="odometer_reading_mi">Reading (miles)</string>
+    <string name="metric_miles">Paid miles</string>
+    <string name="metric_per_mile">%1$s per mile</string>
+    <string name="hint_miles">No miles yet</string>
+    <string name="distance_unit">Distance</string>
+    <string name="distance_km">Kilometres</string>
+    <string name="distance_miles">Miles</string>
     <string name="km_driven">Km driven</string>
     <string name="vehicle_costs">Vehicle costs</string>
     <string name="cost_per_km">Cost per km</string>
@@ -321,7 +330,7 @@
         <item quantity="other">%d without</item>
     </plurals>
     <string name="import_choose_screenshots">Choose screenshots</string>
-    <string name="import_share_hint">You can also share screenshots to Ride Tracker from your gallery.</string>
+    <string name="import_share_hint">You can also share screenshots to Ridely from your gallery.</string>
     <string name="import_add_screenshots">Add screenshots</string>
     <string name="import_add_files">Add files</string>
     <string name="import_reading">Reading…</string>
@@ -541,7 +550,7 @@
     <string name="import_uber_totals">Uber · totals and fee</string>
     <string name="import_uber_hours">Uber · time and km</string>
     <string name="import_uber_not_needed">Uber · not needed</string>
-    <string name="import_uber_not_needed_note">Ride Tracker doesn’t use this file, so it isn’t read. From Uber you only need payments_order, payments_organization, trip_activity and driver_time_and_distance.</string>
+    <string name="import_uber_not_needed_note">Ridely doesn’t use this file, so it isn’t read. From Uber you only need payments_order, payments_organization, trip_activity and driver_time_and_distance.</string>
     <string name="import_uber_days_note">Your income for each day, after Uber’s fee. Each day replaces what Uber had on that day in the app.</string>
     <string name="import_uber_days_fee_note">Uber’s fee isn’t in this file: add payments_organization for it.</string>
     <string name="import_uber_trips_note">Each trip’s earnings come from the payments file (payments_order).</string>
@@ -639,6 +648,23 @@
     <string name="target_reached_exact">Target reached</string>
     <string name="target_missed">Missed by %1$s</string>
     <string name="target_suggest">Set a monthly target</string>
+    <string name="widget_goal_description">How far you are with this month’s target, what each driving day still needs and your pace.</string>
+    <string name="widget_quick_name">Quick add</string>
+    <string name="widget_quick_description">Fuel, Import, Expense and Income in one tap from the home screen.</string>
+    <string name="widget_quick_fuel">Fuel</string>
+    <string name="widget_quick_import">Import</string>
+    <string name="widget_quick_expense">Expense</string>
+    <string name="widget_quick_income">Income</string>
+    <string name="widget_goal_of">of %1$s</string>
+    <string name="widget_goal_per_day_short">%1$s/day</string>
+    <string name="widget_goal_title">%1$s target</string>
+    <string name="widget_goal_done">Done · +%1$s</string>
+    <string name="widget_goal_behind">Behind %1$s</string>
+    <string name="widget_goal_ahead">Ahead %1$s</string>
+    <plurals name="widget_goal_per_day">
+        <item quantity="one">%1$s/day · %2$d day</item>
+        <item quantity="other">%1$s/day · %2$d days</item>
+    </plurals>
     <string name="target_channel">Targets</string>
     <string name="target_channel_description">When you reach your monthly target</string>
     <string name="target_notification_title">Monthly target reached</string>
@@ -654,6 +680,12 @@
     <string name="erase_income_confirm_title">Erase income and imports?</string>
     <string name="erase_income_confirm_body">All income (imported and typed in), trips, hours and the platforms’ totals will be deleted, so you can import everything again. Expenses, platforms, your car and settings stay. This can’t be undone, so make a backup first if you might need the data.</string>
     <string name="erase_income_done">Income and imports erased</string>
+    <string name="demo_fill">Fill with demo data</string>
+    <string name="demo_fill_summary">Beta only: a made-up month in euro, for screenshots</string>
+    <string name="demo_confirm_title">Replace everything with demo data?</string>
+    <string name="demo_confirm_body">All data in this Beta app is replaced by a made-up month in euro (Bolt and Uber days, expenses, a target). Settings stay. Your live Ridely app isn’t touched.</string>
+    <string name="demo_confirm_action">Fill</string>
+    <string name="demo_filled">Demo data added</string>
     <string name="import_again">Import again</string>
     <string name="import_again_note">Replaces what this file saved the first time.</string>
     <string name="tax_deductible">Tax deductible</string>
@@ -716,7 +748,7 @@
     <string name="document_channel_description">Reminders before RCA, ITP and other documents expire</string>
     <string name="document_notification_soon">%1$s expires on %2$s</string>
     <string name="document_notification_today">%1$s expires today</string>
-    <string name="document_notification_body">Renew it, then update the date in Ride Tracker.</string>
+    <string name="document_notification_body">Renew it, then update the date in Ridely.</string>
     <!-- Guided import -->
     <string name="import_tab_today">Today</string>
     <string name="import_tab_month">End of month</string>
@@ -737,13 +769,65 @@
     <string name="import_reminder_body">Drove today? Add the day’s screenshots from Bolt and Uber.</string>
     <string name="import_reason_no_text">No text found in this picture. Choose a screenshot of Bolt’s or Uber’s earnings.</string>
     <string name="import_reason_uber_no_week">Uber’s Earnings screen, but the week at the top (like “Oct 5 – Oct 12”) isn’t in the picture. Take the screenshot with the week showing.</string>
-    <string name="import_reason_uber_cropped">An Uber screen Ride Tracker reads, but the total is cut off. Scroll so “Total Earnings” shows, or use Capture more for one long screenshot.</string>
-    <string name="import_reason_uber_other">This Uber screen isn’t one Ride Tracker reads. Use Earnings (tap the day’s bar) for a day, or the week’s Payments screen.</string>
+    <string name="import_reason_uber_cropped">An Uber screen Ridely reads, but the total is cut off. Scroll so “Total Earnings” shows, or use Capture more for one long screenshot.</string>
+    <string name="import_reason_uber_other">This Uber screen isn’t one Ridely reads. Use Earnings (tap the day’s bar) for a day, or the week’s Payments screen.</string>
     <string name="import_reason_bolt_no_date">Bolt’s earnings breakdown, but the date above it isn’t in the picture. Take the screenshot from the top, with the day or month showing.</string>
     <string name="import_reason_bolt_cropped">Bolt’s earnings breakdown, but it’s cut off before the commission. Scroll down so the whole breakdown fits, or take a longer screenshot.</string>
-    <string name="import_reason_bolt_other">This Bolt screen isn’t one Ride Tracker reads. Use Earnings breakdown (Daily or Monthly) or Activity → Hours.</string>
+    <string name="import_reason_bolt_other">This Bolt screen isn’t one Ridely reads. Use Earnings breakdown (Daily or Monthly) or Activity → Hours.</string>
     <string name="import_reason_other_image">This doesn’t look like a Bolt or Uber screen.</string>
     <string name="import_reason_pdf">Only Bolt’s monthly summary PDF can be read.</string>
     <string name="import_reason_uber_renamed">This Uber file was renamed: its month is only in the name Uber gave it. Download it again from supplier.uber.com and share it as it is.</string>
-    <string name="import_reason_csv">Not a file Ride Tracker reads: Bolt’s rider invoices (CSV) or Uber’s four files from supplier.uber.com.</string>
+    <string name="import_reason_csv">Not a file Ridely reads: Bolt’s rider invoices (CSV) or Uber’s four files from supplier.uber.com.</string>
+    <!-- Wrapped -->
+    <string name="wrapped_your">Your %1$s</string>
+    <string name="wrapped_wrapped">Wrapped</string>
+    <string name="wrapped_kept">You kept</string>
+    <string name="wrapped_earned">You earned</string>
+    <string name="wrapped_more_than">%1$s more than in %2$s</string>
+    <string name="wrapped_less_than">%1$s less than in %2$s</string>
+    <string name="wrapped_more_than_same_days">%1$s more than the same days in %2$s</string>
+    <string name="wrapped_less_than_same_days">%1$s less than the same days in %2$s</string>
+    <string name="wrapped_best_day">Your best day</string>
+    <string name="wrapped_best_weekday">Your best weekday</string>
+    <string name="wrapped_on_average">%1$s a day on average</string>
+    <string name="wrapped_best_month">Your best month</string>
+    <string name="wrapped_per_hour">Every hour online</string>
+    <string name="wrapped_rides">Rides</string>
+    <string name="wrapped_driven">%1$s driven</string>
+    <string name="wrapped_apps">Where it came from</string>
+    <string name="wrapped_expenses">Where your money went</string>
+    <string name="wrapped_expense_share">%1$s · %2$s of your expenses</string>
+    <string name="wrapped_target_reached">Target reached</string>
+    <string name="wrapped_target">Your target</string>
+    <string name="wrapped_target_of">%1$s of %2$s</string>
+    <string name="wrapped_targets_reached">Targets reached</string>
+    <string name="wrapped_summary_title">%1$s, wrapped</string>
+    <string name="wrapped_days_label">Days driven</string>
+    <string name="wrapped_made_with">Made with Ridely</string>
+    <string name="wrapped_share">Share</string>
+    <string name="wrapped_colour">Colour %1$d</string>
+    <string name="wrapped_share_name">Ridely %1$s wrapped</string>
+    <string name="wrapped_previous">Previous</string>
+    <string name="wrapped_next">Next</string>
+    <string name="wrapped_ready">Your %1$s, wrapped</string>
+    <string name="wrapped_ready_body">Your highlights, ready to share</string>
+    <string name="wrapped_menu">Wrapped</string>
+    <plurals name="wrapped_days">
+        <item quantity="one">%d day on the road</item>
+        <item quantity="other">%d days on the road</item>
+    </plurals>
+    <plurals name="wrapped_hours">
+        <item quantity="one">%d hour online</item>
+        <item quantity="other">%d hours online</item>
+    </plurals>
+    <plurals name="wrapped_months">
+        <item quantity="one">%d month with a target</item>
+        <item quantity="other">%d months with a target</item>
+    </plurals>
+    <string name="week_title">Screenshots this week</string>
+    <string name="week_add_today">Add today</string>
+    <plurals name="week_days_in">
+        <item quantity="one">%d day in so far</item>
+        <item quantity="other">%d days in so far</item>
+    </plurals>
 </resources>

@@ -1,5 +1,8 @@
 package app.ridetracker.ui.settings
 
+import app.ridetracker.shared.domain.DistanceUnit
+import app.ridetracker.shared.domain.DemoData
+import app.ridetracker.AppContainer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ridetracker.applyThemeMode
@@ -28,11 +31,13 @@ import kotlinx.datetime.DayOfWeek
 import kotlin.time.Clock
 
 /** One-off results shown as a snackbar. */
-enum class SettingsMessage { BACKUP_SAVED, BACKUP_FAILED, RESTORE_DONE, RESTORE_INVALID, RESTORE_NEWER, INCOME_ERASED }
+enum class SettingsMessage { BACKUP_SAVED, BACKUP_FAILED, RESTORE_DONE, RESTORE_INVALID, RESTORE_NEWER, INCOME_ERASED, DEMO_FILLED }
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val backupService: BackupService,
+    /** For the Beta app's demo data. */
+    private val container: AppContainer,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings?> = settingsRepository.settings
@@ -101,6 +106,10 @@ class SettingsViewModel(
         }
     }
 
+    fun setDistanceUnit(unit: DistanceUnit) {
+        viewModelScope.launch { settingsRepository.setDistanceUnit(unit) }
+    }
+
     fun setFirstDayOfWeek(day: DayOfWeek) {
         viewModelScope.launch { settingsRepository.setFirstDayOfWeek(day) }
     }
@@ -145,6 +154,22 @@ class SettingsViewModel(
         viewModelScope.launch {
             backupService.eraseIncome()
             _message.value = SettingsMessage.INCOME_ERASED
+        }
+    }
+
+    /** Replaces everything with a made-up month in euro (Beta app only, for screenshots). */
+    fun fillDemo() {
+        viewModelScope.launch {
+            DemoData.fill(
+                today = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+                nowEpochMillis = Clock.System.now().toEpochMilliseconds(),
+                backup = backupService,
+                settings = settingsRepository,
+                income = container.incomeRepository,
+                imports = container.importRepository,
+                expenses = container.expenseRepository,
+            )
+            _message.value = SettingsMessage.DEMO_FILLED
         }
     }
 

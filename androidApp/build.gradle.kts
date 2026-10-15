@@ -102,6 +102,8 @@ dependencies {
     implementation(libs.reorderable)
     implementation(libs.haze)
     implementation(libs.haze.blur)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)

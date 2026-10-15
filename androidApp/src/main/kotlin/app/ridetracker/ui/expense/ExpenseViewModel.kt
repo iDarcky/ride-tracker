@@ -71,8 +71,13 @@ class ExpenseViewModel(
 
     private val expenseId: Long? = savedStateHandle.get<Long>("id")?.takeIf { it > 0 }
 
+    /** A new expense can start in a category (the quick widget's Fuel). */
+    private val startCategory: ExpenseCategory? = savedStateHandle.get<String>("category")?.let { ExpenseCategory.fromId(it) }
+
     private val _state = MutableStateFlow(
-        ExpenseUiState(isEdit = expenseId != null, date = Clock.System.todayIn(TimeZone.currentSystemDefault())),
+        ExpenseUiState(isEdit = expenseId != null, date = Clock.System.todayIn(TimeZone.currentSystemDefault())).let { s ->
+            startCategory?.let { s.copy(category = it, group = it.group) } ?: s
+        },
     )
     val state: StateFlow<ExpenseUiState> = _state.asStateFlow()
 

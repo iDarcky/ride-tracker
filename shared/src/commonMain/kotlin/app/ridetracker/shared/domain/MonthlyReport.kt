@@ -41,8 +41,11 @@ object MonthlyReports {
         val monthIncome = income.filter { inMonth(it.date, month) }
         val monthExpenses = expenses.filter { inMonth(it.date, month) }
         val incomeMinor = monthIncome.sumOf { it.amountMinor }
-        val previousIncome = income.filter { inMonth(it.date, previous) }
-        val previousExpenses = expenses.filter { inMonth(it.date, previous) }
+        // A month still running is compared with the same days of the previous one (1–15 Oct with 1–15 Sep).
+        val running = today >= month.range.start && today < month.range.endInclusive
+        fun inPrevious(date: Long) = inMonth(date, previous) && (!running || LocalDate.fromEpochDays(date).day <= today.day)
+        val previousIncome = income.filter { inPrevious(it.date) }
+        val previousExpenses = expenses.filter { inPrevious(it.date) }
         val days = month.range.lengthInDays
         val daysSoFar = when {
             today > month.range.endInclusive -> days

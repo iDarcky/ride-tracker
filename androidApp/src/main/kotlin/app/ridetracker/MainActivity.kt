@@ -1,5 +1,7 @@
 package app.ridetracker
 
+import app.ridetracker.ui.common.LocalDistanceUnit
+import androidx.compose.runtime.CompositionLocalProvider
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -35,7 +37,7 @@ class MainActivity : AppCompatActivity() {
                 when {
                     settings == null -> Unit // Still loading; the window background shows.
                     settings?.country == null -> WelcomeScreen()
-                    else -> AppNavigation()
+                    else -> CompositionLocalProvider(LocalDistanceUnit provides settings!!.distanceUnit) { AppNavigation() }
                 }
             }
         }
@@ -51,6 +53,10 @@ class MainActivity : AppCompatActivity() {
         if (intent?.getBooleanExtra(EXTRA_OPEN_IMPORT, false) == true) {
             (application as RideTrackerApplication).container.openImport.value = true
         }
+        intent?.getStringExtra(EXTRA_OPEN_ROUTE)?.let { (application as RideTrackerApplication).container.openRoute.value = it }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_TARGET, false) == true) {
+            (application as RideTrackerApplication).container.openTarget.value = true
+        }
         val uris: List<Uri> = when (intent?.action) {
             Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
             Intent.ACTION_SEND_MULTIPLE ->
@@ -63,5 +69,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Set by the import reminder's notification: open the Import screen. */
         const val EXTRA_OPEN_IMPORT = "open_import"
+
+        /** Set by the quick-actions widget: the screen to open (a navigation route). */
+        const val EXTRA_OPEN_ROUTE = "open_route"
+
+        /** Set by the target widget when no target is set yet: open the target page. */
+        const val EXTRA_OPEN_TARGET = "open_target"
     }
 }

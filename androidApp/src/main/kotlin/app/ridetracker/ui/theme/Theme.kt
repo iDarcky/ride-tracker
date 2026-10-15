@@ -11,7 +11,8 @@ import androidx.compose.ui.graphics.Color
 
 // Colours from the "Rideshare cockpit" design system: full M3 scheme from seed #0A6C8B,
 // light and dark. Dynamic colour is intentionally off so the brand colour stays consistent.
-private val LightColors = lightColorScheme(
+/** Also used by the home-screen widget. */
+internal val LightColors = lightColorScheme(
     primary = Color(0xFF136682), onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFBEE9FF), onPrimaryContainer = Color(0xFF004D65),
     secondary = Color(0xFF4D616C), onSecondary = Color(0xFFFFFFFF),
@@ -31,7 +32,7 @@ private val LightColors = lightColorScheme(
     surfaceContainerHighest = Color(0xFFDFE3E7),
 )
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = Color(0xFF8BD0F0), onPrimary = Color(0xFF003546),
     primaryContainer = Color(0xFF004D65), onPrimaryContainer = Color(0xFFBEE9FF),
     secondary = Color(0xFFB4CAD6), onSecondary = Color(0xFF1F333C),

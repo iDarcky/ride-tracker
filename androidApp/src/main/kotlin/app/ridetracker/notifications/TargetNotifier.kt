@@ -15,7 +15,7 @@ import app.ridetracker.AppContainer
 import app.ridetracker.MainActivity
 import app.ridetracker.R
 import app.ridetracker.shared.domain.Period
-import app.ridetracker.shared.domain.TargetBasis
+import app.ridetracker.shared.domain.TargetCalculator
 import app.ridetracker.shared.domain.TargetSettings
 import app.ridetracker.ui.common.DateFormats
 import app.ridetracker.ui.common.MoneyFormat
@@ -66,8 +66,7 @@ object TargetNotifier {
                 .flatMapLatest { (month, target) ->
                     val amount = target.targetFor(month) ?: return@flatMapLatest flowOf(null)
                     combine(container.incomeRepository.observeTotals(month.range), container.expenseRepository.observeInRange(month.range)) { totals, expenses ->
-                        val income = totals.sumOf { it.totalMinor }
-                        val achieved = if (target.basis == TargetBasis.KEPT) income - expenses.sumOf { it.amountMinor } else income
+                        val achieved = TargetCalculator.achieved(target.basis, totals.sumOf { it.totalMinor }, expenses.sumOf { it.amountMinor })
                         Triple(month, amount, achieved)
                     }
                 }
@@ -101,7 +100,7 @@ object TargetNotifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_car)
+            .setSmallIcon(R.drawable.ic_stat_ring)
             .setContentTitle(context.getString(R.string.target_notification_title))
             .setContentText(context.getString(R.string.target_notification_body, money.format(achieved), monthName, money.format(target)))
             .setContentIntent(open)

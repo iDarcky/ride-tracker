@@ -1,5 +1,7 @@
 package app.ridetracker.ui.vehicle
 
+import app.ridetracker.ui.common.byUnit
+import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.AlertDialogDefaults
 import app.ridetracker.ui.common.GLASS_DIALOG
@@ -101,7 +103,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
-import java.text.NumberFormat
 import kotlin.time.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,10 +116,10 @@ fun VehicleScreen(
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val distance = distanceFormat()
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
-    val numbers = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var updateOdometer by rememberSaveable { mutableStateOf(false) }
@@ -210,7 +211,7 @@ fun VehicleScreen(
                         Spacer(Modifier.height(4.dp))
                         val latest = state.latest
                         Text(
-                            latest?.let { stringResource(R.string.km_value, numbers.format(it.km)) } ?: stringResource(R.string.odometer_none),
+                            latest?.let { distance.km(it.km.toDouble()) } ?: stringResource(R.string.odometer_none),
                             style = MaterialTheme.typography.displaySmall.tabular(),
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -290,7 +291,7 @@ fun VehicleScreen(
                     colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
                 ) {
                     Column(Modifier.padding(vertical = 8.dp)) {
-                        Metric(stringResource(R.string.km_driven), state.kmDriven?.let { stringResource(R.string.km_value, numbers.format(it)) })
+                        Metric(stringResource(byUnit(R.string.km_driven, R.string.miles_driven)), state.kmDriven?.let { distance.km(it.toDouble()) })
                         if (state.kmDriven == null) {
                             Text(
                                 stringResource(R.string.needs_two_readings),
@@ -300,7 +301,7 @@ fun VehicleScreen(
                             )
                         }
                         Metric(stringResource(R.string.vehicle_costs), money.format(state.vehicleCostMinor))
-                        Metric(stringResource(R.string.cost_per_km), state.costPerKmMinor?.let { money.format(it) })
+                        Metric(stringResource(byUnit(R.string.cost_per_km, R.string.cost_per_mile)), state.costPerKmMinor?.let { money.format(distance.unit.perUnit(it)) })
                         Metric(stringResource(R.string.fuel_spent), money.format(state.fuelSpentMinor))
                         Metric(stringResource(R.string.fuel_estimate), state.fuelEstimateMinor?.let { money.format(it) })
                     }
@@ -321,7 +322,7 @@ fun VehicleScreen(
                 items(state.readings, key = { "reading-${it.id}" }) { reading ->
                     ActionRow(
                         leading = { ExpenseBadge(Icons.Outlined.Speed) },
-                        title = stringResource(R.string.km_value, numbers.format(reading.km)),
+                        title = distance.km(reading.km.toDouble()),
                         note = dates.day(LocalDate.fromEpochDays(reading.date)),
                         amount = "",
                         onClick = { deleteReadingId = reading.id },
@@ -341,7 +342,7 @@ fun VehicleScreen(
             title = stringResource(R.string.delete_reading_title),
             // Show which reading; Undo is offered afterwards, so no "can't be undone" warning.
             body = reading?.let {
-                stringResource(R.string.km_value, numbers.format(it.km)) + " · " + dates.day(LocalDate.fromEpochDays(it.date))
+                distance.km(it.km.toDouble()) + " · " + dates.day(LocalDate.fromEpochDays(it.date))
             } ?: "",
             confirmLabel = stringResource(R.string.delete),
             destructive = true,
@@ -404,12 +405,13 @@ private fun NoVehicle(onAdd: () -> Unit, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit, onSave: suspend (LocalDate, Long) -> Int?) {
+    val distance = distanceFormat()
     val locale = currentLocale()
     val dates = remember(locale) { DateFormats(locale) }
     val scope = rememberCoroutineScope()
     // Pre-filled with the last reading, cursor at the end, so usually only the last digits change.
     var field by remember {
-        val start = latest?.km?.toString() ?: ""
+        val start = latest?.km?.let { distance.fromKm(it).toString() } ?: ""
         mutableStateOf(TextFieldValue(start, selection = TextRange(start.length)))
     }
     var date by remember { mutableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault())) }
@@ -432,8 +434,8 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
                         field = it.copy(text = digits, selection = TextRange(minOf(it.selection.end, digits.length)))
                         error = null
                     },
-                    label = { Text(stringResource(R.string.odometer_reading_km)) },
-                    suffix = { Text(stringResource(R.string.km_unit)) },
+                    label = { Text(stringResource(byUnit(R.string.odometer_reading_km, R.string.odometer_reading_mi))) },
+                    suffix = { Text(stringResource(byUnit(R.string.km_unit, R.string.mi_unit))) },
                     singleLine = true,
                     isError = error != null,
                     supportingText = error?.let { { Text(stringResource(it)) } },
@@ -448,7 +450,8 @@ private fun OdometerDialog(latest: OdometerReadingEntity?, onDismiss: () -> Unit
         },
         confirmButton = {
             TextButton(onClick = {
-                val km = field.text.toLongOrNull()
+                // Typed in the driver's unit, stored in km.
+                val km = field.text.toLongOrNull()?.let(distance::toKm)
                 if (km == null) {
                     error = R.string.invalid_number
                     return@TextButton

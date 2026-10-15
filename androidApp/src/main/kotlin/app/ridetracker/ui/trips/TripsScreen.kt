@@ -1,5 +1,6 @@
 package app.ridetracker.ui.trips
 
+import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -346,7 +347,7 @@ fun paymentName(id: String): Int = when (PaymentMethod.fromId(id)) {
 @Composable
 fun distanceAndDuration(trip: TripWithPlatform): String {
     val locale = currentLocale()
-    val km = trip.distanceMeters?.let { "%.1f".format(locale, it / 1000.0) } ?: "—"
+    val km = trip.distanceMeters?.let { distanceFormat().meters(it, decimals = 1) } ?: "—"
     val min = trip.durationSeconds?.let { (it / 60).toString() } ?: "—"
     return stringResource(R.string.trip_km_min, km, min)
 }

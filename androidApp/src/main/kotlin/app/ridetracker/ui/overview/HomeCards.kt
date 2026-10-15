@@ -1,5 +1,7 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.ui.common.byUnit
+import app.ridetracker.ui.common.distanceFormat
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.stateDescription
@@ -229,13 +231,18 @@ fun Metrics(stats: HomeStats, platforms: List<PlatformEntity>, money: MoneyForma
         else -> null
     }
     val hours = stats.onlineMinutes?.let { stringResource(R.string.hours_minutes, it / 60, it % 60) }
-    val km = stats.distanceMeters?.let { stringResource(R.string.km_value, "%.0f".format(locale, it / 1000.0)) }
+    val distance = distanceFormat()
+    val km = stats.distanceMeters?.let { distance.meters(it) }
     val tiles = listOf(
         Tile(stats.tripCount.takeIf { it > 0 }?.toString(), stringResource(R.string.metric_trips), coverage(stats.tripPlatformIds, R.string.hint_trips)),
-        Tile(km, stringResource(R.string.metric_km), coverage(stats.kmPlatformIds, R.string.hint_km)),
+        Tile(km, stringResource(byUnit(R.string.metric_km, R.string.metric_miles)), coverage(stats.kmPlatformIds, byUnit(R.string.hint_km, R.string.hint_miles))),
         Tile(hours, stringResource(R.string.metric_online), coverage(stats.hourPlatformIds, R.string.hint_hours)),
         Tile(stats.perHourMinor?.let { money.format(it) }, stringResource(R.string.metric_per_hour, money.symbol), coverage(stats.hourPlatformIds, R.string.hint_hours)),
-        Tile(stats.perKmMinor?.let { money.format(it) }, stringResource(R.string.metric_per_km, money.symbol), coverage(stats.kmPlatformIds, R.string.hint_km)),
+        Tile(
+            stats.perKmMinor?.let { money.format(distance.unit.perUnit(it)) },
+            stringResource(byUnit(R.string.metric_per_km, R.string.metric_per_mile), money.symbol),
+            coverage(stats.kmPlatformIds, byUnit(R.string.hint_km, R.string.hint_miles)),
+        ),
     )
     if (tiles.all { it.value == null }) {
         // Nothing to show yet: one line instead of five empty tiles.

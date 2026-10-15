@@ -1,5 +1,6 @@
 package app.ridetracker.shared.data
 
+import app.ridetracker.shared.domain.DistanceUnit
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
 import app.ridetracker.shared.domain.Country
@@ -63,6 +64,8 @@ data class BackupSettings(
     val drivingType: String? = null,
     /** Home cards in order (comma-separated ids). Added in 0.4.0; older backups keep the default layout. */
     val homeWidgets: String? = null,
+    /** "km" or "mi". Added in 0.17.0; older backups read as km. */
+    val distanceUnit: String? = null,
 )
 
 @Serializable
@@ -240,6 +243,7 @@ class BackupService(
                 themeMode = settings.themeMode.id,
                 drivingType = settings.drivingType?.id,
                 homeWidgets = HomeWidget.format(settings.homeWidgets),
+                distanceUnit = settings.distanceUnit.id,
             ),
             platforms = database.platformDao().getAll().map {
                 BackupPlatform(it.id, it.name, it.colorArgb, it.sortOrder, it.archived)
@@ -435,6 +439,7 @@ class BackupService(
                 themeMode = ThemeMode.fromId(s.themeMode),
                 drivingType = DrivingType.fromId(s.drivingType),
                 homeWidgets = HomeWidget.parse(s.homeWidgets),
+                distanceUnit = DistanceUnit.fromId(s.distanceUnit),
             ),
         )
         return BackupSummary(platforms.size, entries.size, expenses.size)
@@ -449,6 +454,16 @@ class BackupService(
             }
         }
         settingsRepository.clear()
+    }
+
+    /** Deletes all data (entries, expenses, car, imports) but keeps the settings; the default apps come back. */
+    suspend fun eraseData() {
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                deleteAllRows()
+                database.platformDao().insertAll(defaultPlatforms)
+            }
+        }
     }
 
     /**

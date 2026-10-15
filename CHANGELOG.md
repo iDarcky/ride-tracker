@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.17.0
+- **New name and icon: Ridely** (a working name, owner 15 Oct 2026). The icon is a ring that is almost closed, with a
+  light green dot where it starts, the same shape as the target widget; it has a one-colour version for themed icons,
+  and notifications use it instead of the car. The Beta app is "Ridely Beta", still orange. Nothing else changes:
+  same app, same data, it updates over the old one.
+- **Screenshots this week** on Home: a column for each day of the week with a dot for each app, filled in the app's
+  colour once that day is in (days still to come are faint), and how many days are in so far. While today has
+  nothing yet, "Add today" opens Import; so does tapping the card. A day without a screenshot still counts as 0, so
+  this only shows what's in. It's a Home card like the others (move or remove it in Customise).
+- **Monthly target widget** for the home screen (hold the app icon → Widgets), in Material 3 Expressive
+  style: a progress ring with the percentage, the amount so far in big numbers ("RON 2,160", of RON 3,000) and one
+  coloured pill: what each driving day left needs, behind (red) or ahead (green) of pace, or "Done". It lays out for
+  its exact size, so the ring and the number grow to fill it; small sizes show the ring and the number. It updates by itself when you import or change the target, follows light and dark mode,
+  and opens the app when tapped (the target page if you haven't set one).
+- The target widget fits any size: square or tall stacks the ring over the number, wide puts them side by side, and
+  the number's size follows the room left, so "RON 2,160" is never cut; narrow widgets show a short pill ("RON 79/day").
+- **Quick add widget**: Fuel (a new expense already set to fuel), Import, Expense and Income in one tap from the home
+  screen; a row at 4×1, a 2×2 grid when square.
+- **Wrapped**, like Spotify's: your month (or year) as full-screen story cards: what you kept and the change, best
+  day, best weekday, best month (yearly), money per hour online, rides and distance, which app paid, your target.
+  Cards advance by themselves like Spotify's (hold to pause; tap right for the next, left for the previous; not with
+  TalkBack on), and their layouts vary (words top, bottom, centred or on the right, the shape in another corner). The
+  last card sums it up in a colour you pick and **shares as an image**. Home
+  offers last month's in the first 10 days of a month, and the year's from 1 December to 15 January; it's also always
+  in the share menu on Money, for the month shown (a month still running is compared with the same days before).
+- **The monthly report (PDF and image) has Wrapped's look**: the brand teal with white numbers, see-through cards,
+  light green for income and light red for expenses, and an Expressive cookie shape.
+- **Comparisons with last month use the same days while a month is running** (the report, Money's totals), like Home:
+  15 days of October against 1–15 September, not the whole of September.
+- **Kilometres or miles** (Settings → Distance): distances, odometer readings, cost per km/mile and Home's paid
+  km/miles follow your choice; everything is still stored in km. Fuel consumption stays in L/100 km.
+- **Demo data (Beta app only)**: Your data → Fill with demo data replaces the Beta app's data with a made-up month in
+  euro (Bolt and Uber days with breakdowns, hours, rides with times, km and cash or card, fuel and other expenses, a
+  target), for screenshots.
+
 ## 0.16.3
 - **No screen animations, really this time**: screens open and close instantly, and the back swipe no longer moves
   anything while you swipe (only Android's arrow shows); the screen changes when you let go. 0.15.2 still had the

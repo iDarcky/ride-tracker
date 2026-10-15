@@ -86,6 +86,10 @@ data class TargetProgress(
 
 object TargetCalculator {
 
+    /** What counts toward the target: income, or income minus expenses for "money kept". */
+    fun achieved(basis: TargetBasis, incomeMinor: Long, expensesMinor: Long): Long =
+        if (basis == TargetBasis.KEPT) incomeMinor - expensesMinor else incomeMinor
+
     fun progress(
         month: Period.Month,
         targetMinor: Long,

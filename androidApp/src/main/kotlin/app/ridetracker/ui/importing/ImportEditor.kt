@@ -1,5 +1,7 @@
 package app.ridetracker.ui.importing
 
+import app.ridetracker.ui.common.byUnit
+import app.ridetracker.ui.common.LocalDistanceUnit
 import app.ridetracker.ui.common.GLASS_DIALOG
 import app.ridetracker.ui.common.glassContainer
 import app.ridetracker.ui.common.glass
@@ -246,7 +248,9 @@ private fun PeriodEditor(summary: ParsedSummary, withEarnings: Boolean, currency
     val tips = remember { AmountText(summary.tipsMinor, digits) }
     val cancellations = remember { AmountText(summary.cancellationMinor, digits) }
     val commission = remember { AmountText(summary.platformFeeMinor?.takeIf { it != 0L }, digits) }
-    val km = remember { AmountText(summary.distanceMeters?.let { it / 10 }, 2) } // km with two decimals
+    // Distance with two decimals, in the driver's unit (stored in metres).
+    val unit = LocalDistanceUnit.current
+    val km = remember(unit) { AmountText(summary.distanceMeters?.let { Math.round(unit.fromKm(it / 1000.0) * 100) }, 2) }
 
     EditorTitle(stringResource(R.string.edit_period_title))
     Text(dates.range(DateRange(summary.periodStart, summary.periodEnd)), style = MaterialTheme.typography.bodyMedium)
@@ -256,7 +260,7 @@ private fun PeriodEditor(summary: ParsedSummary, withEarnings: Boolean, currency
     AmountField(stringResource(R.string.line_tip), tips, symbol)
     AmountField(stringResource(R.string.line_cancellation_fee), cancellations, symbol)
     AmountField(stringResource(R.string.edit_deduction, stringResource(R.string.line_commission)), commission, symbol)
-    if (!withEarnings) AmountField(stringResource(R.string.import_distance), km, "km")
+    if (!withEarnings) AmountField(stringResource(R.string.import_distance), km, stringResource(byUnit(R.string.km_unit, R.string.mi_unit)))
 
     val fields = listOf(earnings, fares, bonus, tips, cancellations, commission, km)
     if (withEarnings && earnings.minor != null) {
@@ -274,7 +278,7 @@ private fun PeriodEditor(summary: ParsedSummary, withEarnings: Boolean, currency
                 tipsMinor = tips.minor,
                 cancellationMinor = cancellations.minor,
                 platformFeeMinor = commission.minor?.let { -it },
-                distanceMeters = if (withEarnings) summary.distanceMeters else km.minor?.let { it * 10 },
+                distanceMeters = if (withEarnings) summary.distanceMeters else km.minor?.let { Math.round(unit.toKm(it / 100.0) * 1000) },
             ),
         )
     }

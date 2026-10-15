@@ -1,5 +1,7 @@
 package app.ridetracker.ui.overview
 
+import kotlinx.coroutines.flow.map
+import app.ridetracker.shared.domain.WrappedCalculator
 import kotlinx.coroutines.flow.distinctUntilChanged
 import app.ridetracker.shared.domain.PeriodComparisons
 import app.ridetracker.shared.domain.ComparisonRow
@@ -49,6 +51,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import app.ridetracker.shared.domain.IncomeSource
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
@@ -85,12 +91,29 @@ data class OverviewUiState(
     val target: TargetProgress? = null,
     /** This period against the previous one; null when there's nothing to compare with. */
     val comparisonCard: ComparisonCard? = null,
+    /** This week's screenshots, whatever period is shown; null when no app was used lately. */
+    val week: WeekLog? = null,
 ) {
     val keptMinor: Long get() = totalMinor - expenseMinor
 
     /** The headline number: money kept once expenses are tracked, otherwise income. */
     val headlineMinor: Long get() = if (tracksExpenses) keptMinor else totalMinor
     val previousHeadlineMinor: Long? get() = previous?.let { if (tracksExpenses) it.incomeMinor - it.expenseMinor else it.incomeMinor }
+}
+
+/**
+ * This week, day by day: which apps have their day in. A day without one counts as 0 (days off are normal), so this
+ * only shows what's in, never a warning. [apps] are the apps used in the last four weeks.
+ */
+data class WeekLog(
+    val days: List<LocalDate>,
+    val today: LocalDate,
+    val apps: List<PlatformEntity>,
+    val logged: Map<LocalDate, Set<Long>>,
+) {
+    /** Days so far with at least one app in. */
+    val daysIn: Int get() = days.count { it <= today && !logged[it].isNullOrEmpty() }
+    val todayIn: Boolean get() = !logged[today].isNullOrEmpty()
 }
 
 /** What "Needs attention" on Home lists. */
@@ -224,6 +247,29 @@ class OverviewViewModel(
         OverviewUiState(period = selected.value, today = today(), currencyCode = null),
     )
 
+    val week: StateFlow<WeekLog?> = settingsRepository.settings.map { it.firstDayOfWeek }.distinctUntilChanged().flatMapLatest { first ->
+        val today = today()
+        val week = Period.Week.containing(today, first)
+        val recent = DateRange(today.minus(DatePeriod(days = 27)), today)
+        combine(
+            incomeRepository.observeEntries(week.range),
+            incomeRepository.observeEntries(recent),
+            incomeRepository.observePlatforms(),
+        ) { entries, lately, platforms ->
+            val used = lately.filter { it.source != IncomeSource.ESTIMATE.id }.map { it.platformId }.toSet()
+            val apps = platforms.filter { it.id in used }
+            if (apps.isEmpty()) return@combine null
+            WeekLog(
+                days = (0..6).map { week.start.plus(DatePeriod(days = it)) },
+                today = today,
+                apps = apps,
+                logged = entries.filter { it.source != IncomeSource.ESTIMATE.id }
+                    .groupBy({ LocalDate.fromEpochDays(it.date) }, { it.platformId })
+                    .mapValues { it.value.toSet() },
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** Recurring expenses waiting for Add or Skip, documents running out, Raportul Z and suggestions. */
     val attention: StateFlow<Attention> = combine(
         combine(recurringRepository.observePending(today()), vehicleRepository.observeAllDocuments()) { p, d -> p to d },
@@ -244,6 +290,17 @@ class OverviewViewModel(
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Attention())
 
+    /**
+     * Last month's or the year's Wrapped, while Home offers it (see [WrappedCalculator.offered]) and it has at least
+     * two days driven; null otherwise.
+     */
+    val wrappedOffer: StateFlow<Pair<DateRange, Boolean>?> = run {
+        val offer = WrappedCalculator.offered(today()) ?: return@run MutableStateFlow(null)
+        incomeRepository.observeEntryDetails(offer.first)
+            .map { entries -> offer.takeIf { entries.filter { it.amountMinor > 0 }.map { it.date }.distinct().size >= 2 } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }
+
     /** The target of the month shown (the month the period starts in; this month for "All"). */
     val target: StateFlow<TargetProgress?> = combine(selected, settingsRepository.target) { period, settings ->
         val month = if (period is Period.All) Period.Month.containing(today()) else Period.Month.containing(period.range.start)
@@ -251,8 +308,7 @@ class OverviewViewModel(
     }.flatMapLatest { (month, settings) ->
         val amount = settings.targetFor(month) ?: return@flatMapLatest flowOf(null)
         combine(incomeRepository.observeTotals(month.range), expenseRepository.observeInRange(month.range)) { totals, expenses ->
-            val income = totals.sumOf { it.totalMinor }
-            val achieved = if (settings.basis == TargetBasis.KEPT) income - expenses.sumOf { it.amountMinor } else income
+            val achieved = TargetCalculator.achieved(settings.basis, totals.sumOf { it.totalMinor }, expenses.sumOf { it.amountMinor })
             TargetCalculator.progress(month, amount, achieved, settings.drivingDays, today())
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

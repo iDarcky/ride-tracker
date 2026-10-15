@@ -33,15 +33,19 @@ fun resolveCurrency(code: String?): Currency =
         ?: runCatching { Currency.getInstance(Locale.getDefault()) }.getOrNull()
         ?: Currency.getInstance("EUR")
 
-/** Formats minor-unit amounts in the app currency, using the UI locale's number style. */
-class MoneyFormat(val currency: Currency, locale: Locale) {
+/**
+ * Formats minor-unit amounts in the app currency, using the UI locale's number style. [wholeUnits] rounds to whole
+ * lei / euro ("RON 2,160") where space is tight, like the home-screen widget.
+ */
+class MoneyFormat(val currency: Currency, locale: Locale, wholeUnits: Boolean = false) {
     val fractionDigits: Int = currency.defaultFractionDigits.coerceAtLeast(0)
     val symbol: String = currency.getSymbol(locale)
 
     private val formatter = NumberFormat.getCurrencyInstance(locale).apply {
         currency = this@MoneyFormat.currency
-        minimumFractionDigits = fractionDigits
-        maximumFractionDigits = fractionDigits
+        minimumFractionDigits = if (wholeUnits) 0 else fractionDigits
+        maximumFractionDigits = if (wholeUnits) 0 else fractionDigits
+        roundingMode = java.math.RoundingMode.HALF_UP
     }
 
     fun format(minor: Long): String {
@@ -65,6 +69,14 @@ class DateFormats(private val locale: Locale) {
     private val medium = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
 
     fun day(date: LocalDate): String = date.toJavaLocalDate().format(day).capitalized()
+
+    /** "M", one letter for a day of the week. */
+    fun weekdayNarrow(date: LocalDate): String =
+        date.toJavaLocalDate().dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW_STANDALONE, locale).uppercase(locale)
+
+    /** "Monday", for screen readers. */
+    fun weekdayFull(date: LocalDate): String =
+        date.toJavaLocalDate().dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, locale).capitalized()
 
     /** "5 Oct", for chart axes. */
     fun shortDay(date: LocalDate): String = date.toJavaLocalDate().format(shortDay)

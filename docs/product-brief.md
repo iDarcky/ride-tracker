@@ -173,6 +173,16 @@ Product:
 - [x] Monthly target (0.10.0): income or money kept, per driving day, pace, notification when reached.
 - [x] Import reminders: an evening reminder for the day's screenshots (0.15.0); End of month opens first early in a month.
 - [ ] Backup off the phone (Android backup or Drive), so a lost phone doesn't lose the data.
+- [x] Wrapped (monthly and yearly story cards, share as image) and the km / miles setting: done in 0.17.0. Money stays
+      in one currency per app, no conversion.
+- [ ] Scan fuel receipts (owner, 15 Oct 2026: to-do): a photo of a receipt becomes an expense with litres and price
+      per litre, read on the phone like screenshots (TOTAL, date, "35,20 L x 7,45", fuel type, station name), with a
+      preview to fix; abroad it falls back to amount and date. Needs 3–4 real receipts from different stations
+      (made-up fixtures only in the repo). Pairs with real fuel cost and L/100 km.
+- [ ] Weather (owner wanted it, parked as too complicated, 15 Oct 2026): "Tomorrow: rain from 17:00, your rainy
+      evenings paid X% more per hour". One city per driver (Romania: one city per licence), a few KB of stored
+      hourly weather, opt-in. Blocker: licensing (Open-Meteo free tier is non-commercial; MET Norway is free with
+      credit but has no history).
 - [ ] Past months (owner, 13 Oct 2026: later): a "Past months" page in Import: Uber Supplier portal CSVs for a whole
       year, which Bolt monthly PDFs to get, and a quick "a month's total" per app for months without files. Bolt's
       personal data export (below) would be the best Bolt source.
@@ -185,7 +195,8 @@ Product:
 - [ ] TVA intracomunitar suggestion from imported commission (rate × commission), PFA only.
 - [ ] Bolt "Rides" (acceptance) and "Cancels" tabs; Bolt's personal data export (ZIP with CSV/JSON) as a
       one-off history import; Bolt Driver Portal reports (invoices, payouts, balance).
-- [ ] Identity: final name, icon, darker cockpit look.
+- [x] Identity: **Ridely** with the ring icon (0.17.0, owner 15 Oct 2026: "for now", may change). Board with the
+      other names and icon ideas: https://claude.ai/artifact/4QFJMMLXCV8q3P39Kg6ikb. Still open: darker cockpit look.
 Widget ideas (owner, 9 Oct 2026: a growing list to go over later; nothing decided):
 - Money: **this week's payout** (earned, cash in hand, coming to the bank, payout day); **real profit per hour/km**
   after commission and fuel; **which app pays better** (Bolt vs Uber RON/hour, RON/km); **effective commission** per

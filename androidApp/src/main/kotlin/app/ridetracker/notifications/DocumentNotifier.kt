@@ -64,7 +64,7 @@ object DocumentNotifier {
                 context.getString(R.string.document_notification_soon, name, dates.day(LocalDate.fromEpochDays(document.expiryDate)))
             }
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_car)
+                .setSmallIcon(R.drawable.ic_stat_ring)
                 .setContentTitle(title)
                 .setContentText(context.getString(R.string.document_notification_body))
                 .setContentIntent(open)

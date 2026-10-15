@@ -66,7 +66,9 @@ class IncomeListViewModel(
                 .sortedByDescending { it.range.start }
             fun inMonth(m: Period.Month) = all.filter { LocalDate.fromEpochDays(it.date) in m.range.start..m.range.endInclusive }
             val monthly = inMonth(month)
+            // The month still running is compared with the same days of the previous one, like Home.
             val previous = inMonth(month.previous() as Period.Month)
+                .filter { month != current || LocalDate.fromEpochDays(it.date).day <= today.day }
             combine(
                 incomeRepository.observeTotals(month.range),
                 incomeRepository.observeEntryDetails(month.range),

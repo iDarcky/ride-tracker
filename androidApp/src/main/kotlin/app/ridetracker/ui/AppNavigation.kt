@@ -1,5 +1,7 @@
 package app.ridetracker.ui
 
+import app.ridetracker.shared.domain.DateRange
+import app.ridetracker.ui.wrapped.WrappedScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.semantics
@@ -149,6 +151,25 @@ fun AppNavigation() {
             if (backStack?.destination?.route != "import") nav.navigate("import")
         }
     }
+    // A quick-actions widget button: open its screen (import, a new expense or income).
+    val openRouteFlow = (LocalContext.current.applicationContext as RideTrackerApplication).container.openRoute
+    val openRoute by openRouteFlow.collectAsState()
+    LaunchedEffect(openRoute, backStack != null) {
+        val route = openRoute
+        if (route != null && backStack != null) {
+            openRouteFlow.value = null
+            nav.navigate(route)
+        }
+    }
+    // The target widget, tapped with no target set: open the target page.
+    val openTargetFlow = (LocalContext.current.applicationContext as RideTrackerApplication).container.openTarget
+    val openTarget by openTargetFlow.collectAsState()
+    LaunchedEffect(openTarget, backStack != null) {
+        if (openTarget && backStack != null) {
+            openTargetFlow.value = false
+            if (backStack?.destination?.route != SettingsPage.TARGET.route) nav.navigate(SettingsPage.TARGET.route)
+        }
+    }
     val currentTab = Tab.entries.firstOrNull { it.route == backStack?.destination?.route }
     val reselects = remember { mutableStateMapOf<Tab, Int>() }
     val entries = remember { mutableStateMapOf<Tab, Int>() }
@@ -180,6 +201,7 @@ fun AppNavigation() {
                 composable(Tab.HOME.route) { ReselectScope(reselects[Tab.HOME] ?: 0, entries[Tab.HOME] ?: 0) { OverviewScreen(onImport = { nav.navigate("import") }, onOpenZReport = { nav.navigate(SettingsPage.Z_REPORT.route) },
                         onOpenTarget = { nav.navigate(SettingsPage.TARGET.route) },
                         onRenewDocument = { nav.navigate("vehicle/document/$it?renew=true") },
+                        onOpenWrapped = { range, yearly -> nav.navigate(wrappedRoute(range, yearly)) },
                     ) } }
                 composable(Tab.TRIPS.route) { ReselectScope(reselects[Tab.TRIPS] ?: 0, entries[Tab.TRIPS] ?: 0) {
                     TripsScreen(onOpenTrip = { id -> nav.navigate("trip/$id") }, onImport = { nav.navigate("import") })
@@ -193,6 +215,7 @@ fun AppNavigation() {
                         onEditExpense = { id -> nav.navigate("expense?id=$id") },
                         onOpenRecurring = { nav.navigate("recurring") },
                         onOpenPlatform = { id, month -> nav.navigate("platform-income/$id/${month.range.start.toEpochDays()}") },
+                        onOpenWrapped = { range, yearly -> nav.navigate(wrappedRoute(range, yearly)) },
                     )
                 } }
                 composable(Tab.VEHICLE.route) { ReselectScope(reselects[Tab.VEHICLE] ?: 0, entries[Tab.VEHICLE] ?: 0) {
@@ -248,8 +271,12 @@ fun AppNavigation() {
                     EntryScreen(onDone = { nav.popBackStack() }, onManagePlatforms = { nav.navigate("platforms") })
                 }
                 composable(
-                    "expense?id={id}",
-                    arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L }),
+                    "expense?id={id}&category={category}",
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.LongType; defaultValue = -1L },
+                        // A new expense that starts in this category (the quick widget's Fuel).
+                        navArgument("category") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    ),
                 ) {
                     ExpenseScreen(onDone = { nav.popBackStack() }, onOpenDocument = { nav.navigate("vehicle/document/$it") })
                 }
@@ -266,6 +293,21 @@ fun AppNavigation() {
                     TripDetailsScreen(tripId = entry.arguments?.getLong("id") ?: -1L, onBack = { nav.popBackStack() })
                 }
                 composable("platforms") { PlatformsScreen(onBack = { nav.popBackStack() }) }
+                composable(
+                    "wrapped/{start}/{end}/{yearly}",
+                    arguments = listOf(
+                        navArgument("start") { type = NavType.LongType },
+                        navArgument("end") { type = NavType.LongType },
+                        navArgument("yearly") { type = NavType.BoolType },
+                    ),
+                ) { entry ->
+                    WrappedScreen(
+                        start = LocalDate.fromEpochDays(entry.arguments?.getLong("start") ?: 0L),
+                        end = LocalDate.fromEpochDays(entry.arguments?.getLong("end") ?: 0L),
+                        yearly = entry.arguments?.getBoolean("yearly") == true,
+                        onClose = { nav.popBackStack() },
+                    )
+                }
                 composable(
                     "platform-income/{id}/{month}",
                     arguments = listOf(navArgument("id") { type = NavType.LongType }, navArgument("month") { type = NavType.LongType }),
@@ -330,6 +372,9 @@ fun AppNavigation() {
         }
     }
 }
+
+private fun wrappedRoute(range: DateRange, yearly: Boolean) =
+    "wrapped/${range.start.toEpochDays()}/${range.endInclusive.toEpochDays()}/$yearly"
 
 @Composable
 private fun ReselectScope(reselects: Int, entries: Int, content: @Composable () -> Unit) {

@@ -74,6 +74,32 @@
                 android:name="autoStoreLocales"
                 android:value="true" />
         </service>
+        <!-- Home-screen widget: this month's target. -->
+        <receiver
+            android:name=".widget.GoalWidgetReceiver"
+            android:exported="true"
+            android:label="@string/target_setting">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/goal_widget_info" />
+        </receiver>
+
+        <!-- Home-screen widget: quick actions (Fuel, Import, Expense, Income). -->
+        <receiver
+            android:name=".widget.QuickWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_widget_info" />
+        </receiver>
+
         <!-- Shares the monthly report (PDF or image) with other apps. -->
         <provider
             android:name="androidx.core.content.FileProvider"

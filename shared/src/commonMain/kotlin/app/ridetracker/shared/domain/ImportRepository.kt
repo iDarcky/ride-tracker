@@ -251,6 +251,7 @@ class ImportRepository(private val database: AppDatabase) {
                 TripEntity(
                     platformId = platformId, importBatchId = batchId, externalId = it.externalId, date = it.date.toEpochDays(),
                     startMinute = it.startMinute, fareMinor = it.fareMinor, paymentMethod = it.paymentMethod.id,
+                    distanceMeters = it.distanceMeters, durationSeconds = it.durationSeconds,
                 )
             },
         )

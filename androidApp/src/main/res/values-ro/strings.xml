@@ -18,7 +18,7 @@
     <string name="nav_expenses">Cheltuieli</string>
 
     <!-- Welcome -->
-    <string name="welcome_title">Bun venit în Ride Tracker</string>
+    <string name="welcome_title">Bun venit în Ridely</string>
     <string name="welcome_body">Urmărește cât câștigi din Uber, Bolt și alte platforme. Datele tale rămân pe acest dispozitiv.</string>
     <string name="welcome_country_question">Unde conduci?</string>
     <string name="welcome_continue">Continuă</string>
@@ -111,7 +111,7 @@
     <string name="restore_confirm_body">Tot ce este acum în aplicație va fi înlocuit cu această copie din %1$s (%2$s).</string>
     <string name="restore_action">Restaurează</string>
     <string name="restore_done">Copia a fost restaurată</string>
-    <string name="restore_invalid">Acest fișier nu este o copie Ride Tracker</string>
+    <string name="restore_invalid">Acest fișier nu este o copie Ridely</string>
     <string name="restore_newer">Copia este dintr-o versiune mai nouă. Actualizează mai întâi aplicația.</string>
     <string name="erase">Șterge toate datele</string>
     <string name="erase_summary">Șterge toate înregistrările, platformele și setările</string>
@@ -170,7 +170,7 @@
     <string name="report_share_pdf">Trimite ca PDF</string>
     <string name="report_share_image">Trimite ca imagine</string>
     <string name="report_failed">Nu am putut face raportul</string>
-    <string name="report_brand">Ride Tracker</string>
+    <string name="report_brand">Ridely</string>
     <string name="report_income">Venituri</string>
     <string name="report_expenses">Cheltuieli</string>
     <string name="report_profit">Profit</string>
@@ -181,7 +181,7 @@
     <string name="report_no_expenses">Nicio cheltuială luna aceasta</string>
     <string name="report_days">Zile cu venituri: %1$d din %2$d</string>
     <string name="report_made">Generat pe %1$s</string>
-    <string name="report_file">Ride Tracker %1$s</string>
+    <string name="report_file">Ridely %1$s</string>
     <string name="csv_date">Data</string>
     <string name="csv_type">Tip</string>
     <string name="csv_item">Platformă sau categorie</string>
@@ -219,8 +219,17 @@
     <string name="odometer_history">Istoric kilometraj</string>
     <string name="delete_reading_title">Ștergi această citire?</string>
     <string name="reading_deleted">Citire ștearsă</string>
-    <string name="km_value">%1$s km</string>
     <string name="km_unit">km</string>
+    <string name="mi_unit">mi</string>
+    <string name="miles_driven">Mile parcurse</string>
+    <string name="cost_per_mile">Cost pe milă</string>
+    <string name="odometer_reading_mi">Citire (mile)</string>
+    <string name="metric_miles">Mile plătite</string>
+    <string name="metric_per_mile">%1$s pe milă</string>
+    <string name="hint_miles">Încă fără mile</string>
+    <string name="distance_unit">Distanță</string>
+    <string name="distance_km">Kilometri</string>
+    <string name="distance_miles">Mile</string>
     <string name="km_driven">Km parcurși</string>
     <string name="vehicle_costs">Costuri mașină</string>
     <string name="cost_per_km">Cost pe km</string>
@@ -323,7 +332,7 @@
         <item quantity="other">%d fără</item>
     </plurals>
     <string name="import_choose_screenshots">Alege capturi de ecran</string>
-    <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ride Tracker.</string>
+    <string name="import_share_hint">Poți trimite capturile și direct din galerie: Distribuie → Ridely.</string>
     <string name="import_add_screenshots">Adaugă capturi</string>
     <string name="import_add_files">Adaugă fișiere</string>
     <string name="import_reading">Se citește…</string>
@@ -554,7 +563,7 @@
     <string name="import_uber_totals">Uber · totaluri și comision</string>
     <string name="import_uber_hours">Uber · timp și km</string>
     <string name="import_uber_not_needed">Uber · nu e necesar</string>
-    <string name="import_uber_not_needed_note">Ride Tracker nu folosește acest fișier, așa că nu îl citește. De la Uber ai nevoie doar de payments_order, payments_organization, trip_activity și driver_time_and_distance.</string>
+    <string name="import_uber_not_needed_note">Ridely nu folosește acest fișier, așa că nu îl citește. De la Uber ai nevoie doar de payments_order, payments_organization, trip_activity și driver_time_and_distance.</string>
     <string name="import_uber_days_note">Venitul tău pe fiecare zi, după comisionul Uber. Fiecare zi înlocuiește ce avea Uber în aplicație în ziua respectivă.</string>
     <string name="import_uber_days_fee_note">Comisionul Uber nu e în acest fișier: adaugă payments_organization pentru el.</string>
     <string name="import_uber_trips_note">Câștigul fiecărei curse vine din fișierul de plăți (payments_order).</string>
@@ -656,6 +665,24 @@
     <string name="target_reached_exact">Țintă atinsă</string>
     <string name="target_missed">Ratată cu %1$s</string>
     <string name="target_suggest">Setează o țintă lunară</string>
+    <string name="widget_goal_description">Cât mai ai până la ținta lunii, cât trebuie pe fiecare zi de condus rămasă și dacă ești în ritm.</string>
+    <string name="widget_quick_name">Adaugă rapid</string>
+    <string name="widget_quick_description">Combustibil, Import, Cheltuială și Venit dintr-o atingere, de pe ecranul principal.</string>
+    <string name="widget_quick_fuel">Combustibil</string>
+    <string name="widget_quick_import">Import</string>
+    <string name="widget_quick_expense">Cheltuială</string>
+    <string name="widget_quick_income">Venit</string>
+    <string name="widget_goal_of">din %1$s</string>
+    <string name="widget_goal_per_day_short">%1$s/zi</string>
+    <string name="widget_goal_title">Ținta pe %1$s</string>
+    <string name="widget_goal_done">Gata · +%1$s</string>
+    <string name="widget_goal_behind">În urmă cu %1$s</string>
+    <string name="widget_goal_ahead">Înainte cu %1$s</string>
+    <plurals name="widget_goal_per_day">
+        <item quantity="one">%1$s/zi · %2$d zi</item>
+        <item quantity="few">%1$s/zi · %2$d zile</item>
+        <item quantity="other">%1$s/zi · %2$d de zile</item>
+    </plurals>
     <string name="target_channel">Ținte</string>
     <string name="target_channel_description">Când îți atingi ținta lunară</string>
     <string name="target_notification_title">Țintă lunară atinsă</string>
@@ -672,6 +699,12 @@
     <string name="erase_income_confirm_title">Ștergi veniturile și importurile?</string>
     <string name="erase_income_confirm_body">Se șterg toate veniturile (importate și introduse de tine), cursele, orele și totalurile platformelor, ca să poți importa totul din nou. Cheltuielile, platformele, mașina și setările rămân. Nu se poate anula, așa că fă întâi o copie de rezervă dacă ai putea avea nevoie de date.</string>
     <string name="erase_income_done">Veniturile și importurile au fost șterse</string>
+    <string name="demo_fill">Completează cu date demo</string>
+    <string name="demo_fill_summary">Doar în Beta: o lună inventată în euro, pentru capturi</string>
+    <string name="demo_confirm_title">Înlocuiești totul cu date demo?</string>
+    <string name="demo_confirm_body">Toate datele din aplicația Beta sunt înlocuite cu o lună inventată în euro (zile Bolt și Uber, cheltuieli, o țintă). Setările rămân. Aplicația Ridely obișnuită nu e atinsă.</string>
+    <string name="demo_confirm_action">Completează</string>
+    <string name="demo_filled">Date demo adăugate</string>
     <string name="import_again">Importă din nou</string>
     <string name="import_again_note">Înlocuiește ce a salvat acest fișier prima dată.</string>
     <string name="tax_deductible">Deductibilă</string>
@@ -736,7 +769,7 @@
     <string name="document_channel_description">Notificări înainte să expire RCA, ITP și celelalte documente</string>
     <string name="document_notification_soon">%1$s expiră pe %2$s</string>
     <string name="document_notification_today">%1$s expiră azi</string>
-    <string name="document_notification_body">Reînnoiește-l, apoi schimbă data în Ride Tracker.</string>
+    <string name="document_notification_body">Reînnoiește-l, apoi schimbă data în Ridely.</string>
     <!-- Guided import -->
     <string name="import_tab_today">Azi</string>
     <string name="import_tab_month">La final de lună</string>
@@ -766,4 +799,60 @@
     <string name="import_reason_pdf">Se poate citi doar rezumatul lunar Bolt (PDF).</string>
     <string name="import_reason_uber_renamed">Fișierul Uber a fost redenumit: luna apare doar în numele dat de Uber. Descarcă-l din nou de pe supplier.uber.com și trimite-l așa cum e.</string>
     <string name="import_reason_csv">Nu e un fișier pe care îl citim: facturile către pasageri din Bolt (CSV) sau cele patru fișiere Uber de pe supplier.uber.com.</string>
+    <!-- Wrapped -->
+    <string name="wrapped_your">%1$s, pe scurt</string>
+    <string name="wrapped_wrapped">Wrapped</string>
+    <string name="wrapped_kept">Ți-au rămas</string>
+    <string name="wrapped_earned">Ai câștigat</string>
+    <string name="wrapped_more_than">Cu %1$s mai mult decât în %2$s</string>
+    <string name="wrapped_less_than">Cu %1$s mai puțin decât în %2$s</string>
+    <string name="wrapped_more_than_same_days">Cu %1$s mai mult decât în aceleași zile din %2$s</string>
+    <string name="wrapped_less_than_same_days">Cu %1$s mai puțin decât în aceleași zile din %2$s</string>
+    <string name="wrapped_best_day">Cea mai bună zi</string>
+    <string name="wrapped_best_weekday">Cea mai bună zi a săptămânii</string>
+    <string name="wrapped_on_average">%1$s pe zi, în medie</string>
+    <string name="wrapped_best_month">Cea mai bună lună</string>
+    <string name="wrapped_per_hour">Pe fiecare oră online</string>
+    <string name="wrapped_rides">Curse</string>
+    <string name="wrapped_driven">%1$s parcurși</string>
+    <string name="wrapped_apps">De unde au venit banii</string>
+    <string name="wrapped_expenses">Unde s-au dus banii</string>
+    <string name="wrapped_expense_share">%1$s · %2$s din cheltuieli</string>
+    <string name="wrapped_target_reached">Țintă atinsă</string>
+    <string name="wrapped_target">Ținta ta</string>
+    <string name="wrapped_target_of">%1$s din %2$s</string>
+    <string name="wrapped_targets_reached">Ținte atinse</string>
+    <string name="wrapped_summary_title">%1$s, pe scurt</string>
+    <string name="wrapped_days_label">Zile la volan</string>
+    <string name="wrapped_made_with">Făcut cu Ridely</string>
+    <string name="wrapped_share">Trimite</string>
+    <string name="wrapped_colour">Culoarea %1$d</string>
+    <string name="wrapped_share_name">Ridely %1$s pe scurt</string>
+    <string name="wrapped_previous">Înapoi</string>
+    <string name="wrapped_next">Înainte</string>
+    <string name="wrapped_ready">%1$s, pe scurt</string>
+    <string name="wrapped_ready_body">Ce-a fost mai bun, gata de trimis</string>
+    <string name="wrapped_menu">Pe scurt (Wrapped)</string>
+    <plurals name="wrapped_days">
+        <item quantity="one">%d zi pe drum</item>
+        <item quantity="few">%d zile pe drum</item>
+        <item quantity="other">%d de zile pe drum</item>
+    </plurals>
+    <plurals name="wrapped_hours">
+        <item quantity="one">%d oră online</item>
+        <item quantity="few">%d ore online</item>
+        <item quantity="other">%d de ore online</item>
+    </plurals>
+    <plurals name="wrapped_months">
+        <item quantity="one">%d lună cu țintă</item>
+        <item quantity="few">%d luni cu țintă</item>
+        <item quantity="other">%d de luni cu țintă</item>
+    </plurals>
+    <string name="week_title">Capturi săptămâna asta</string>
+    <string name="week_add_today">Adaugă azi</string>
+    <plurals name="week_days_in">
+        <item quantity="one">O zi adăugată până acum</item>
+        <item quantity="few">%d zile adăugate până acum</item>
+        <item quantity="other">%d de zile adăugate până acum</item>
+    </plurals>
 </resources>

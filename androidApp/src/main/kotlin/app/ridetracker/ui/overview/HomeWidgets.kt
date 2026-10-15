@@ -71,6 +71,14 @@ import app.ridetracker.ui.common.tabular
 import app.ridetracker.ui.money.PaymentSplitContent
 import java.text.NumberFormat
 import kotlinx.datetime.LocalDate
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 
 /** The heat map needs enough trips to say anything about when you earn. */
 const val MIN_TRIPS_FOR_HEAT = 20
@@ -88,6 +96,7 @@ val HomeWidget.title: Int
         HomeWidget.EXPENSE_GROUPS -> R.string.expenses_by_group
         HomeWidget.NEEDS_ATTENTION -> R.string.needs_attention
         HomeWidget.CASH_CARD -> R.string.card_and_cash
+        HomeWidget.WEEK_SCREENSHOTS -> R.string.week_title
     }
 
 /** Whether the card has something to show for this period (empty cards are left out, except while customising). */
@@ -105,6 +114,7 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.TARGET -> state.target != null
         HomeWidget.COMPARISON -> state.comparisonCard != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
+        HomeWidget.WEEK_SCREENSHOTS -> state.week != null
     }
 }
 
@@ -120,6 +130,7 @@ fun WidgetBody(
     onOpenDay: (LocalDate) -> Unit,
     onOpenTarget: () -> Unit,
     onCompareWhole: (Boolean) -> Unit = {},
+    onImport: () -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -144,7 +155,76 @@ fun WidgetBody(
         }
         HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
         HomeWidget.COMPARISON -> state.comparisonCard?.let { ComparisonCardView(it, state, money, dates, percent, onCompareWhole) }
+        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport) }
         HomeWidget.NEEDS_ATTENTION -> Unit
+    }
+}
+
+/**
+ * This week's screenshots: a column per day with a dot per app, filled in the app's colour once that day is in.
+ * Days still to come are faint. Tapping the card (or the button, while today is missing) opens Import.
+ */
+@Composable
+private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit) {
+    OutlinedCard(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.week_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+              // Which app each row is: its badge, level with that row's dots.
+              Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(" ", style = MaterialTheme.typography.labelMedium)
+                week.apps.forEach { PlatformBadge(it.name, it.colorArgb, size = 20.dp) }
+              }
+              Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
+                week.days.forEach { day ->
+                    val future = day > week.today
+                    val isToday = day == week.today
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.semantics(mergeDescendants = true) {
+                            contentDescription = dates.weekdayFull(day) + ": " +
+                                week.apps.joinToString { app -> app.name + " " + if (app.id in week.logged[day].orEmpty()) "✓" else "–" }
+                        },
+                    ) {
+                        Text(
+                            dates.weekdayNarrow(day),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        week.apps.forEach { app ->
+                            val inDay = app.id in week.logged[day].orEmpty()
+                            val colour = Color(app.colorArgb.toInt())
+                            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                              Box(
+                                Modifier.size(14.dp).clip(CircleShape)
+                                    .then(
+                                        when {
+                                            // The faint ring keeps Uber's black visible in dark mode.
+                                            inDay -> Modifier.background(colour).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f), CircleShape)
+                                            future -> Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                            else -> Modifier.border(1.5.dp, colour.copy(alpha = 0.6f), CircleShape)
+                                        },
+                                    ),
+                              )
+                            }
+                        }
+                    }
+                }
+              }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    pluralStringResource(R.plurals.week_days_in, week.daysIn, week.daysIn),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (!week.todayIn) {
+                    FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
+                }
+            }
+        }
     }
 }
 
