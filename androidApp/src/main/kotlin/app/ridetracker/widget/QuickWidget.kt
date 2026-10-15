@@ -34,19 +34,17 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import app.ridetracker.MainActivity
 import app.ridetracker.R
-import app.ridetracker.ui.theme.DarkColors
-import app.ridetracker.ui.theme.LightColors
 
 /**
  * Quick actions on the home screen (owner, 15 Oct 2026): Fuel (a new expense already set to fuel), Import, Expense and
- * Income, the same icons as the + menu. A row when wide (4×1), a 2×2 grid when square.
+ * Income, the same icons as the + menu. One button per cell of width, in this order: 4×1 shows all four, 3×1 the first
+ * three, 2×1 two, 1×1 one. Two cells high or more, they wrap into a grid (2×2 shows all four).
  */
 class QuickWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -61,34 +59,36 @@ class QuickWidget : GlanceAppWidget() {
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        provideContent { GlanceTheme(colors = ColorProviders(light = LightColors, dark = DarkColors)) { Content() } }
+        provideContent { GlanceTheme(colors = widgetColors()) { Content() } }
     }
 
     @Composable
     private fun Content() {
         val size = LocalSize.current
-        val grid = size.width < size.height * 2f
+        // A launcher cell is roughly 70–100 dp; one button per cell of width, two rows once there's room for them.
+        val columns = (size.width.value / CELL_DP).toInt().coerceIn(1, actions.size)
+        val rows = if (size.height.value >= TWO_ROWS_DP && columns < actions.size) 2 else 1
+        val shown = actions.take(columns * rows)
+        val perRow = (shown.size + rows - 1) / rows
+        // A single cell has no room for "Combustibil": the icon alone (TalkBack still reads the name).
+        val labels = shown.size > 1
         Box(
             GlanceModifier.fillMaxSize().appWidgetBackground().background(GlanceTheme.colors.widgetBackground)
                 .cornerRadius(28.dp).padding(8.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (grid) {
-                Column(GlanceModifier.fillMaxSize()) {
-                    actions.chunked(2).forEach { pair ->
-                        Row(GlanceModifier.defaultWeight().fillMaxWidth()) { pair.forEach { Button(it, GlanceModifier.defaultWeight()) } }
+            Column(GlanceModifier.fillMaxSize()) {
+                shown.chunked(perRow).forEach { row ->
+                    Row(GlanceModifier.defaultWeight().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        row.forEach { Button(it, GlanceModifier.defaultWeight(), labels) }
                     }
-                }
-            } else {
-                Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                    actions.forEach { Button(it, GlanceModifier.defaultWeight()) }
                 }
             }
         }
     }
 
     @Composable
-    private fun Button(action: Action, modifier: GlanceModifier) {
+    private fun Button(action: Action, modifier: GlanceModifier, label: Boolean) {
         val context = LocalContext.current
         val intent = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -107,11 +107,12 @@ class QuickWidget : GlanceAppWidget() {
             ) {
                 Image(
                     ImageProvider(action.icon),
-                    contentDescription = null,
+                    contentDescription = if (label) null else context.getString(action.label),
                     modifier = GlanceModifier.size(22.dp),
                     colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
                 )
             }
+            if (!label) return@Column
             Spacer(GlanceModifier.height(4.dp))
             Text(
                 context.getString(action.label),
@@ -121,6 +122,12 @@ class QuickWidget : GlanceAppWidget() {
         }
     }
 }
+
+/** Width of one button: a launcher cell, give or take. */
+private const val CELL_DP = 85f
+
+/** Height from which the buttons wrap into two rows (two cells). */
+private const val TWO_ROWS_DP = 130f
 
 class QuickWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = QuickWidget()

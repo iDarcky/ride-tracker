@@ -1,5 +1,12 @@
 package app.ridetracker.ui.summary
 
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.filled.Check
@@ -93,10 +100,10 @@ class SummaryViewModel(
         load()
     }
 
-    /** Marks a missing day as "Didn't drive", or unmarks a day off; the summary is worked out again. */
-    fun toggleDayOff(day: LocalDate) {
+    /** Marks a missing day as "Didn't drive" (or undoes it); the summary is worked out again. */
+    fun setDayOff(day: LocalDate, off: Boolean) {
         viewModelScope.launch {
-            imports.setDayOff(day, _state.value.summary?.offDays?.contains(day) != true)
+            imports.setDayOff(day, off)
             load()
         }
     }
@@ -137,13 +144,27 @@ fun SummaryScreen(
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val undoText = stringResource(R.string.undo)
+    val resources = LocalResources.current
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
     val monthly = state.summary?.monthly ?: (Period.Month.containing(range.start).range == range)
     val month = Period.Month.containing(range.start)
     val title = if (monthly) dates.period(month) else stringResource(R.string.summary_week_title, dates.range(range))
-    SettingsFrame(title, onBack) {
+    // A day marked as a day off leaves the missing list; Undo puts it back.
+    val markOff: (LocalDate) -> Unit = { day ->
+        viewModel.setDayOff(day, true)
+        scope.launch {
+            val text = resources.getString(R.string.day_marked_off, dates.shortWeekday(day))
+            if (snackbar.showSnackbar(text, actionLabel = undoText, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
+                viewModel.setDayOff(day, false)
+            }
+        }
+    }
+    SettingsFrame(title, onBack, snackbar) {
         val summary = state.summary ?: return@SettingsFrame
         val gap = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
         if (monthly) {
@@ -159,8 +180,8 @@ fun SummaryScreen(
             }
         }
         item { KeptCard(summary, money, dates, month, gap) }
-        if (summary.missingDays.isNotEmpty() || summary.offDays.isNotEmpty()) {
-            item { MissingDays(summary, dates, onImport, viewModel::toggleDayOff, gap) }
+        if (summary.missingDays.isNotEmpty()) {
+            item { MissingDays(summary, dates, onImport, markOff, gap) }
         }
         summary.real?.let { real -> item { Column(gap) { RealHourlyCard(real, money) } } }
         item {
@@ -261,41 +282,27 @@ private fun KeptCard(summary: Summary, money: MoneyFormat, dates: DateFormats, m
 }
 
 /**
- * The days with nothing in: missing ones in red, each a chip to mark it "Didn't drive"; days already marked stay
- * listed, ticked, so they can be unmarked (owner, 15 Oct 2026: missing days must be fixable from here).
+ * The days with nothing in, in red, each a chip: tap one to mark it "Didn't drive" and it leaves the list (owner,
+ * 15 Oct 2026: a ticked day shouldn't stay); the snackbar's Undo brings it back.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MissingDays(summary: Summary, dates: DateFormats, onImport: () -> Unit, onToggle: (LocalDate) -> Unit, modifier: Modifier) {
+private fun MissingDays(summary: Summary, dates: DateFormats, onImport: () -> Unit, onMarkOff: (LocalDate) -> Unit, modifier: Modifier) {
     OutlinedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (summary.missingDays.isEmpty()) {
-                        stringResource(R.string.summary_no_missing)
-                    } else {
-                        pluralStringResource(R.plurals.summary_missing_count, summary.missingDays.size, summary.missingDays.size)
-                    },
+                    pluralStringResource(R.plurals.summary_missing_count, summary.missingDays.size, summary.missingDays.size),
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (summary.missingDays.isEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.weight(1f),
                 )
-                if (summary.missingDays.isNotEmpty()) TextButton(onClick = onImport) { Text(stringResource(R.string.import_title)) }
+                TextButton(onClick = onImport) { Text(stringResource(R.string.import_title)) }
             }
             Text(stringResource(R.string.summary_mark_days_off), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                (summary.missingDays + summary.offDays).sorted().forEach { day ->
-                    val off = day in summary.offDays
-                    FilterChip(
-                        selected = off,
-                        onClick = { onToggle(day) },
-                        label = { Text(dates.shortWeekday(day)) },
-                        leadingIcon = if (off) {
-                            { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }
-                        } else {
-                            null
-                        },
-                    )
+                summary.missingDays.forEach { day ->
+                    AssistChip(onClick = { onMarkOff(day) }, label = { Text(dates.shortWeekday(day)) })
                 }
             }
         }

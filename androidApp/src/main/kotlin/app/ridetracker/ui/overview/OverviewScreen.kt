@@ -1,5 +1,7 @@
 package app.ridetracker.ui.overview
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import java.time.format.TextStyle
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.ui.unit.sp
@@ -64,15 +66,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -170,6 +169,7 @@ fun OverviewScreen(
     val week by viewModel.week.collectAsStateWithLifecycle()
     val monthEnd by viewModel.monthEnd.collectAsStateWithLifecycle()
     val payout by viewModel.payout.collectAsStateWithLifecycle()
+    val dismissedText = stringResource(R.string.offer_dismissed)
     val state = baseState.copy(target = target, comparisonCard = comparisonCard, week = week, payout = payout)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -177,6 +177,14 @@ fun OverviewScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val addedText = stringResource(R.string.expense_added)
+    // The card just swiped away: say where it went (Menu → Summaries). Shown here, not in the card, which has
+    // already left the list.
+    var justDismissed by remember { mutableStateOf(false) }
+    LaunchedEffect(justDismissed) {
+        if (!justDismissed) return@LaunchedEffect
+        snackbar.showSnackbar(dismissedText, duration = SnackbarDuration.Short)
+        justDismissed = false
+    }
     val locale = currentLocale()
     val money = remember(state.currencyCode, locale) { MoneyFormat(resolveCurrency(state.currencyCode), locale) }
     val dates = remember(locale) { DateFormats(locale) }
@@ -314,8 +322,22 @@ fun OverviewScreen(
                 item { Spacer(Modifier.height(12.dp)) }
             }
             wrappedOffer?.let { (range, yearly) ->
-                item(key = "wrapped") {
-                    WrappedCard(range, yearly, onClick = { if (yearly) onOpenWrapped(range, true) else onOpenSummary(range) }, modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
+                // Keyed by its month: the list restores a card's saved swipe state, and next month's card must not
+                // come back already swiped.
+                item(key = "wrapped-${range.start}") {
+                    // Swipe it away either way; it stays in Menu → Summaries.
+                    val dismiss = rememberSwipeToDismissBoxState()
+                    SwipeToDismissBox(
+                        state = dismiss,
+                        backgroundContent = {},
+                        onDismiss = {
+                            viewModel.dismissOffer(range)
+                            justDismissed = true
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
+                    ) {
+                        WrappedCard(range, yearly, onClick = { if (yearly) onOpenWrapped(range, true) else onOpenSummary(range) })
+                    }
                 }
             }
             // Things waiting for the driver, pinned above everything else; only when there are some.

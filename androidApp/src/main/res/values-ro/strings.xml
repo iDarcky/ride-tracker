@@ -935,7 +935,6 @@
     <string name="summary_month_notification_body">Toate fișierele de final de lună sunt importate. Vezi luna și Wrapped-ul.</string>
     <string name="summary_month_notification_body_partial">Lipsesc câteva fișiere de final de lună, așa că se poate schimba.</string>
 
-    <string name="summary_no_missing">Nu lipsește nicio zi</string>
     <plurals name="summary_missing_count">
         <item quantity="one">Lipsește o zi</item>
         <item quantity="few">Lipsesc %d zile</item>
@@ -944,4 +943,6 @@
     <string name="summary_mark_days_off">N-ai condus? Atinge o zi ca s-o marchezi ca zi liberă.</string>
     <string name="week_day_off">N-am condus</string>
     <string name="week_day_drove">Totuși am condus</string>
+    <string name="offer_dismissed">O găsești în meniu, la Rezumate</string>
+    <string name="day_marked_off">%1$s, marcată ca zi liberă</string>
 </resources>

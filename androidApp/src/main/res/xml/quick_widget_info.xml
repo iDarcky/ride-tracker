@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Quick actions: Fuel, Import, Expense, Income. 4x1 by default (a row); 2x2 shows a grid. -->
+<!-- Quick actions: Fuel, Import, Expense, Income. 4x1 by default; one button per cell of width (1x1 shows Fuel);
+     two cells high wraps into a grid (2x2 shows all four). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="UnusedAttribute"
@@ -7,8 +8,8 @@
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="110dp"
     android:minHeight="48dp"
-    android:minResizeWidth="110dp"
-    android:minResizeHeight="48dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="4"
     android:targetCellHeight="1"
     android:resizeMode="horizontal|vertical"

@@ -340,9 +340,10 @@ class OverviewViewModel(
      * two days driven; null otherwise.
      */
     val wrappedOffer: StateFlow<Pair<DateRange, Boolean>?> =
-        monthEnd.flatMapLatest { status ->
+        combine(monthEnd, settingsRepository.dismissedOffer) { status, dismissed -> status to dismissed }.flatMapLatest { (status, dismissed) ->
             val offer = WrappedCalculator.offered(today(), lastMonthComplete = status?.let { it.complete && it.apps.isNotEmpty() } == true)
                 ?: return@flatMapLatest flowOf(null)
+            if (offerKey(offer.first) == dismissed) return@flatMapLatest flowOf(null)
             incomeRepository.observeEntryDetails(offer.first)
                 .map { entries -> offer.takeIf { entries.filter { it.amountMinor > 0 }.map { it.date }.distinct().size >= 2 } }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -402,6 +403,13 @@ class OverviewViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     }
+
+    /** Swiped away on Home: it stays in Menu → Summaries (and the year's in Money's share menu). */
+    fun dismissOffer(range: DateRange) {
+        viewModelScope.launch { settingsRepository.setDismissedOffer(offerKey(range)) }
+    }
+
+    private fun offerKey(range: DateRange) = "${range.start.toEpochDays()}-${range.endInclusive.toEpochDays()}"
 
     /** Home's week card: marks a day with nothing in as "Didn't drive", or unmarks it. */
     fun toggleDayOff(day: LocalDate) {

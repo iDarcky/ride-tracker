@@ -1,5 +1,12 @@
 package app.ridetracker.ui.importing
 
+import androidx.compose.ui.platform.LocalResources
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ButtonDefaults
@@ -213,7 +220,22 @@ fun ImportScreen(
         )
     }
 
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val resources = LocalResources.current
+    val undoText = stringResource(R.string.undo)
+    // "Day off": the day leaves the menu and the week strip shows a dash; Undo puts it back.
+    val markDayOff: (LocalDate) -> Unit = { day ->
+        viewModel.setDayOff(day, true)
+        scope.launch {
+            val text = resources.getString(R.string.day_marked_off, dates.shortWeekday(day))
+            if (snackbar.showSnackbar(text, actionLabel = undoText, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
+                viewModel.setDayOff(day, false)
+            }
+        }
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = 80.dp)) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.import_title)) },
@@ -251,7 +273,7 @@ fun ImportScreen(
                 EmptyState(
                     state, money, dates, startOnMonth,
                     onScreenshots = chooseScreenshots, onFiles = chooseFiles, onOpenReminder = onOpenReminder,
-                    onToggleDayOff = viewModel::toggleDayOff, onAddDifference = viewModel::addMonthDifference, onOpenSummary = onOpenSummary,
+                    onToggleDayOff = markDayOff, onAddDifference = viewModel::addMonthDifference, onOpenSummary = onOpenSummary,
                     modifier = Modifier.padding(padding),
                 )
             else -> LazyColumn(
@@ -363,7 +385,8 @@ private fun ImportToolbar(
     modifier: Modifier = Modifier,
 ) {
     var dayOffMenu by remember { mutableStateOf(false) }
-    val emptyDays = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays }.reversed()
+    // Days with nothing in and not already marked: a marked day leaves the menu (Undo is in the snackbar).
+    val emptyDays = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays && it.toEpochDays() !in state.daysOff }.reversed()
     // Three equal frosted-glass buttons (owner, 15 Oct 2026: none coloured, so none looks like a selected tab).
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ToolbarButton(Icons.Outlined.Image, stringResource(R.string.toolbar_screenshots), onScreenshots)
@@ -379,18 +402,13 @@ private fun ImportToolbar(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     emptyDays.forEach { day ->
-                        val off = day.toEpochDays() in state.daysOff
                         DropdownMenuItem(
                             text = { Text(dates.shortWeekday(day)) },
-                            onClick = { onToggleDayOff(day) },
-                            leadingIcon = {
-                                Icon(
-                                    if (off) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
-                                    contentDescription = null,
-                                    tint = if (off) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                )
+                            onClick = {
+                                dayOffMenu = false
+                                onToggleDayOff(day)
                             },
-                            modifier = Modifier.semantics { if (off) stateDescription = "✓" },
+                            leadingIcon = { Icon(Icons.Outlined.EventBusy, contentDescription = null) },
                         )
                     }
                 }

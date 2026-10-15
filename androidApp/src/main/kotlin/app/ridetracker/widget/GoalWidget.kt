@@ -43,7 +43,6 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -57,8 +56,6 @@ import app.ridetracker.shared.domain.TargetCalculator
 import app.ridetracker.shared.domain.TargetProgress
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.resolveCurrency
-import app.ridetracker.ui.theme.DarkColors
-import app.ridetracker.ui.theme.LightColors
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Clock
@@ -111,7 +108,7 @@ class GoalWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val state = load(context)
         provideContent {
-            GlanceTheme(colors = colors) { Content(state) }
+            GlanceTheme(colors = widgetColors()) { Content(state) }
         }
     }
 
@@ -296,7 +293,6 @@ class GoalWidget : GlanceAppWidget() {
     companion object {
         private val MEDIUM = DpSize(180.dp, 110.dp)
 
-        private val colors = ColorProviders(light = LightColors, dark = DarkColors)
 
         /** The theme's "money up" green (positiveColor() and its container), light and dark. */
         private val positive: GlanceColor = ColorProvider(day = Color(0xFF146C3E), night = Color(0xFF7EE2A8))

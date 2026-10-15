@@ -187,8 +187,8 @@ class ImportViewModel(
         }
     }
 
-    fun toggleDayOff(day: LocalDate) {
-        viewModelScope.launch { importRepository.setDayOff(day, day.toEpochDays() !in _state.value.daysOff) }
+    fun setDayOff(day: LocalDate, off: Boolean) {
+        viewModelScope.launch { importRepository.setDayOff(day, off) }
     }
 
     /** Adds what the platform's monthly total has beyond last month's days (one tap on End of month). */

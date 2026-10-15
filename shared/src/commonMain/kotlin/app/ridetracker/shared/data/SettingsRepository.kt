@@ -105,6 +105,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[SUMMARY_SEEN_MONTH] = monthStart }
     }
 
+    /** The month or year card on Home the driver swiped away, as "firstDay-lastDay" (epoch days); null when none. */
+    val dismissedOffer: Flow<String?> = dataStore.data.map { it[DISMISSED_OFFER] }
+
+    suspend fun setDismissedOffer(key: String?) {
+        dataStore.edit { if (key == null) it.remove(DISMISSED_OFFER) else it[DISMISSED_OFFER] = key }
+    }
+
     /** The last week (its first day) and month (its first day) whose summary was announced. */
     suspend fun summaryNotified(): Pair<Long?, Long?> = dataStore.data.first().let { it[SUMMARY_NOTIFIED_WEEK] to it[SUMMARY_NOTIFIED_MONTH] }
 
@@ -274,6 +281,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val HOME_WIDGETS_SEEN = stringPreferencesKey("home_widgets_seen")
         private val IMPORT_REMINDER_ENABLED = booleanPreferencesKey("import_reminder_enabled")
         private val IMPORT_REMINDER_MINUTE = intPreferencesKey("import_reminder_minute")
+        private val DISMISSED_OFFER = stringPreferencesKey("dismissed_offer")
         private val SUMMARY_SEEN_MONTH = longPreferencesKey("summary_seen_month")
         private val SUMMARY_NOTIFIED_WEEK = longPreferencesKey("summary_notified_week")
         private val SUMMARY_NOTIFIED_MONTH = longPreferencesKey("summary_notified_month")

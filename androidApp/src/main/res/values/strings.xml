@@ -909,7 +909,6 @@
     <string name="summary_month_notification_body">Every month-end file is in. See your month and your Wrapped.</string>
     <string name="summary_month_notification_body_partial">Some month-end files are missing, so it may still change.</string>
 
-    <string name="summary_no_missing">No days missing</string>
     <plurals name="summary_missing_count">
         <item quantity="one">%d day missing</item>
         <item quantity="other">%d days missing</item>
@@ -917,4 +916,6 @@
     <string name="summary_mark_days_off">Didn’t drive? Tap a day to mark it as a day off.</string>
     <string name="week_day_off">Didn’t drive</string>
     <string name="week_day_drove">Drove after all</string>
+    <string name="offer_dismissed">You’ll find it in the menu, under Summaries</string>
+    <string name="day_marked_off">%1$s marked as a day off</string>
 </resources>

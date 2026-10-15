@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.20.0
+- **Widgets in the phone's colours**: the Monthly target and Quick add widgets now take the colours from your wallpaper
+  (Material You, like Google's own widgets) on Android 12 and newer; older phones keep the app's colours. Light and
+  dark follow the phone.
+- **Quick add fits its size**: one button per cell of width, in this order: 4×1 shows Fuel, Import, Expense and Income;
+  3×1 the first three; 2×1 two; 1×1 just Fuel, as an icon. Two cells high, they wrap into a grid (2×2 shows all four).
+- **Swipe away the month's card** on Home ("Your September is ready"): it stays in Menu → Summaries, and a message
+  says so.
+- **Marked days leave the list**: in a summary, tapping a missing day marks it as a day off and it disappears from
+  "Days missing" (the count drops, "Days" counts it as off), with Undo in the message. Import's Day off menu works the
+  same way: a marked day leaves the menu, with Undo.
+
 ## 0.19.2
 - **Mark missing days anywhere.** A summary's missing days are now a card of chips: tap a day to mark it "Didn't drive"
   (it leaves the missing list and counts as a day off; tap again to undo), for any week or month, however old. On
