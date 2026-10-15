@@ -1,7 +1,5 @@
 package app.ridetracker.ui.importing
 
-import androidx.compose.material3.HorizontalFloatingToolbar
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ButtonDefaults
@@ -352,10 +350,9 @@ private fun EmptyState(
 }
 
 /**
- * The start page's actions in one floating toolbar (Material 3 Expressive, frosted glass like the navigation bar):
- * screenshots first, then files, then "Day off", whose menu lists the last week's days with nothing in.
+ * The start page's actions floating at the bottom, frosted glass like the navigation bar: screenshots, files, and
+ * "Day off", whose menu lists the last week's days with nothing in.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ImportToolbar(
     state: ImportUiState,
@@ -367,28 +364,13 @@ private fun ImportToolbar(
 ) {
     var dayOffMenu by remember { mutableStateOf(false) }
     val emptyDays = state.recentDays.filter { it !in state.boltDays && it !in state.uberDays }.reversed()
-    HorizontalFloatingToolbar(
-        expanded = true,
-        modifier = modifier.clip(CircleShape).glass().border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-        colors = FloatingToolbarDefaults.standardFloatingToolbarColors(toolbarContainerColor = glassContainer()),
-    ) {
-        Button(onClick = onScreenshots) {
-            Icon(Icons.Outlined.Image, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text(stringResource(R.string.toolbar_screenshots), maxLines = 1)
-        }
-        TextButton(onClick = onFiles) {
-            Icon(Icons.Outlined.Description, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text(stringResource(R.string.toolbar_files), maxLines = 1)
-        }
+    // Three equal frosted-glass buttons (owner, 15 Oct 2026: none coloured, so none looks like a selected tab).
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ToolbarButton(Icons.Outlined.Image, stringResource(R.string.toolbar_screenshots), onScreenshots)
+        ToolbarButton(Icons.Outlined.Description, stringResource(R.string.toolbar_files), onFiles)
         if (emptyDays.isNotEmpty()) {
             Box {
-                TextButton(onClick = { dayOffMenu = true }) {
-                    Icon(Icons.Outlined.EventBusy, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text(stringResource(R.string.toolbar_day_off), maxLines = 1)
-                }
+                ToolbarButton(Icons.Outlined.EventBusy, stringResource(R.string.toolbar_day_off)) { dayOffMenu = true }
                 GlassDropdownMenu(expanded = dayOffMenu, onDismissRequest = { dayOffMenu = false }) {
                     Text(
                         stringResource(R.string.days_off_body),
@@ -444,6 +426,21 @@ private fun TodayGuide(state: ImportUiState, dates: DateFormats, onOpenReminder:
                 trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
             )
         }
+    }
+}
+
+/** One of the floating actions: an outlined pill in frosted glass, all alike. */
+@Composable
+private fun ToolbarButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.height(48.dp).clip(CircleShape).glass(),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = glassContainer()),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+    ) {
+        Icon(icon, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(label, maxLines = 1)
     }
 }
 

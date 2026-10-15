@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.1
+- Import's floating actions (Screenshots, Files, Day off) are now three matching frosted-glass buttons; none is coloured,
+  so none looks like a selected tab.
+
 ## 0.19.0
 - **Weekly summary**: on Monday around 10:00 (the day after your week ends), "Last week: RON 1,840 kept" opens a page with
   the week: money kept and the change from the week before, money per hour from the apps, after fuel and after all
