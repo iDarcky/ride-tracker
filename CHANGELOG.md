@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.21.0
+- **A shorter Home** (owner, 16 Oct 2026: too many cards, too much text). Home now shows, in order:
+  - **Today and this week's screenshots** at the top: "Today · Friday" with Add today (or today's amount once it's in),
+    and one row of dots for the week, each dot split in half per app (Uber | Bolt) instead of a row per app.
+  - **Money kept with the target inside**: a ring with the target's share, "Target: 1,810 of 3,000", what each driving
+    day left needs and the pace, in two lines. Tap it for the target's settings.
+  - **This week's payout**, each app's amount with its cash only when there was some.
+  - **In detail**: income and per hour with their change, hours · trips · distance, the apps' shares, and **See all**
+    for the full cards (breakdown, comparison, metrics, money per hour, by app, card and cash, activity, expenses,
+    when you earn).
+  Customise still adds, removes and moves any card. A layout saved before switches to the short one once.
+- **Less text everywhere**: one figure per line, no cents on Home's own cards (rates keep them; Money, Trips and
+  Details keep cents), changes as "▼ 5.5 % vs Sep", and explanations behind a small ⓘ instead of sentences on the
+  cards (Home, Money's card and cash, Trips' fares, Import's privacy note and gallery tip). Shorter intros on Import,
+  the target, the evening reminder, automatic backup, car documents and empty screens. Comparison rows show what it was
+  before when tapped.
+- **Trips**: only cash trips name how they were paid (in the app is the usual case).
+- **Fixed**: trip distance said "km km"; the target said "driving days left" twice; Uber's payout showed the same
+  amount twice.
+- Play Store icon and feature graphics redrawn: the ring was drawn as a full circle.
+
 ## 0.20.0
 - **Widgets in the phone's colours**: the Monthly target and Quick add widgets now take the colours from your wallpaper
   (Material You, like Google's own widgets) on Android 12 and newer; older phones keep the app's colours. Light and

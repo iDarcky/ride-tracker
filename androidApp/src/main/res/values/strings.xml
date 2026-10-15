@@ -44,7 +44,7 @@
     <string name="next_period">Next period</string>
     <string name="back_to_today">Back to today</string>
     <string name="total_income">Total income</string>
-    <string name="empty_period">No income for this period yet.\nImport a Bolt screenshot or add it with the + button.</string>
+    <string name="empty_period">No income yet</string>
     <string name="add_income">Add income</string>
     <string name="entry_deleted">Entry deleted</string>
     <plurals name="entry_count">
@@ -226,7 +226,7 @@
     <string name="cost_per_mile">Cost per mile</string>
     <string name="odometer_reading_mi">Reading (miles)</string>
     <string name="metric_miles">Paid miles</string>
-    <string name="metric_per_mile">%1$s per mile</string>
+    <string name="metric_per_mile">per mile</string>
     <string name="hint_miles">No miles yet</string>
     <string name="distance_unit">Distance</string>
     <string name="distance_km">Kilometres</string>
@@ -248,10 +248,6 @@
     <string name="fuel_plug_in_diesel">Plug-in hybrid (diesel)</string>
 
     <!-- 0.0.8: comparison with the previous period -->
-    <string name="compare_same_days_last_month">vs the same days last month</string>
-    <string name="compare_same_days_last_week">vs the same days last week</string>
-    <string name="compare_previous_month">vs the previous month</string>
-    <string name="compare_previous_week">vs the previous week</string>
     <plurals name="compare_previous_days">
         <item quantity="one">vs the previous day</item>
         <item quantity="other">vs the previous %d days</item>
@@ -388,11 +384,11 @@
     <string name="trips_total_fares">Total fares (gross)</string>
     <string name="trips_footnote">Fares are what riders paid, before the platform’s commission. Distance and duration appear only when the report has them; Bolt invoices don’t.</string>
     <string name="trips_empty_title">No trips yet</string>
-    <string name="trips_empty_body">Import Bolt’s rider invoices (CSV) and your trips appear here. Files stay on this phone.</string>
+    <string name="trips_empty_body">Import Bolt’s rider invoices (CSV) to see your trips here.</string>
     <string name="payment_cash">Cash</string>
     <string name="payment_in_app">In the app</string>
     <string name="payment_business">Business account</string>
-    <string name="trip_km_min">%1$s km · %2$s min</string>
+    <string name="trip_km_min">%1$s · %2$s min</string>
     <string name="trip_minutes">%1$d min</string>
     <string name="trip_details">Trip details</string>
     <string name="trip_completed">Completed</string>
@@ -417,8 +413,6 @@
     </plurals>
 
     <!-- Home (cockpit) -->
-    <string name="after_fees">after platform fees</string>
-    <string name="after_fees_and_expenses">after platform fees and expenses</string>
     <string name="fees">Fees</string>
     <string name="kept">Kept</string>
     <string name="earned">Earned</string>
@@ -429,15 +423,15 @@
     <string name="fees_partial">Fees are known only for days imported from a report.</string>
     <string name="metric_trips">Trips</string>
     <string name="metric_online">Hours online</string>
-    <string name="metric_per_hour">%1$s per hour</string>
+    <string name="metric_per_hour">per hour</string>
     <string name="metric_km">Paid km</string>
-    <string name="metric_per_km">%1$s per km</string>
+    <string name="metric_per_km">per km</string>
     <string name="hours_minutes">%1$d h %2$d min</string>
     <string name="only_platforms">%1$s only</string>
     <string name="hint_trips">No trips yet</string>
     <string name="hint_km">No km yet</string>
     <string name="hint_hours">No hours yet</string>
-    <string name="metrics_empty">Trips, paid km, hours online and what you make per hour and per km appear here once a report includes them: Bolt invoices and monthly summary, or Uber reports.</string>
+    <string name="metrics_empty">Trips, km and hours appear once a report has them.</string>
     <string name="split_by_app">Split by platform</string>
     <string name="daily_activity">Daily activity</string>
     <string name="tap_a_bar">Tap a bar to see a day</string>
@@ -486,13 +480,12 @@
         <item quantity="other">%d trips paid in cash</item>
     </plurals>
     <string name="total_expenses">Total expenses</string>
-    <string name="change_vs">%1$s vs %2$s</string>
     <string name="recent">Recent</string>
     <string name="all_entries">All</string>
     <string name="show_fewer">Show fewer</string>
     <string name="clear_filter">Clear filter</string>
     <string name="no_income_this_month">No income this month.\nImport a Bolt screenshot or add income above.</string>
-    <string name="no_expenses_this_month">No expenses this month.\nAdd fuel, repairs and other costs above.</string>
+    <string name="no_expenses_this_month">No expenses this month</string>
     <plurals name="see_all">
         <item quantity="one">See %d entry</item>
         <item quantity="other">See all %d</item>
@@ -592,9 +585,9 @@
     <string name="z_exact_allow">Allow</string>
     <!-- Monthly target -->
     <string name="target_setting">Monthly target</string>
-    <string name="target_intro">What you want to make this month. Home shows how far you are, what each driving day still needs and whether you’re on pace.</string>
+    <string name="target_intro">How much you want to make this month.</string>
     <string name="target_for_month">Target for %1$s</string>
-    <string name="target_each_month">Each month keeps its own target; a new month starts with last month’s.</string>
+    <string name="target_each_month">A new month starts with last month’s target.</string>
     <string name="target_counts">What it counts</string>
     <string name="target_basis_income">Income after platform fees</string>
     <string name="target_basis_income_detail">What Bolt, Uber and the other apps pay you</string>
@@ -602,16 +595,6 @@
     <string name="target_basis_kept_detail">Income minus your expenses (fuel, car, phone…)</string>
     <string name="target_driving_days">Days you drive</string>
     <string name="target_driving_days_detail">“Per day” and the pace count only these days.</string>
-    <string name="target_title">Target · %1$s</string>
-    <string name="target_of">%1$s of %2$s</string>
-    <string name="target_to_go">%1$s · %2$s to go</string>
-    <string name="target_per_day">%1$s a day on the driving days left</string>
-    <plurals name="target_days_left">
-        <item quantity="one">%d driving day left</item>
-        <item quantity="other">%d driving days left</item>
-    </plurals>
-    <string name="target_ahead">Ahead of pace by %1$s</string>
-    <string name="target_behind">Behind pace by %1$s</string>
     <string name="target_on_pace">Right on pace</string>
     <string name="target_reached">Target reached · %1$s over</string>
     <string name="target_reached_exact">Target reached</string>
@@ -671,7 +654,7 @@
     <string name="comparison_was">was %1$s</string>
     <!-- Car documents -->
     <string name="documents">Documents</string>
-    <string name="documents_empty">Add RCA, ITP, rovinietă and the rest: you\'ll get a reminder 30 and 7 days before each expires, and on the day.</string>
+    <string name="documents_empty">Add RCA, ITP, rovinietă and more: reminders 30 and 7 days before each one expires.</string>
     <string name="add_document">Add document</string>
     <string name="edit_document">Edit document</string>
     <string name="document_kind">Document</string>
@@ -721,7 +704,7 @@
     <!-- Guided import -->
     <string name="import_tab_today">Today</string>
     <string name="import_tab_month">End of month</string>
-    <string name="import_today_intro">After each driving day, one screenshot from each app. It gives that day exactly. A day without one counts as 0.</string>
+    <string name="import_today_intro">One screenshot from each app after every driving day. A day without one counts as 0.</string>
     <string name="import_today_bolt_how">Bolt Driver → Earnings → Earnings breakdown → Daily, pick the day, take a screenshot.</string>
     <string name="import_today_uber_how">Uber Driver → Earnings, tap the day’s bar (its date turns blue), take a screenshot.</string>
     <string name="import_today_week">Last 7 days</string>
@@ -730,7 +713,7 @@
     <string name="import_reminder_row">Remind me every evening</string>
     <string name="import_reminder_row_on">Reminder every day at %1$s</string>
     <string name="import_reminder_setting">Import reminder</string>
-    <string name="import_reminder_intro">A reminder every evening to import the day’s screenshots from Bolt and Uber. It stays quiet once the day is imported or marked as a day off. On the 1st of the month, it also reminds you to get last month’s files.</string>
+    <string name="import_reminder_intro">Every evening, a reminder to import the day’s screenshots. It stays quiet once the day is in. On the 1st, it also reminds you of last month’s files.</string>
     <string name="import_reminder_channel">Import reminder</string>
     <string name="import_reminder_channel_description">Evening reminder to import the day’s screenshots</string>
     <string name="import_reminder_title">Import today’s earnings</string>
@@ -794,13 +777,9 @@
     </plurals>
     <string name="week_title">Screenshots this week</string>
     <string name="week_add_today">Add today</string>
-    <plurals name="week_days_in">
-        <item quantity="one">%d day in so far</item>
-        <item quantity="other">%d days in so far</item>
-    </plurals>
 
     <!-- End of month (0.18.0) -->
-    <string name="month_intro">When a month is over, two things from each app finish it: the app’s own monthly total and your hours online. Daily screenshots stay as they are.</string>
+    <string name="month_intro">When a month ends: each app’s monthly total and your hours online.</string>
     <string name="month_steps">%1$d of %2$d</string>
     <string name="month_complete">%1$s is complete</string>
     <string name="month_complete_body">Every app has its monthly total and hours. Its numbers won’t change any more.</string>
@@ -825,10 +804,6 @@
     <string name="income_month_difference">From the monthly total</string>
     <string name="days_off_body">Mark your days off so they don’t show as missing.</string>
     <string name="day_off_label">%1$s, day off</string>
-    <plurals name="week_month_days">
-        <item quantity="one">%1$s: %2$d of %3$d day in</item>
-        <item quantity="other">%1$s: %2$d of %3$d days in</item>
-    </plurals>
     <plurals name="week_month_files">
         <item quantity="one">%1$s’s files: %2$d of %3$d app</item>
         <item quantity="other">%1$s’s files: %2$d of %3$d apps</item>
@@ -845,7 +820,7 @@
     <string name="auto_backup_summary_off">Off: your data is only on this phone</string>
     <string name="auto_backup_summary_on">On: last backup %1$s</string>
     <string name="auto_backup_summary_failed">The last backup couldn’t be saved</string>
-    <string name="auto_backup_intro">Once a week, Ridely saves a backup over one file you choose. Pick Google Drive, and a lost or new phone won’t lose your data: install Ridely, then Your data → Restore from backup and choose that file.</string>
+    <string name="auto_backup_intro">Once a week, Ridely saves a backup over a file you choose. On Google Drive, it survives a lost or new phone: Your data → Restore from backup.</string>
     <string name="auto_backup_switch">Back up every week</string>
     <string name="auto_backup_file">Saved to</string>
     <string name="auto_backup_change">Change</string>
@@ -853,13 +828,10 @@
     <string name="auto_backup_never">No backup yet</string>
     <string name="auto_backup_failed">The last backup couldn’t be saved. The file may have been moved or deleted: choose it again.</string>
     <string name="auto_backup_now">Back up now</string>
-    <string name="auto_backup_android">Android’s own backup also keeps Ridely’s data in your Google account when Backup is on in the phone’s settings, and brings it back when you set up a new phone.</string>
+    <string name="auto_backup_android">Android’s own backup also keeps Ridely’s data in your Google account, when Backup is on in the phone’s settings.</string>
 
     <!-- This week's payout and money per hour (0.18.0) -->
     <string name="widget_week_payout">This week’s payout</string>
-    <string name="payout_earned">Earned %1$s</string>
-    <string name="payout_cash">cash in hand %1$s</string>
-    <string name="payout_to_account">to your account</string>
     <string name="payout_owed">owed to %1$s</string>
     <string name="payout_total">To your account in all</string>
     <string name="payout_note">So far this week. The apps pay it after the week ends.</string>
@@ -870,7 +842,6 @@
     <string name="real_after_fuel">After fuel</string>
     <string name="real_after_expenses">After all expenses</string>
     <string name="real_no_fuel">Add your fuel to see it</string>
-    <string name="real_hours">Over %1$s online</string>
     <string name="real_partial">only days and apps with hours</string>
 
     <string name="toolbar_screenshots">Screenshots</string>
@@ -918,4 +889,29 @@
     <string name="week_day_drove">Drove after all</string>
     <string name="offer_dismissed">You’ll find it in the menu, under Summaries</string>
     <string name="day_marked_off">%1$s marked as a day off</string>
+    <!-- Short Home (0.21.0): one number per line, explanations behind ⓘ. -->
+    <string name="more_info">More info</string>
+    <string name="kept_info">What’s left of your income after platform fees and expenses.</string>
+    <string name="income_info">Your income after platform fees.</string>
+    <string name="chip_vs_month">vs %1$s</string>
+    <string name="chip_vs_last_week">vs last week</string>
+    <string name="target_short">Target: %1$s of %2$s</string>
+    <plurals name="target_per_day_short">
+        <item quantity="one">%1$s/day · %2$d day</item>
+        <item quantity="other">%1$s/day · %2$d days</item>
+    </plurals>
+    <string name="target_ahead_short">+%1$s ahead</string>
+    <string name="target_behind_short">−%1$s behind</string>
+    <string name="week_today_amount">Today %1$s</string>
+    <string name="payout_cash_short">cash %1$s</string>
+    <string name="gross_short">Gross %1$s</string>
+    <string name="widget_month_detail">In detail</string>
+    <string name="detail_see_all">See all</string>
+    <string name="details_title">Details</string>
+    <string name="detail_activity">Hours · trips · distance</string>
+    <string name="detail_split">By app</string>
+    <string name="week_today_title">Today · %1$s</string>
+    <string name="week_today_missing">Screenshots not in yet</string>
+    <string name="week_today_in">Today is in</string>
+    <string name="week_today_off">Day off</string>
 </resources>

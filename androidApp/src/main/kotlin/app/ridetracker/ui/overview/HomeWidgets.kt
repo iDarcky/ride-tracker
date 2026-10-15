@@ -18,9 +18,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.pluralStringResource
-import app.ridetracker.shared.domain.TargetProgress
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LinearWavyProgressIndicator
+import app.ridetracker.shared.domain.Comparison
+import app.ridetracker.shared.domain.ComparisonRow
+import app.ridetracker.shared.domain.PeriodType
+import kotlinx.datetime.isoDayNumber
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -84,6 +85,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import app.ridetracker.ui.common.currentLocale
 
 /** The heat map needs enough trips to say anything about when you earn. */
 const val MIN_TRIPS_FOR_HEAT = 20
@@ -104,6 +109,7 @@ val HomeWidget.title: Int
         HomeWidget.WEEK_SCREENSHOTS -> R.string.week_title
         HomeWidget.WEEK_PAYOUT -> R.string.widget_week_payout
         HomeWidget.REAL_PER_HOUR -> R.string.widget_real_per_hour
+        HomeWidget.MONTH_DETAIL -> R.string.widget_month_detail
     }
 
 /** Whether the card has something to show for this period (empty cards are left out, except while customising). */
@@ -118,12 +124,13 @@ fun HomeWidget.hasContent(state: OverviewUiState, attention: Attention): Boolean
         HomeWidget.WHEN_YOU_EARN -> stats.tripCount >= MIN_TRIPS_FOR_HEAT
         HomeWidget.EXPENSE_GROUPS -> state.expenseGroups.isNotEmpty()
         HomeWidget.NEEDS_ATTENTION -> false // pinned at the top instead (see NeedsAttention)
-        HomeWidget.TARGET -> state.target != null
+        HomeWidget.TARGET -> false // inside the money-kept card instead (see TotalCard)
         HomeWidget.COMPARISON -> state.comparisonCard != null
         HomeWidget.CASH_CARD -> state.breakdown?.payment != null
         HomeWidget.WEEK_SCREENSHOTS -> state.week != null
         HomeWidget.WEEK_PAYOUT -> state.payout != null
         HomeWidget.REAL_PER_HOUR -> state.realHourly != null
+        HomeWidget.MONTH_DETAIL -> state.totalMinor != 0L || stats.tripCount > 0
     }
 }
 
@@ -142,6 +149,9 @@ fun WidgetBody(
     onImport: () -> Unit = {},
     onImportMonth: () -> Unit = {},
     onToggleDayOff: (LocalDate) -> Unit = {},
+    /** Money without cents, for the cards Home shows by default (owner, 16 Oct 2026); rates keep theirs. */
+    whole: MoneyFormat = money,
+    onSeeAll: () -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -154,132 +164,142 @@ fun WidgetBody(
         HomeWidget.CASH_CARD -> state.breakdown?.payment?.let { payment ->
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(vertical = 12.dp)) {
-                    Text(
-                        stringResource(R.string.card_and_cash),
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    CardTitle(stringResource(R.string.card_and_cash), Modifier.padding(horizontal = 16.dp), info = app.ridetracker.ui.money.paymentNote(payment))
                     PaymentSplitContent(payment, money, percent)
                 }
             }
         }
-        HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
+        HomeWidget.TARGET -> Unit
         HomeWidget.COMPARISON -> state.comparisonCard?.let { ComparisonCardView(it, state, money, dates, percent, onCompareWhole) }
-        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport, onImportMonth, onToggleDayOff) }
-        HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, money) }
+        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { week ->
+            // Today's income once it's in, while the period shown includes today.
+            val todayMinor = stats.days.firstOrNull { it.date == week.today }?.totalMinor?.takeIf { week.todayIn && it > 0 }
+            WeekCard(week, dates, todayMinor?.let { whole.format(it) }, onImport, onImportMonth, onToggleDayOff)
+        }
+        HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, whole) }
         HomeWidget.REAL_PER_HOUR -> state.realHourly?.let { RealHourlyCard(it, money) }
+        HomeWidget.MONTH_DETAIL -> MonthDetailCard(state, money, whole, dates, percent, onSeeAll)
         HomeWidget.NEEDS_ATTENTION -> Unit
     }
 }
 
 /**
- * This week's screenshots: a column per day with a dot per app, filled in the app's colour once that day is in.
- * Days still to come are faint. Tapping the card (or the button, while today is missing) opens Import.
+ * Today and this week's screenshots in one row (owner, 16 Oct 2026): a dot per day, split into one slice per app,
+ * each slice filled in its app's colour once that day is in. Days still to come are faint; a day off is a dash.
+ * Above it, today: its button while it's missing, or its amount. Sits above money kept on Home: it's the day's job.
+ * Tapping the card opens Import; tapping a past day without anything opens "Didn't drive" / Import.
  */
 @Composable
-private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, onImportMonth: () -> Unit, onToggleDayOff: (LocalDate) -> Unit) {
+private fun WeekCard(
+    week: WeekLog,
+    dates: DateFormats,
+    today: String?,
+    onImport: () -> Unit,
+    onImportMonth: () -> Unit,
+    onToggleDayOff: (LocalDate) -> Unit,
+) {
+    val colours = week.apps.map { platformChartColor(it.colorArgb) }
     OutlinedCard(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.week_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-              // Which app each row is: its badge, level with that row's dots.
-              Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(" ", style = MaterialTheme.typography.labelMedium)
-                week.apps.forEach { PlatformBadge(it.name, it.colorArgb, size = 20.dp) }
-              }
-              Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.week_today_title, dates.weekdayFull(week.today).lowercase(currentLocale())),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        when {
+                            week.today in week.daysOff -> stringResource(R.string.week_today_off)
+                            !week.todayIn -> stringResource(R.string.week_today_missing)
+                            today != null -> stringResource(R.string.week_today_amount, today)
+                            else -> stringResource(R.string.week_today_in)
+                        },
+                        style = MaterialTheme.typography.titleMedium.tabular(),
+                    )
+                }
+                if (!week.todayIn) {
+                    FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 week.days.forEach { day ->
                     val future = day > week.today
                     val isToday = day == week.today
                     val off = day in week.daysOff
+                    val inDay = week.logged[day].orEmpty()
                     val dayOffLabel = stringResource(R.string.day_off_label, dates.weekdayFull(day))
-                    val empty = week.logged[day].isNullOrEmpty()
                     var menu by remember { mutableStateOf(false) }
-                    // A past day with nothing in opens a menu: "Didn't drive" (or undo it) and Import.
                     Box {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.small)
-                            .then(if (!future && empty) Modifier.clickable { menu = true } else Modifier)
-                            .padding(horizontal = 4.dp)
-                            .semantics(mergeDescendants = true) {
-                            contentDescription = if (off) {
-                                dayOffLabel
-                            } else {
-                                dates.weekdayFull(day) + ": " +
-                                    week.apps.joinToString { app -> app.name + " " + if (app.id in week.logged[day].orEmpty()) "✓" else "–" }
-                            }
-                        },
-                    ) {
-                        Text(
-                            dates.weekdayNarrow(day),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        week.apps.forEach { app ->
-                            val inDay = app.id in week.logged[day].orEmpty()
-                            val colour = Color(app.colorArgb.toInt())
-                            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-                              // A day off: a dash instead of the app's dot, so it reads as done, not missing.
-                              if (off && !inDay) {
-                                  Box(Modifier.width(10.dp).height(2.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
-                                  return@Box
-                              }
-                              Box(
-                                Modifier.size(14.dp).clip(CircleShape)
-                                    .then(
-                                        when {
-                                            // The faint ring keeps Uber's black visible in dark mode.
-                                            inDay -> Modifier.background(colour).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f), CircleShape)
-                                            future -> Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                                            else -> Modifier.border(1.5.dp, colour.copy(alpha = 0.6f), CircleShape)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.small)
+                                .then(if (!future && inDay.isEmpty()) Modifier.clickable { menu = true } else Modifier)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = if (off) {
+                                        dayOffLabel
+                                    } else {
+                                        dates.weekdayFull(day) + ": " +
+                                            week.apps.joinToString { app -> app.name + " " + if (app.id in inDay) "✓" else "–" }
+                                    }
+                                },
+                        ) {
+                            Text(
+                                dates.weekdayNarrow(day),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                                if (off && inDay.isEmpty()) {
+                                    // A day off: a dash, so it reads as done, not missing.
+                                    Box(Modifier.width(12.dp).height(2.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
+                                } else {
+                                    SplitDot(
+                                        filled = week.apps.map { it.id in inDay },
+                                        colours = colours,
+                                        ring = when {
+                                            future -> MaterialTheme.colorScheme.outlineVariant
+                                            isToday -> MaterialTheme.colorScheme.primary
+                                            else -> MaterialTheme.colorScheme.outline
                                         },
-                                    ),
-                              )
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
                             }
                         }
-                    }
-                    GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        Text(
-                            dates.day(day),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(if (off) R.string.week_day_drove else R.string.week_day_off)) },
-                            onClick = { menu = false; onToggleDayOff(day) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.import_title)) },
-                            onClick = { menu = false; onImport() },
-                        )
-                    }
+                        GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            Text(
+                                dates.day(day),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(if (off) R.string.week_day_drove else R.string.week_day_off)) },
+                                onClick = { menu = false; onToggleDayOff(day) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.import_title)) },
+                                onClick = { menu = false; onImport() },
+                            )
+                        }
                     }
                 }
-              }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        pluralStringResource(R.plurals.week_days_in, week.daysIn, week.daysIn),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    week.month?.let { month ->
-                        val (inDays, soFar) = week.monthDays
-                        Text(
-                            pluralStringResource(R.plurals.week_month_days, soFar, dates.monthTitle(month), inDays, soFar),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+            // Which slice is which app, only when the dots are split.
+            if (week.apps.size > 1) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    week.apps.forEachIndexed { i, app ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SplitDot(List(week.apps.size) { it == i }, colours, MaterialTheme.colorScheme.outlineVariant, Modifier.size(10.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(app.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
-                }
-                if (!week.todayIn) {
-                    FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
                 }
             }
             // Early in a month: how last month's files are coming in, until every app has them.
@@ -305,6 +325,30 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, on
 }
 
 /**
+ * A day's dot split into one slice per app (left to right for two: halves), each slice filled in its app's colour
+ * when [filled], with a thin [ring] around the whole dot and a gap between slices.
+ */
+@Composable
+private fun SplitDot(filled: List<Boolean>, colours: List<Color>, ring: Color, modifier: Modifier = Modifier) {
+    val gap = MaterialTheme.colorScheme.surface
+    Canvas(modifier) {
+        val n = filled.size.coerceAtLeast(1)
+        val sweep = 360f / n
+        filled.forEachIndexed { i, on ->
+            if (on) drawArc(colours[i], 90f + i * sweep, sweep, useCenter = true)
+        }
+        if (n > 1 && filled.any { it }) {
+            for (i in 0 until n) {
+                val angle = Math.toRadians((90.0 + i * sweep))
+                val r = size.minDimension / 2
+                drawLine(gap, center, center + Offset((r * kotlin.math.cos(angle)).toFloat(), (r * kotlin.math.sin(angle)).toFloat()), 1.5.dp.toPx())
+            }
+        }
+        drawCircle(ring, style = Stroke(1.dp.toPx()), radius = size.minDimension / 2 - 0.5.dp.toPx())
+    }
+}
+
+/**
  * This period against the previous one (the same days while it's running, or the whole one): each figure now, before
  * and the change, green when it's better and red when it's worse.
  */
@@ -320,12 +364,7 @@ private fun ComparisonCardView(
     val previousLabel = card.comparison.range.let { if (it.start == it.endInclusive) dates.day(it.start) else dates.range(it) }
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 12.dp)) {
-            Text(
-                stringResource(R.string.comparison_title, previousLabel),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            CardTitle(stringResource(R.string.comparison_title, previousLabel), modifier = Modifier.padding(horizontal = 16.dp))
             if (card.canCompareWhole) {
                 val whole = stringResource(if (state.period is Period.Week) R.string.comparison_whole_week else R.string.comparison_whole_month)
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -350,26 +389,25 @@ private fun ComparisonCardView(
                     row.metric == ComparisonMetric.TRIPS -> v.toString()
                     else -> money.format(v)
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Just the change; tap a row for what it was before.
+                var showWas by rememberSaveable(row.metric, row.platformId) { mutableStateOf(false) }
+                Row(
+                    Modifier.fillMaxWidth().clickable { showWas = !showWas }.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Column(Modifier.weight(1f)) {
                         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(value(row.current), style = MaterialTheme.typography.titleMedium.tabular())
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        val change = row.change
-                        if (change != null && change != 0.0) {
-                            val better = (change > 0) == row.higherIsBetter
+                        ChangeText(row, percent)
+                        if (showWas || row.change == null) {
                             Text(
-                                (if (change > 0) "▲ " else "▼ ") + percent.format(kotlin.math.abs(change)),
-                                style = MaterialTheme.typography.labelLarge.tabular(),
-                                color = if (better) positiveColor() else MaterialTheme.colorScheme.error,
+                                stringResource(R.string.comparison_was, value(row.previous)),
+                                style = MaterialTheme.typography.bodySmall.tabular(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Text(
-                            stringResource(R.string.comparison_was, value(row.previous)),
-                            style = MaterialTheme.typography.bodySmall.tabular(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                 }
             }
@@ -502,69 +540,102 @@ private fun Suggestion(icon: ImageVector, label: String, onOpen: () -> Unit, onD
     }
 }
 
-/**
- * The month's target: how far, what's left per driving day, and the pace (where the driver should be by today).
- * Tapping it opens the target's settings.
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** "▲ 7 %", green when better and red when worse; nothing when there's no change to show. */
 @Composable
-private fun TargetCard(p: TargetProgress, money: MoneyFormat, dates: DateFormats, onOpen: () -> Unit) {
-    val percent = remember { NumberFormat.getPercentInstance() }
-    OutlinedCard(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                stringResource(R.string.target_title, dates.period(p.month)),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                stringResource(R.string.target_of, money.format(p.achievedMinor), money.format(p.targetMinor)),
-                style = MaterialTheme.typography.titleLarge.tabular(),
-            )
-            LinearWavyProgressIndicator(progress = { p.fraction }, modifier = Modifier.fillMaxWidth())
-            val status = when {
-                p.reached && p.achievedMinor > p.targetMinor ->
-                    stringResource(R.string.target_reached, money.format(p.achievedMinor - p.targetMinor))
-                p.reached -> stringResource(R.string.target_reached_exact)
-                p.finished -> stringResource(R.string.target_missed, money.format(p.remainingMinor))
-                else -> stringResource(R.string.target_to_go, percent.format(p.fraction.toDouble()), money.format(p.remainingMinor))
-            }
-            Text(status, style = MaterialTheme.typography.bodyLarge)
-            p.perDayMinor?.let {
-                Text(
-                    stringResource(R.string.target_per_day, money.format(it)) + " · " +
-                        pluralStringResource(R.plurals.target_days_left, p.drivingDaysLeft, p.drivingDaysLeft),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (!p.reached) {
-                p.paceMinor?.let { pace ->
-                    Text(
-                        when {
-                            pace > 0 -> stringResource(R.string.target_ahead, money.format(pace))
-                            pace < 0 -> stringResource(R.string.target_behind, money.format(-pace))
-                            else -> stringResource(R.string.target_on_pace)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (pace < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    )
+fun ChangeText(row: ComparisonRow, percent: NumberFormat) {
+    val change = row.change
+    if (change == null || change == 0.0) return
+    val better = (change > 0) == row.higherIsBetter
+    Text(
+        (if (change > 0) "▲ " else "▼ ") + percent.format(kotlin.math.abs(change)),
+        style = MaterialTheme.typography.labelLarge.tabular(),
+        color = if (better) positiveColor() else MaterialTheme.colorScheme.error,
+    )
+}
+
+/**
+ * "In detail": one line from each detail card (income and per hour with their change, hours · trips · distance, the
+ * apps' shares) and "See all" for the full cards.
+ */
+@Composable
+private fun MonthDetailCard(
+    state: OverviewUiState,
+    money: MoneyFormat,
+    whole: MoneyFormat,
+    dates: DateFormats,
+    percent: NumberFormat,
+    onSeeAll: () -> Unit,
+) {
+    val stats = state.stats ?: return
+    val rows = state.comparisonCard?.rows.orEmpty()
+    fun row(metric: ComparisonMetric) = rows.firstOrNull { it.metric == metric }
+    val vs = state.comparisonCard?.comparison?.let { comparisonShort(it, dates) }
+    OutlinedCard(onClick = onSeeAll, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            CardTitle(listOfNotNull(stringResource(R.string.widget_month_detail), vs).joinToString(" · "))
+            @Composable
+            fun Line(label: String, value: String, change: ComparisonRow? = null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(value, style = MaterialTheme.typography.titleMedium.tabular())
+                    if (change?.change != null && change.change != 0.0) {
+                        Spacer(Modifier.width(8.dp))
+                        ChangeText(change, percent)
+                    }
                 }
             }
+            Line(stringResource(R.string.comparison_income), whole.format(state.totalMinor), row(ComparisonMetric.INCOME))
+            stats.perHourMinor?.let { Line(stringResource(R.string.comparison_per_hour), money.format(it), row(ComparisonMetric.PER_HOUR)) }
+            val distance = app.ridetracker.ui.common.distanceFormat()
+            val activity = listOfNotNull(
+                stats.onlineMinutes?.let { stringResource(R.string.hours_minutes, it / 60, it % 60) },
+                stats.tripCount.takeIf { it > 0 }?.toString(),
+                stats.distanceMeters?.let { distance.meters(it) },
+            )
+            if (activity.isNotEmpty()) Line(stringResource(R.string.detail_activity), activity.joinToString(" · "))
+            val sum = state.totals.sumOf { it.totalMinor }
+            if (state.totals.size > 1 && sum > 0) {
+                Line(
+                    stringResource(R.string.detail_split),
+                    state.totals.joinToString(" · ") { it.name + " " + percent.format(it.totalMinor.toDouble() / sum) },
+                )
+            }
+            // On the left, so the floating + button never covers it.
+            TextButton(onClick = onSeeAll) { Text(stringResource(R.string.detail_see_all)) }
         }
     }
+}
+
+/** "vs Sept", "vs last week", "vs last Friday": the short form for chips and titles. */
+@Composable
+fun comparisonShort(comparison: Comparison, dates: DateFormats): String = when (comparison) {
+    is Comparison.SameDaysPrevious, is Comparison.WholePrevious -> {
+        val type = if (comparison is Comparison.SameDaysPrevious) comparison.type else (comparison as Comparison.WholePrevious).type
+        if (type == PeriodType.MONTH) {
+            stringResource(R.string.chip_vs_month, dates.monthShort(Period.Month.containing(comparison.range.start)))
+        } else {
+            stringResource(R.string.chip_vs_last_week)
+        }
+    }
+    is Comparison.SameWeekdayLastWeek -> stringResource(
+        when (comparison.range.start.dayOfWeek.isoDayNumber) {
+            1 -> R.string.compare_last_weekday_1
+            2 -> R.string.compare_last_weekday_2
+            3 -> R.string.compare_last_weekday_3
+            4 -> R.string.compare_last_weekday_4
+            5 -> R.string.compare_last_weekday_5
+            6 -> R.string.compare_last_weekday_6
+            else -> R.string.compare_last_weekday_7
+        },
+    )
+    is Comparison.PreviousDays -> pluralStringResource(R.plurals.compare_previous_days, comparison.days, comparison.days)
 }
 
 @Composable
 private fun ExpenseGroups(state: OverviewUiState, money: MoneyFormat, percent: NumberFormat) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 12.dp)) {
-            Text(
-                stringResource(R.string.expenses_by_group),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            CardTitle(stringResource(R.string.expenses_by_group), modifier = Modifier.padding(horizontal = 16.dp))
             state.expenseGroups.forEach { group ->
                 val share = if (state.expenseMinor > 0) group.totalMinor.toFloat() / state.expenseMinor else 0f
                 ListItem(

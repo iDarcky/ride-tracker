@@ -133,7 +133,7 @@ fun PlatformIncomeScreen(
                 }
             }
             if (b.parts.isNotEmpty()) MadeOfCard(b, money)
-            b.payment?.let { BreakdownCard(stringResource(R.string.card_and_cash)) { PaymentSplitContent(it, money, percent) } }
+            b.payment?.let { BreakdownCard(stringResource(R.string.card_and_cash), info = paymentNote(it)) { PaymentSplitContent(it, money, percent) } }
         }
     }
 }

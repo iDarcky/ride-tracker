@@ -164,6 +164,8 @@ See the README for build, versioning and signing rules.
    **0.18.0 (owner, 15 Oct 2026):** End of month reworked (two steps per app: monthly total and hours; difference added
    with one tap; "Didn't drive" days; month status on Home; "May still change"; reminder on the 1st).
    **Then (owner, 11 Oct 2026, in this order):** a readability check of every Home widget, branding directions.
+   **0.21.0 (owner, 16 Oct 2026):** short Home (Today strip with split dots, money kept with the target ring, payout, In
+   detail → Details page) and less text across the app (ⓘ for explanations, no cents on Home). Icon kept as the original ring.
    **Next:** Romanian Uber screens (owner sends them), English Uber CSV columns (owner exports one in English),
    maybe "See customer fare breakdown" per day; then the list below.
 

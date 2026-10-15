@@ -21,6 +21,7 @@ import app.ridetracker.ui.theme.onPositiveContainerColor
 import app.ridetracker.ui.theme.positiveContainerColor
 import app.ridetracker.ui.theme.positiveColor
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
@@ -51,8 +52,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -326,7 +325,7 @@ private fun IncomeTab(
             item { MadeOfCard(breakdown, money) }
         }
         breakdown?.payment?.let { payment ->
-            item { BreakdownCard(stringResource(R.string.card_and_cash)) { PaymentSplitContent(payment, money, percent) } }
+            item { BreakdownCard(stringResource(R.string.card_and_cash), info = paymentNote(payment)) { PaymentSplitContent(payment, money, percent) } }
         }
         val entries = state.days.flatMap { it.entries }
         if (!state.loading && entries.isEmpty()) {
@@ -541,20 +540,15 @@ private fun TotalCard(
                     val change = Comparisons.percentChange(totalMinor, previousMinor)
                         ?.let { NumberFormat.getPercentInstance(currentLocale()).apply { maximumFractionDigits = 0 }.format(abs(it)) }
                         ?: money.format(abs(diff))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            if (diff >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                            contentDescription = stringResource(if (diff >= 0) R.string.change_up else R.string.change_down),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            stringResource(R.string.change_vs, change, dates.period(previousMonth)),
-                            style = MaterialTheme.typography.bodySmall.tabular(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    // "▼ 10 % vs Sep", like Home; TalkBack says "up" / "down" instead of the triangle.
+                    val vs = stringResource(R.string.chip_vs_month, dates.monthShort(previousMonth))
+                    val spoken = stringResource(if (diff >= 0) R.string.change_up else R.string.change_down) + " " + change + " " + vs
+                    Text(
+                        (if (diff >= 0) "▲ " else "▼ ") + change + " " + vs,
+                        modifier = Modifier.semantics { contentDescription = spoken },
+                        style = MaterialTheme.typography.bodySmall.tabular(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             FilledTonalButton(
@@ -570,15 +564,10 @@ private fun TotalCard(
 }
 
 @Composable
-internal fun BreakdownCard(title: String, content: @Composable () -> Unit) {
+internal fun BreakdownCard(title: String, info: String? = null, content: @Composable () -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp)) {
         Column(Modifier.padding(vertical = 12.dp)) {
-            Text(
-                title,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            app.ridetracker.ui.overview.CardTitle(title, Modifier.padding(horizontal = 16.dp), info = info)
             content()
         }
     }

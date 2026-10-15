@@ -242,6 +242,13 @@ fun ImportScreen(
                 navigationIcon = {
                     IconButton(onClick = onDone) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close)) }
                 },
+                // Read on the phone, and sharing from the gallery: behind ⓘ instead of two lines on the page.
+                actions = {
+                    app.ridetracker.ui.common.InfoButton(
+                        stringResource(R.string.import_empty_body) + "\n\n" + stringResource(R.string.import_share_hint),
+                        Modifier.padding(end = 8.dp),
+                    )
+                },
             )
         },
         bottomBar = {
@@ -336,13 +343,6 @@ private fun EmptyState(
                 .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 112.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                stringResource(R.string.import_empty_body),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(16.dp))
             ConnectedChoice(ImportGuide.entries, guide, { guide = it }) {
                 Text(stringResource(if (it == ImportGuide.TODAY) R.string.import_tab_today else R.string.import_tab_month))
             }
@@ -351,13 +351,6 @@ private fun EmptyState(
                 ImportGuide.TODAY -> TodayGuide(state, dates, onOpenReminder)
                 ImportGuide.MONTH -> MonthGuide(state, money, dates, onAddDifference, onOpenSummary)
             }
-            Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.import_share_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
         CompositionLocalProvider(LocalHaze provides haze) {
             ImportToolbar(

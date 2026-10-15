@@ -57,6 +57,10 @@ fun MadeOfCard(b: IncomeBreakdown, money: MoneyFormat) {
     }
 }
 
+/** What the card-and-cash figures mean, for the card title's ⓘ. */
+@Composable
+fun paymentNote(p: PaymentSplit): String = stringResource(if (p.partial) R.string.payment_note_partial else R.string.payment_note)
+
 /** In the app vs cash: a two-part bar with the parts named under it, then cash in hand, paid to the bank and trips. */
 @Composable
 fun PaymentSplitContent(p: PaymentSplit, money: MoneyFormat, percent: NumberFormat) {
@@ -77,7 +81,6 @@ fun PaymentSplitContent(p: PaymentSplit, money: MoneyFormat, percent: NumberForm
         }
         p.cashInHandMinor?.let { TypeRow(stringResource(R.string.cash_in_hand), money.format(it)) }
         p.toBankMinor?.let { TypeRow(stringResource(R.string.to_bank), money.format(it), strong = true) }
-        Note(stringResource(if (p.partial) R.string.payment_note_partial else R.string.payment_note))
     }
     if (p.hasTrips) {
         if (p.hasMoney) HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 4.dp))

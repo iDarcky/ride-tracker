@@ -128,14 +128,6 @@ fun TripsScreen(
                     )
                 }
             }
-            item {
-                Text(
-                    stringResource(R.string.trips_footnote),
-                    modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
@@ -235,6 +227,8 @@ private fun Summary(state: TripsUiState, money: MoneyFormat) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // What fares are and why distance can be missing: behind ⓘ instead of a footnote.
+            app.ridetracker.ui.common.InfoButton(stringResource(R.string.trips_footnote))
         }
     }
 }
@@ -286,7 +280,8 @@ private fun TripRow(trip: TripWithPlatform, money: MoneyFormat, onClick: () -> U
         Column(Modifier.weight(1f)) {
             Text(trip.platformName, style = MaterialTheme.typography.bodyLarge)
             Text(
-                timeOf(trip.startMinute) + " · " + stringResource(paymentName(trip.paymentMethod)),
+                // In the app is the usual case: only cash is named.
+                timeOf(trip.startMinute) + if (PaymentMethod.fromId(trip.paymentMethod) == PaymentMethod.IN_APP) "" else " · " + stringResource(paymentName(trip.paymentMethod)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

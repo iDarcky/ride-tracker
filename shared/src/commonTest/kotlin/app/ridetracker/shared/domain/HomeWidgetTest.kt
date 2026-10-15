@@ -28,17 +28,18 @@ class HomeWidgetTest {
     }
 
     @Test
-    fun newCardsShowUpOnceInACustomisedLayout() {
-        val custom = listOf(HomeWidget.TARGET, HomeWidget.SPLIT, HomeWidget.BREAKDOWN)
-        // Saved before cards were tracked: the comparison card is new and goes after Breakdown, its place in the default.
-        assertEquals(
-            listOf(
-                HomeWidget.TARGET, HomeWidget.WEEK_SCREENSHOTS, HomeWidget.WEEK_PAYOUT, HomeWidget.SPLIT, HomeWidget.BREAKDOWN,
-                HomeWidget.COMPARISON, HomeWidget.REAL_PER_HOUR,
-            ),
-            HomeWidget.withNew(custom, seen = null),
-        )
-        // Once the driver saves a layout with every card seen, a removed card stays removed.
+    fun aLayoutFromBeforeTheShortHomeSwitchesToItOnce() {
+        val custom = listOf(HomeWidget.SPLIT, HomeWidget.BREAKDOWN)
+        assertEquals(HomeWidget.DEFAULT, HomeWidget.withNew(custom, seen = null))
+        val before = HomeWidget.entries.map { it.id }.toSet() - HomeWidget.MONTH_DETAIL.id
+        assertEquals(HomeWidget.DEFAULT, HomeWidget.withNew(custom, seen = before))
+        // Once the driver saves a layout with every card seen, it stays theirs.
         assertEquals(custom, HomeWidget.withNew(custom, seen = HomeWidget.entries.map { it.id }.toSet()))
+    }
+
+    @Test
+    fun targetIsNoLongerACard() {
+        assertEquals(listOf(HomeWidget.SPLIT), HomeWidget.parse("target,split"))
+        assertEquals(false, HomeWidget.TARGET in HomeWidget.MOVABLE)
     }
 }

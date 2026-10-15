@@ -151,11 +151,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             prefs[TARGET_AMOUNTS] = TargetSettings.formatAmounts(amounts)
             // The month's target can be reached again with a new amount.
             if (prefs[TARGET_NOTIFIED] == TargetSettings.key(month)) prefs.remove(TARGET_NOTIFIED)
-            // A Home customised before targets existed doesn't have the card yet: it goes first.
-            prefs[HOME_WIDGETS]?.let { stored ->
-                val widgets = HomeWidget.parse(stored)
-                if (amountMinor > 0 && HomeWidget.TARGET !in widgets) prefs[HOME_WIDGETS] = HomeWidget.format(listOf(HomeWidget.TARGET) + widgets)
-            }
         }
     }
 

@@ -77,6 +77,8 @@ import app.ridetracker.ui.common.DateFormats
 import app.ridetracker.ui.common.MoneyFormat
 import app.ridetracker.ui.common.currentLocale
 import app.ridetracker.ui.common.tabular
+import app.ridetracker.ui.common.InfoButton
+import androidx.compose.foundation.layout.heightIn
 import kotlinx.datetime.LocalDate
 import java.text.NumberFormat
 import java.time.format.TextStyle
@@ -178,23 +180,21 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
                 parts.forEach { SegmentLabel(it.label, money.format(it.shown), it.color, Modifier.weight(1f)) }
             }
         }
+        // Just the gross; what it's made of (and whether fees are known everywhere) is behind ⓘ.
         val gross = buildList {
             add(stringResource(R.string.gross_fares, money.format(stats.faresMinor)))
             if (stats.bonusesAndTipsMinor != 0L) add(stringResource(R.string.gross_bonuses, money.format(stats.bonusesAndTipsMinor)))
             if (stats.otherIncomeMinor != 0L) add(stringResource(R.string.gross_other, money.format(stats.otherIncomeMinor)))
         }
-        Text(
-            stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")),
-            modifier = Modifier.padding(top = 12.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (!stats.feesKnownForAll) {
+        val info = stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")) +
+            if (stats.feesKnownForAll) "" else "\n" + stringResource(R.string.fees_partial)
+        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(R.string.fees_partial),
-                style = MaterialTheme.typography.bodySmall,
+                stringResource(R.string.gross_short, money.format(stats.grossMinor)),
+                style = MaterialTheme.typography.bodySmall.tabular(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            InfoButton(info)
         }
     }
 }
@@ -237,10 +237,10 @@ fun Metrics(stats: HomeStats, platforms: List<PlatformEntity>, money: MoneyForma
         Tile(stats.tripCount.takeIf { it > 0 }?.toString(), stringResource(R.string.metric_trips), coverage(stats.tripPlatformIds, R.string.hint_trips)),
         Tile(km, stringResource(byUnit(R.string.metric_km, R.string.metric_miles)), coverage(stats.kmPlatformIds, byUnit(R.string.hint_km, R.string.hint_miles))),
         Tile(hours, stringResource(R.string.metric_online), coverage(stats.hourPlatformIds, R.string.hint_hours)),
-        Tile(stats.perHourMinor?.let { money.format(it) }, stringResource(R.string.metric_per_hour, money.symbol), coverage(stats.hourPlatformIds, R.string.hint_hours)),
+        Tile(stats.perHourMinor?.let { money.format(it) }, stringResource(R.string.metric_per_hour), coverage(stats.hourPlatformIds, R.string.hint_hours)),
         Tile(
             stats.perKmMinor?.let { money.format(distance.unit.perUnit(it)) },
-            stringResource(byUnit(R.string.metric_per_km, R.string.metric_per_mile), money.symbol),
+            stringResource(byUnit(R.string.metric_per_km, R.string.metric_per_mile)),
             coverage(stats.kmPlatformIds, byUnit(R.string.hint_km, R.string.hint_miles)),
         ),
     )
@@ -567,7 +567,7 @@ fun BestTimeToDrive(heat: List<List<Long>>, money: MoneyFormat, modifier: Modifi
     }
     val resources = LocalResources.current
 
-    ChartCard(stringResource(R.string.best_time), modifier) {
+    ChartCard(stringResource(R.string.best_time), modifier, info = stringResource(R.string.best_time_caption)) {
         Row {
             Spacer(Modifier.width(48.dp))
             weekdays.forEach { d ->
@@ -598,9 +598,23 @@ fun BestTimeToDrive(heat: List<List<Long>>, money: MoneyFormat, modifier: Modifi
                 }
             }
         }
-        val text = picked?.let { (d, s) -> stringResource(R.string.heat_cell, weekdays[d], slots[s], money.format(heat[d][s])) }
-            ?: stringResource(R.string.best_time_caption)
-        Text(text, Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        picked?.let { (d, s) ->
+            Text(
+                stringResource(R.string.heat_cell, weekdays[d], slots[s], money.format(heat[d][s])),
+                Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** A card's title in the primary colour, with an optional ⓘ for what used to be a sentence on the card. */
+@Composable
+fun CardTitle(title: String, modifier: Modifier = Modifier, info: String? = null) {
+    Row(modifier.heightIn(min = 32.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        info?.let { InfoButton(it) }
     }
 }
 
@@ -622,10 +636,10 @@ fun Sparkline(days: List<DayIncome>, color: Color, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun ChartCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun ChartCard(title: String, modifier: Modifier = Modifier, info: String? = null, content: @Composable () -> Unit) {
     OutlinedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            CardTitle(title, info = info)
             Spacer(Modifier.height(8.dp))
             content()
         }

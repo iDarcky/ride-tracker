@@ -42,7 +42,7 @@
     <string name="next_period">Perioada următoare</string>
     <string name="back_to_today">Înapoi la azi</string>
     <string name="total_income">Venit total</string>
-    <string name="empty_period">Niciun venit în această perioadă.\nImportă o captură Bolt sau adaugă venitul cu butonul +.</string>
+    <string name="empty_period">Niciun venit încă</string>
     <string name="add_income">Adaugă venit</string>
     <string name="entry_deleted">Înregistrare ștearsă</string>
     <plurals name="entry_count">
@@ -225,7 +225,7 @@
     <string name="cost_per_mile">Cost pe milă</string>
     <string name="odometer_reading_mi">Citire (mile)</string>
     <string name="metric_miles">Mile plătite</string>
-    <string name="metric_per_mile">%1$s pe milă</string>
+    <string name="metric_per_mile">pe milă</string>
     <string name="hint_miles">Încă fără mile</string>
     <string name="distance_unit">Distanță</string>
     <string name="distance_km">Kilometri</string>
@@ -247,10 +247,6 @@
     <string name="fuel_plug_in_diesel">Hibrid plug-in (motorină)</string>
 
     <!-- 0.0.8: comparison with the previous period -->
-    <string name="compare_same_days_last_month">față de aceleași zile de luna trecută</string>
-    <string name="compare_same_days_last_week">față de aceleași zile de săptămâna trecută</string>
-    <string name="compare_previous_month">față de luna anterioară</string>
-    <string name="compare_previous_week">față de săptămâna anterioară</string>
     <plurals name="compare_previous_days">
         <item quantity="one">față de ziua anterioară</item>
         <item quantity="few">față de cele %d zile anterioare</item>
@@ -392,11 +388,11 @@
     <string name="trips_total_fares">Total tarife (brut)</string>
     <string name="trips_footnote">Tarifele sunt ce au plătit pasagerii, înainte de comisionul platformei. Distanța și durata apar doar dacă raportul le are; facturile Bolt nu le au.</string>
     <string name="trips_empty_title">Nicio cursă încă</string>
-    <string name="trips_empty_body">Importă facturile către pasageri din Bolt (CSV) și cursele apar aici. Fișierele rămân pe acest telefon.</string>
+    <string name="trips_empty_body">Importă facturile Bolt către pasageri (CSV) ca să vezi cursele aici.</string>
     <string name="payment_cash">Cash</string>
     <string name="payment_in_app">În aplicație</string>
     <string name="payment_business">Cont business</string>
-    <string name="trip_km_min">%1$s km · %2$s min</string>
+    <string name="trip_km_min">%1$s · %2$s min</string>
     <string name="trip_minutes">%1$d min</string>
     <string name="trip_details">Detalii cursă</string>
     <string name="trip_completed">Finalizată</string>
@@ -423,8 +419,6 @@
     </plurals>
 
     <!-- Home (cockpit) -->
-    <string name="after_fees">după comisioanele platformelor</string>
-    <string name="after_fees_and_expenses">după comisioane și cheltuieli</string>
     <string name="fees">Comisioane</string>
     <string name="kept">Rămași</string>
     <string name="earned">Câștigat</string>
@@ -435,15 +429,15 @@
     <string name="fees_partial">Comisioanele se știu doar pentru zilele importate dintr-un raport.</string>
     <string name="metric_trips">Curse</string>
     <string name="metric_online">Ore online</string>
-    <string name="metric_per_hour">%1$s pe oră</string>
+    <string name="metric_per_hour">pe oră</string>
     <string name="metric_km">Km plătiți</string>
-    <string name="metric_per_km">%1$s pe km</string>
+    <string name="metric_per_km">pe km</string>
     <string name="hours_minutes">%1$d h %2$d min</string>
     <string name="only_platforms">doar %1$s</string>
     <string name="hint_trips">Încă fără curse</string>
     <string name="hint_km">Încă fără km</string>
     <string name="hint_hours">Încă fără ore</string>
-    <string name="metrics_empty">Cursele, km plătiți, orele online și cât câștigi pe oră și pe km apar aici când un raport le conține: facturile și rezumatul lunar Bolt sau rapoartele Uber.</string>
+    <string name="metrics_empty">Cursele, km și orele apar după primul raport care le are.</string>
     <string name="split_by_app">Pe platforme</string>
     <string name="daily_activity">Activitate pe zile</string>
     <string name="tap_a_bar">Atinge o bară ca să vezi ziua</string>
@@ -495,13 +489,12 @@
         <item quantity="other">%d de curse plătite cu numerar</item>
     </plurals>
     <string name="total_expenses">Total cheltuieli</string>
-    <string name="change_vs">%1$s față de %2$s</string>
     <string name="recent">Recente</string>
     <string name="all_entries">Toate</string>
     <string name="show_fewer">Arată mai puține</string>
     <string name="clear_filter">Șterge filtrul</string>
     <string name="no_income_this_month">Niciun venit luna aceasta.\nImportă o captură Bolt sau adaugă venitul mai sus.</string>
-    <string name="no_expenses_this_month">Nicio cheltuială luna aceasta.\nAdaugă combustibil, reparații și alte costuri mai sus.</string>
+    <string name="no_expenses_this_month">Nicio cheltuială luna aceasta</string>
     <plurals name="see_all">
         <item quantity="one">Vezi %d înregistrare</item>
         <item quantity="few">Vezi toate cele %d</item>
@@ -605,9 +598,9 @@
     <string name="z_exact_allow">Permite</string>
     <!-- Ținta lunară -->
     <string name="target_setting">Ținta lunară</string>
-    <string name="target_intro">Cât vrei să faci luna aceasta. Acasă vezi cât ai făcut, cât mai trebuie în fiecare zi de condus și dacă ești în ritm.</string>
+    <string name="target_intro">Cât vrei să faci luna asta.</string>
     <string name="target_for_month">Ținta pentru %1$s</string>
-    <string name="target_each_month">Fiecare lună își păstrează ținta; o lună nouă pornește cu ținta lunii trecute.</string>
+    <string name="target_each_month">O lună nouă pornește cu ținta lunii trecute.</string>
     <string name="target_counts">Ce numără</string>
     <string name="target_basis_income">Venit după comisioane</string>
     <string name="target_basis_income_detail">Ce îți plătesc Bolt, Uber și celelalte aplicații</string>
@@ -615,17 +608,6 @@
     <string name="target_basis_kept_detail">Venitul minus cheltuielile (carburant, mașină, telefon…)</string>
     <string name="target_driving_days">Zilele în care conduci</string>
     <string name="target_driving_days_detail">„Pe zi” și ritmul numără doar aceste zile.</string>
-    <string name="target_title">Ținta · %1$s</string>
-    <string name="target_of">%1$s din %2$s</string>
-    <string name="target_to_go">%1$s · mai ai %2$s</string>
-    <string name="target_per_day">%1$s pe zi în zilele de condus rămase</string>
-    <plurals name="target_days_left">
-        <item quantity="one">%d zi de condus rămasă</item>
-        <item quantity="few">%d zile de condus rămase</item>
-        <item quantity="other">%d de zile de condus rămase</item>
-    </plurals>
-    <string name="target_ahead">Peste ritm cu %1$s</string>
-    <string name="target_behind">Sub ritm cu %1$s</string>
     <string name="target_on_pace">Exact în ritm</string>
     <string name="target_reached">Țintă atinsă · cu %1$s peste</string>
     <string name="target_reached_exact">Țintă atinsă</string>
@@ -687,7 +669,7 @@
     <string name="comparison_was">înainte %1$s</string>
     <!-- Car documents -->
     <string name="documents">Documente</string>
-    <string name="documents_empty">Adaugă RCA, ITP, rovinieta și celelalte: primești o notificare cu 30 și 7 zile înainte să expire fiecare, și în ziua respectivă.</string>
+    <string name="documents_empty">Adaugă RCA, ITP, rovinieta și altele: primești notificări cu 30 și 7 zile înainte să expire fiecare.</string>
     <string name="add_document">Adaugă un document</string>
     <string name="edit_document">Editează documentul</string>
     <string name="document_kind">Document</string>
@@ -739,7 +721,7 @@
     <!-- Guided import -->
     <string name="import_tab_today">Azi</string>
     <string name="import_tab_month">La final de lună</string>
-    <string name="import_today_intro">După fiecare zi de condus, câte o captură din fiecare aplicație. Aduce ziua exact. O zi fără captură contează 0.</string>
+    <string name="import_today_intro">O captură din fiecare aplicație după fiecare zi de condus. O zi fără captură contează 0.</string>
     <string name="import_today_bolt_how">Bolt Driver → Câștiguri → Defalcarea câștigurilor → Zilnic, alege ziua, fă o captură de ecran.</string>
     <string name="import_today_uber_how">Uber Driver → Câștiguri, atinge bara zilei (data devine albastră), fă o captură de ecran.</string>
     <string name="import_today_week">Ultimele 7 zile</string>
@@ -748,7 +730,7 @@
     <string name="import_reminder_row">Amintește-mi în fiecare seară</string>
     <string name="import_reminder_row_on">Notificare în fiecare zi la %1$s</string>
     <string name="import_reminder_setting">Notificare pentru import</string>
-    <string name="import_reminder_intro">O notificare în fiecare seară ca să imporți capturile zilei din Bolt și Uber. Nu mai apare dacă ziua e deja importată sau marcată ca zi liberă. Pe 1 ale lunii îți amintește și de fișierele lunii trecute.</string>
+    <string name="import_reminder_intro">În fiecare seară, o notificare să imporți capturile zilei. Nu apare dacă ziua e deja adăugată. Pe 1 ale lunii îți amintește și de fișierele lunii trecute.</string>
     <string name="import_reminder_channel">Notificare pentru import</string>
     <string name="import_reminder_channel_description">Notificare seara pentru importul capturilor zilei</string>
     <string name="import_reminder_title">Importă câștigurile de azi</string>
@@ -815,14 +797,9 @@
     </plurals>
     <string name="week_title">Capturi săptămâna asta</string>
     <string name="week_add_today">Adaugă azi</string>
-    <plurals name="week_days_in">
-        <item quantity="one">O zi adăugată până acum</item>
-        <item quantity="few">%d zile adăugate până acum</item>
-        <item quantity="other">%d de zile adăugate până acum</item>
-    </plurals>
 
     <!-- La final de lună (0.18.0) -->
-    <string name="month_intro">După ce se termină luna, două lucruri din fiecare aplicație o completează: totalul lunar al aplicației și orele tale online. Capturile zilnice rămân cum sunt.</string>
+    <string name="month_intro">La final de lună: totalul lunar al fiecărei aplicații și orele tale online.</string>
     <string name="month_steps">%1$d din %2$d</string>
     <string name="month_complete">Luna %1$s e completă</string>
     <string name="month_complete_body">Fiecare aplicație are totalul lunar și orele. Cifrele lunii nu se mai schimbă.</string>
@@ -847,11 +824,6 @@
     <string name="income_month_difference">Din totalul lunar</string>
     <string name="days_off_body">Marchează zilele libere, ca să nu mai apară ca lipsă.</string>
     <string name="day_off_label">%1$s, zi liberă</string>
-    <plurals name="week_month_days">
-        <item quantity="one">%1$s: %2$d din %3$d zi</item>
-        <item quantity="few">%1$s: %2$d din %3$d zile</item>
-        <item quantity="other">%1$s: %2$d din %3$d de zile</item>
-    </plurals>
     <plurals name="week_month_files">
         <item quantity="one">Fișiere pentru %1$s: %2$d din %3$d aplicație</item>
         <item quantity="few">Fișiere pentru %1$s: %2$d din %3$d aplicații</item>
@@ -869,7 +841,7 @@
     <string name="auto_backup_summary_off">Oprită: datele sunt doar pe acest telefon</string>
     <string name="auto_backup_summary_on">Pornită: ultima copie %1$s</string>
     <string name="auto_backup_summary_failed">Ultima copie nu s-a putut salva</string>
-    <string name="auto_backup_intro">O dată pe săptămână, Ridely salvează o copie de rezervă peste un fișier ales de tine. Alege Google Drive și nu pierzi datele dacă pierzi sau schimbi telefonul: instalezi Ridely, apoi Datele tale → Restaurează din copie și alegi fișierul.</string>
+    <string name="auto_backup_intro">O dată pe săptămână, Ridely salvează o copie peste un fișier ales de tine. Pe Google Drive rămâne și dacă pierzi sau schimbi telefonul: Datele tale → Restaurează din copie.</string>
     <string name="auto_backup_switch">Copie în fiecare săptămână</string>
     <string name="auto_backup_file">Se salvează în</string>
     <string name="auto_backup_change">Schimbă</string>
@@ -877,13 +849,10 @@
     <string name="auto_backup_never">Încă nicio copie</string>
     <string name="auto_backup_failed">Ultima copie nu s-a putut salva. Poate fișierul a fost mutat sau șters: alege-l din nou.</string>
     <string name="auto_backup_now">Fă o copie acum</string>
-    <string name="auto_backup_android">Și backupul Android păstrează datele Ridely în contul tău Google, dacă Backup e pornit în setările telefonului, și le aduce înapoi când configurezi un telefon nou.</string>
+    <string name="auto_backup_android">Și backupul Android păstrează datele Ridely în contul tău Google, dacă Backup e pornit în setările telefonului.</string>
 
     <!-- Plata săptămânii și bani pe oră (0.18.0) -->
     <string name="widget_week_payout">Plata săptămânii</string>
-    <string name="payout_earned">Câștigat %1$s</string>
-    <string name="payout_cash">numerar încasat %1$s</string>
-    <string name="payout_to_account">vin în cont</string>
     <string name="payout_owed">datorie către %1$s</string>
     <string name="payout_total">Total în cont</string>
     <string name="payout_note">Până acum în săptămâna asta. Aplicațiile plătesc după ce se încheie săptămâna.</string>
@@ -894,7 +863,6 @@
     <string name="real_after_fuel">După carburant</string>
     <string name="real_after_expenses">După toate cheltuielile</string>
     <string name="real_no_fuel">Adaugă carburantul ca să-l vezi</string>
-    <string name="real_hours">Din %1$s online</string>
     <string name="real_partial">doar zilele și aplicațiile cu ore</string>
 
     <string name="toolbar_screenshots">Capturi</string>
@@ -945,4 +913,30 @@
     <string name="week_day_drove">Totuși am condus</string>
     <string name="offer_dismissed">O găsești în meniu, la Rezumate</string>
     <string name="day_marked_off">%1$s, marcată ca zi liberă</string>
+    <!-- Short Home (0.21.0): one number per line, explanations behind ⓘ. -->
+    <string name="more_info">Mai multe informații</string>
+    <string name="kept_info">Ce rămâne din venit după comisioanele platformelor și cheltuieli.</string>
+    <string name="income_info">Venitul după comisioanele platformelor.</string>
+    <string name="chip_vs_month">față de %1$s</string>
+    <string name="chip_vs_last_week">față de săpt. trecută</string>
+    <string name="target_short">Țintă: %1$s din %2$s</string>
+    <plurals name="target_per_day_short">
+        <item quantity="one">%1$s/zi · %2$d zi</item>
+        <item quantity="few">%1$s/zi · %2$d zile</item>
+        <item quantity="other">%1$s/zi · %2$d de zile</item>
+    </plurals>
+    <string name="target_ahead_short">+%1$s peste ritm</string>
+    <string name="target_behind_short">−%1$s sub ritm</string>
+    <string name="week_today_amount">Azi %1$s</string>
+    <string name="payout_cash_short">numerar %1$s</string>
+    <string name="gross_short">Brut %1$s</string>
+    <string name="widget_month_detail">În detaliu</string>
+    <string name="detail_see_all">Vezi tot</string>
+    <string name="details_title">Detalii</string>
+    <string name="detail_activity">Ore · curse · distanță</string>
+    <string name="detail_split">Pe aplicații</string>
+    <string name="week_today_title">Azi · %1$s</string>
+    <string name="week_today_missing">Capturile de azi lipsesc</string>
+    <string name="week_today_in">Ziua de azi e adăugată</string>
+    <string name="week_today_off">Zi liberă</string>
 </resources>

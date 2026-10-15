@@ -27,8 +27,8 @@ import app.ridetracker.ui.common.tabular
 import kotlin.math.abs
 
 /**
- * This week so far, app by app: what it paid, the cash already in hand, and what's coming to the account (or owed
- * back, when the cash is more than earned). The week, whatever period Home shows.
+ * This week so far, app by app: what's coming to the account (or owed back, when the cash is more than earned), with
+ * the cash already in hand only when there was some. The week, whatever period Home shows.
  */
 @Composable
 fun WeekPayoutCard(
@@ -42,7 +42,7 @@ fun WeekPayoutCard(
 ) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            CardTitle(title, info = if (showNote) stringResource(if (fleet) R.string.payout_note_fleet else R.string.payout_note) else null)
             payout.apps.forEach { app ->
                 val platform = platforms.firstOrNull { it.id == app.platformId } ?: return@forEach
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -50,14 +50,13 @@ fun WeekPayoutCard(
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(platform.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            listOfNotNull(
-                                stringResource(R.string.payout_earned, money.format(app.earnedMinor)),
-                                app.cashInHandMinor?.let { stringResource(R.string.payout_cash, money.format(it)) },
-                            ).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        app.cashInHandMinor?.takeIf { it != 0L }?.let {
+                            Text(
+                                stringResource(R.string.payout_cash_short, money.format(it)),
+                                style = MaterialTheme.typography.bodySmall.tabular(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
@@ -66,11 +65,13 @@ fun WeekPayoutCard(
                             fontWeight = FontWeight.SemiBold,
                             color = if (app.toAccountMinor < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                         )
-                        Text(
-                            if (app.toAccountMinor < 0) stringResource(R.string.payout_owed, platform.name) else stringResource(R.string.payout_to_account),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        if (app.toAccountMinor < 0) {
+                            Text(
+                                stringResource(R.string.payout_owed, platform.name),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
@@ -85,13 +86,6 @@ fun WeekPayoutCard(
                     )
                 }
             }
-            if (showNote) {
-                Text(
-                    stringResource(if (fleet) R.string.payout_note_fleet else R.string.payout_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
@@ -101,7 +95,7 @@ fun WeekPayoutCard(
 fun RealHourlyCard(real: RealHourly, money: MoneyFormat) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.widget_real_per_hour), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            CardTitle(stringResource(R.string.widget_real_per_hour))
             HourlyRow(stringResource(R.string.real_from_apps), money.format(real.perHourMinor), money)
             HourlyRow(
                 stringResource(R.string.real_after_fuel),
@@ -111,14 +105,9 @@ fun RealHourlyCard(real: RealHourly, money: MoneyFormat) {
                 strong = true,
             )
             real.afterExpensesPerHourMinor?.let { HourlyRow(stringResource(R.string.real_after_expenses), money.format(it), money) }
-            Text(
-                listOfNotNull(
-                    stringResource(R.string.real_hours, stringResource(R.string.hours_minutes, real.onlineMinutes / 60, real.onlineMinutes % 60)),
-                    if (real.partial) stringResource(R.string.real_partial) else null,
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (real.partial) {
+                Text(stringResource(R.string.real_partial), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
