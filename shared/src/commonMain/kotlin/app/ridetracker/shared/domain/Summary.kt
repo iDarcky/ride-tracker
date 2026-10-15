@@ -28,6 +28,8 @@ data class Summary(
     val real: RealHourly?,
     val daysDriven: Int,
     val daysOff: Int,
+    /** The days marked as off (no income those days), so a summary can unmark them. */
+    val offDays: List<LocalDate> = emptyList(),
     /** Days up to today with nothing in and not marked as a day off ("Sunday missing"). */
     val missingDays: List<LocalDate>,
     val bestDay: DayIncome?,
@@ -82,6 +84,7 @@ object SummaryCalculator {
             real = RealHourlyCalculator.compute(stats, fuelMinor, expensesMinor),
             daysDriven = driven.size,
             daysOff = off.size,
+            offDays = off.sorted().map(LocalDate::fromEpochDays),
             missingDays = missing,
             bestDay = stats.days.takeIf { !stats.monthly }?.filter { it.totalMinor > 0 }?.maxByOrNull { it.totalMinor },
             apps = apps,

@@ -1,5 +1,11 @@
 package app.ridetracker.ui.summary
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import kotlinx.datetime.LocalDate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -74,16 +80,28 @@ data class SummaryUiState(
 )
 
 class SummaryViewModel(
-    range: DateRange,
-    summaries: SummaryRepository,
-    income: IncomeRepository,
-    imports: ImportRepository,
-    settings: SettingsRepository,
+    private val range: DateRange,
+    private val summaries: SummaryRepository,
+    private val income: IncomeRepository,
+    private val imports: ImportRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SummaryUiState())
     val state: StateFlow<SummaryUiState> = _state
 
     init {
+        load()
+    }
+
+    /** Marks a missing day as "Didn't drive", or unmarks a day off; the summary is worked out again. */
+    fun toggleDayOff(day: LocalDate) {
+        viewModelScope.launch {
+            imports.setDayOff(day, _state.value.summary?.offDays?.contains(day) != true)
+            load()
+        }
+    }
+
+    private fun load() {
         viewModelScope.launch {
             val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
             val s = settings.settings.first()
@@ -141,19 +159,8 @@ fun SummaryScreen(
             }
         }
         item { KeptCard(summary, money, dates, month, gap) }
-        if (summary.missingDays.isNotEmpty()) {
-            item {
-                Row(gap, verticalAlignment = Alignment.CenterVertically) {
-                    val days = summary.missingDays.take(5).joinToString { dates.shortWeekday(it) } + if (summary.missingDays.size > 5) "…" else ""
-                    Text(
-                        pluralStringResource(R.plurals.summary_missing, summary.missingDays.size, days),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = onImport) { Text(stringResource(R.string.import_title)) }
-                }
-            }
+        if (summary.missingDays.isNotEmpty() || summary.offDays.isNotEmpty()) {
+            item { MissingDays(summary, dates, onImport, viewModel::toggleDayOff, gap) }
         }
         summary.real?.let { real -> item { Column(gap) { RealHourlyCard(real, money) } } }
         item {
@@ -248,6 +255,48 @@ private fun KeptCard(summary: Summary, money: MoneyFormat, dates: DateFormats, m
                     "$sign${money.format(abs(change))} $versus",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * The days with nothing in: missing ones in red, each a chip to mark it "Didn't drive"; days already marked stay
+ * listed, ticked, so they can be unmarked (owner, 15 Oct 2026: missing days must be fixable from here).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MissingDays(summary: Summary, dates: DateFormats, onImport: () -> Unit, onToggle: (LocalDate) -> Unit, modifier: Modifier) {
+    OutlinedCard(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (summary.missingDays.isEmpty()) {
+                        stringResource(R.string.summary_no_missing)
+                    } else {
+                        pluralStringResource(R.plurals.summary_missing_count, summary.missingDays.size, summary.missingDays.size)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (summary.missingDays.isEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f),
+                )
+                if (summary.missingDays.isNotEmpty()) TextButton(onClick = onImport) { Text(stringResource(R.string.import_title)) }
+            }
+            Text(stringResource(R.string.summary_mark_days_off), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                (summary.missingDays + summary.offDays).sorted().forEach { day ->
+                    val off = day in summary.offDays
+                    FilterChip(
+                        selected = off,
+                        onClick = { onToggle(day) },
+                        label = { Text(dates.shortWeekday(day)) },
+                        leadingIcon = if (off) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }
+                        } else {
+                            null
+                        },
+                    )
+                }
             }
         }
     }

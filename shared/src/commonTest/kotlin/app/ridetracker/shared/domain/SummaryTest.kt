@@ -30,6 +30,7 @@ class SummaryTest {
         val s = compute(listOf(entry(1, 5, 20000), entry(2, 5, 5000), entry(1, 6, 30000), entry(1, 7, 10000)), off = setOf(8, 9))
         assertEquals(3, s.daysDriven)
         assertEquals(2, s.daysOff)
+        assertEquals(listOf(LocalDate(2026, 10, 8), LocalDate(2026, 10, 9)), s.offDays)
         assertEquals(listOf(LocalDate(2026, 10, 10), LocalDate(2026, 10, 11)), s.missingDays)
         assertEquals(LocalDate(2026, 10, 6), s.bestDay?.date)
         assertEquals(65000, s.incomeMinor)

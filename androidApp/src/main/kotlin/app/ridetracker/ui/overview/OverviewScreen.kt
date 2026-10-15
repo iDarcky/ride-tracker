@@ -360,6 +360,7 @@ fun OverviewScreen(
                                     onCompareWhole = viewModel::setCompareWhole,
                                     onImport = onImport,
                                     onImportMonth = onImportMonth,
+                                    onToggleDayOff = viewModel::toggleDayOff,
                                 )
                             } else {
                                 WidgetPlaceholder()

@@ -403,6 +403,11 @@ class OverviewViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     }
 
+    /** Home's week card: marks a day with nothing in as "Didn't drive", or unmarks it. */
+    fun toggleDayOff(day: LocalDate) {
+        viewModelScope.launch { importRepository.setDayOff(day, day !in (week.value?.daysOff ?: emptySet())) }
+    }
+
     fun dismissTargetSuggestion() {
         viewModelScope.launch { settingsRepository.dismissTargetSuggestion() }
     }

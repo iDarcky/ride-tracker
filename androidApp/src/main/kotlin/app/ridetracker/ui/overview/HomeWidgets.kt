@@ -1,5 +1,8 @@
 package app.ridetracker.ui.overview
 
+import app.ridetracker.ui.common.GlassDropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.clickable
 import app.ridetracker.ui.theme.positiveColor
 import androidx.compose.material3.FilterChip
 import app.ridetracker.shared.domain.ComparisonMetric
@@ -138,6 +141,7 @@ fun WidgetBody(
     onCompareWhole: (Boolean) -> Unit = {},
     onImport: () -> Unit = {},
     onImportMonth: () -> Unit = {},
+    onToggleDayOff: (LocalDate) -> Unit = {},
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -162,7 +166,7 @@ fun WidgetBody(
         }
         HomeWidget.TARGET -> state.target?.let { TargetCard(it, money, dates, onOpenTarget) }
         HomeWidget.COMPARISON -> state.comparisonCard?.let { ComparisonCardView(it, state, money, dates, percent, onCompareWhole) }
-        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport, onImportMonth) }
+        HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { WeekCard(it, dates, onImport, onImportMonth, onToggleDayOff) }
         HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, money) }
         HomeWidget.REAL_PER_HOUR -> state.realHourly?.let { RealHourlyCard(it, money) }
         HomeWidget.NEEDS_ATTENTION -> Unit
@@ -174,7 +178,7 @@ fun WidgetBody(
  * Days still to come are faint. Tapping the card (or the button, while today is missing) opens Import.
  */
 @Composable
-private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, onImportMonth: () -> Unit) {
+private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, onImportMonth: () -> Unit, onToggleDayOff: (LocalDate) -> Unit) {
     OutlinedCard(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.week_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
@@ -190,10 +194,18 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, on
                     val isToday = day == week.today
                     val off = day in week.daysOff
                     val dayOffLabel = stringResource(R.string.day_off_label, dates.weekdayFull(day))
+                    val empty = week.logged[day].isNullOrEmpty()
+                    var menu by remember { mutableStateOf(false) }
+                    // A past day with nothing in opens a menu: "Didn't drive" (or undo it) and Import.
+                    Box {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.semantics(mergeDescendants = true) {
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .then(if (!future && empty) Modifier.clickable { menu = true } else Modifier)
+                            .padding(horizontal = 4.dp)
+                            .semantics(mergeDescendants = true) {
                             contentDescription = if (off) {
                                 dayOffLabel
                             } else {
@@ -230,6 +242,23 @@ private fun WeekCard(week: WeekLog, dates: DateFormats, onImport: () -> Unit, on
                               )
                             }
                         }
+                    }
+                    GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        Text(
+                            dates.day(day),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (off) R.string.week_day_drove else R.string.week_day_off)) },
+                            onClick = { menu = false; onToggleDayOff(day) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.import_title)) },
+                            onClick = { menu = false; onImport() },
+                        )
+                    }
                     }
                 }
               }

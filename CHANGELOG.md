@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.2
+- **Mark missing days anywhere.** A summary's missing days are now a card of chips: tap a day to mark it "Didn't drive"
+  (it leaves the missing list and counts as a day off; tap again to undo), for any week or month, however old. On
+  Home's week card, tapping a past day with nothing in opens "Didn't drive" (or "Drove after all") and Import.
+
 ## 0.19.1
 - Import's floating actions (Screenshots, Files, Day off) are now three matching frosted-glass buttons; none is coloured,
   so none looks like a selected tab.
