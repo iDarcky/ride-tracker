@@ -444,6 +444,10 @@ fun OverviewScreen(
                             onImportMonth = onImportMonth,
                             onToggleDayOff = viewModel::toggleDayOff,
                             whole = whole,
+                            onHideWeek = {
+                                viewModel.hideWeekCard()
+                                weekJustHidden = true
+                            },
                         )
                     }
                 }

@@ -913,4 +913,5 @@
     <string name="week_today_in">Today’s in</string>
     <string name="week_today_off">Day off</string>
     <string name="week_hidden">Back tomorrow. Customise removes it for good.</string>
+    <string name="week_hide">Hide until tomorrow</string>
 </resources>

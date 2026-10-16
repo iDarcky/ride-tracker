@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.22.1
+- **The ring's green part has its line**: "Kept" with its amount, above fees and expenses, so every colour on the ring
+  is named.
+- **✕ on the screenshots card**: hides it until tomorrow, like a swipe.
+
 ## 0.22.0
 - **Screenshots card, narrower**: two rows. Today with its button, amount or "Day off" on the right, then the week with
   each day's letter beside its dot (no legend: the halves are in the apps' colours). **Tap a day** that's in to open

@@ -126,7 +126,7 @@ fun platformChartColor(argb: Long): Color {
 
 /**
  * Gross split into kept, platform fees and expenses (owner, 16 Oct 2026: option 3a): a ring with the share kept in the
- * middle, and beside it the gross, then fees and expenses. The amount kept is in the card above, so it isn't repeated.
+ * middle, and beside it the gross, then kept, fees and expenses, each with its colour.
  * What the gross is made of is behind ⓘ.
  */
 @Composable
@@ -187,8 +187,8 @@ fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean
                     maxLines = 1,
                 )
                 Spacer(Modifier.height(4.dp))
-                // Without the ring (spent more than earned), kept gets its own line too.
-                if (!ring) PartRow(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), money.format(kept), keptColor)
+                // Every colour on the ring has its line, kept included (owner, 16 Oct 2026).
+                PartRow(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), money.format(kept), keptColor)
                 if (fees > 0) PartRow(stringResource(R.string.fees), money.format(fees), feesColor)
                 if (expenseMinor > 0) PartRow(stringResource(R.string.nav_expenses), money.format(expenseMinor), expensesColor)
             }

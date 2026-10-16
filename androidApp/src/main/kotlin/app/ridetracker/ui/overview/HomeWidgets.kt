@@ -153,6 +153,8 @@ fun WidgetBody(
     /** Money without cents, for the cards Home shows by default (owner, 16 Oct 2026); rates keep theirs. */
     whole: MoneyFormat = money,
     onSeeAll: () -> Unit = {},
+    /** Hides the screenshots card until tomorrow; null where it can't be hidden (Customise). */
+    onHideWeek: (() -> Unit)? = null,
 ) {
     val stats = state.stats ?: return
     when (widget) {
@@ -175,7 +177,7 @@ fun WidgetBody(
         HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { week ->
             // Today's income once it's in, while the period shown includes today.
             val todayMinor = stats.days.firstOrNull { it.date == week.today }?.totalMinor?.takeIf { week.todayIn && it > 0 }
-            WeekCard(week, dates, todayMinor?.let { whole.format(it) }, onImport, onImportMonth, onToggleDayOff, onOpenDay)
+            WeekCard(week, dates, todayMinor?.let { whole.format(it) }, onImport, onImportMonth, onToggleDayOff, onOpenDay, onHideWeek)
         }
         HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, whole) }
         HomeWidget.REAL_PER_HOUR -> state.realHourly?.let { RealHourlyCard(it, money) }
@@ -199,6 +201,7 @@ private fun WeekCard(
     onImportMonth: () -> Unit,
     onToggleDayOff: (LocalDate) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    onHide: (() -> Unit)?,
 ) {
     val colours = week.apps.map { platformChartColor(it.colorArgb) }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -222,6 +225,12 @@ private fun WeekCard(
                         style = MaterialTheme.typography.titleMedium.tabular(),
                         fontWeight = FontWeight.SemiBold,
                     )
+                }
+                // Shows it can be put away (a swipe does the same): back tomorrow.
+                onHide?.let {
+                    IconButton(onClick = it, modifier = Modifier.padding(start = 4.dp).size(36.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.week_hide), Modifier.size(20.dp))
+                    }
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
