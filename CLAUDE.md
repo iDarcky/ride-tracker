@@ -11,7 +11,7 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 
 ## Where we are (15 October 2026)
 - Name: **Ridely** (owner 15 Oct, "for now"; ring icon). Code, package and repo keep `ridetracker`.
-- App **0.21.0** (live and beta); database version **10**, backup format **10**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- App **0.22.0** beta, **0.21.0** live; database version **10**, backup format **10**. What each version added: [CHANGELOG.md](CHANGELOG.md).
 - Direction (owner, 13 Oct): **screenshots first**: after each driving day, one screenshot per app (Bolt Daily,
   Uber's day). A missing day counts as 0; no estimates (the estimating code is kept but not called). PDF/CSV import
   still works from Import's "End of month" page (reworked in 0.18.0: two steps per app, monthly total + hours). Parsers in

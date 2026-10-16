@@ -895,23 +895,22 @@
     <string name="income_info">Your income after platform fees.</string>
     <string name="chip_vs_month">vs %1$s</string>
     <string name="chip_vs_last_week">vs last week</string>
-    <string name="target_short">Target: %1$s of %2$s</string>
+    <string name="target_short">Target %1$s</string>
     <plurals name="target_per_day_short">
         <item quantity="one">%1$s/day · %2$d day</item>
         <item quantity="other">%1$s/day · %2$d days</item>
     </plurals>
     <string name="target_ahead_short">+%1$s ahead</string>
     <string name="target_behind_short">−%1$s behind</string>
-    <string name="week_today_amount">Today %1$s</string>
     <string name="payout_cash_short">cash %1$s</string>
-    <string name="gross_short">Gross %1$s</string>
+    <string name="gross_label">Gross</string>
     <string name="widget_month_detail">In detail</string>
     <string name="detail_see_all">See all</string>
     <string name="details_title">Details</string>
     <string name="detail_activity">Hours · trips · distance</string>
     <string name="detail_split">By app</string>
     <string name="week_today_title">Today · %1$s</string>
-    <string name="week_today_missing">Screenshots not in yet</string>
-    <string name="week_today_in">Today is in</string>
+    <string name="week_today_in">Today’s in</string>
     <string name="week_today_off">Day off</string>
+    <string name="week_hidden">Back tomorrow. Customise removes it for good.</string>
 </resources>

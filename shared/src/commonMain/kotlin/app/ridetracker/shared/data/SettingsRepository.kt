@@ -108,6 +108,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     /** The month or year card on Home the driver swiped away, as "firstDay-lastDay" (epoch days); null when none. */
     val dismissedOffer: Flow<String?> = dataStore.data.map { it[DISMISSED_OFFER] }
 
+    /** The day (ISO date) Home's screenshots card was swiped away; it comes back the next day. Not in backups. */
+    val weekCardHiddenOn: Flow<String?> = dataStore.data.map { it[WEEK_CARD_HIDDEN_ON] }
+
+    suspend fun setWeekCardHiddenOn(day: String) {
+        dataStore.edit { it[WEEK_CARD_HIDDEN_ON] = day }
+    }
+
     suspend fun setDismissedOffer(key: String?) {
         dataStore.edit { if (key == null) it.remove(DISMISSED_OFFER) else it[DISMISSED_OFFER] = key }
     }
@@ -195,7 +202,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     suspend fun setHomeWidgets(widgets: List<HomeWidget>) {
         dataStore.edit {
             it[HOME_WIDGETS] = HomeWidget.format(widgets)
-            it[HOME_WIDGETS_SEEN] = HomeWidget.entries.joinToString(",") { w -> w.id }
+            it[HOME_WIDGETS_SEEN] = HomeWidget.SEEN.joinToString(",")
         }
     }
 
@@ -277,6 +284,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val IMPORT_REMINDER_ENABLED = booleanPreferencesKey("import_reminder_enabled")
         private val IMPORT_REMINDER_MINUTE = intPreferencesKey("import_reminder_minute")
         private val DISMISSED_OFFER = stringPreferencesKey("dismissed_offer")
+        private val WEEK_CARD_HIDDEN_ON = stringPreferencesKey("week_card_hidden_on")
         private val SUMMARY_SEEN_MONTH = longPreferencesKey("summary_seen_month")
         private val SUMMARY_NOTIFIED_WEEK = longPreferencesKey("summary_notified_week")
         private val SUMMARY_NOTIFIED_MONTH = longPreferencesKey("summary_notified_month")

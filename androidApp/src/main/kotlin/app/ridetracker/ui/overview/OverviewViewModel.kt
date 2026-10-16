@@ -409,6 +409,14 @@ class OverviewViewModel(
         viewModelScope.launch { settingsRepository.setDismissedOffer(offerKey(range)) }
     }
 
+    /** Home's screenshots card, swiped away for today (owner, 16 Oct 2026); it's back tomorrow. */
+    val weekHidden: StateFlow<Boolean> = settingsRepository.weekCardHiddenOn.map { it == today().toString() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun hideWeekCard() {
+        viewModelScope.launch { settingsRepository.setWeekCardHiddenOn(today().toString()) }
+    }
+
     private fun offerKey(range: DateRange) = "${range.start.toEpochDays()}-${range.endInclusive.toEpochDays()}"
 
     /** Home's week card: marks a day with nothing in as "Didn't drive", or unmarks it. */

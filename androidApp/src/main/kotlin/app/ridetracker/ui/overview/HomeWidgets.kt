@@ -86,6 +86,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import app.ridetracker.ui.common.currentLocale
@@ -155,7 +156,7 @@ fun WidgetBody(
 ) {
     val stats = state.stats ?: return
     when (widget) {
-        HomeWidget.BREAKDOWN -> MoneyBreakdown(stats, state.expenseMinor, state.tracksExpenses, money)
+        HomeWidget.BREAKDOWN -> MoneyBreakdown(stats, state.expenseMinor, state.tracksExpenses, whole)
         HomeWidget.METRICS -> Metrics(stats, state.platforms, money)
         HomeWidget.SPLIT -> PlatformSplit(state.totals, money)
         HomeWidget.ACTIVITY -> DailyActivity(stats.days, state.platforms, money, dates, onOpenDay, monthly = stats.monthly)
@@ -174,7 +175,7 @@ fun WidgetBody(
         HomeWidget.WEEK_SCREENSHOTS -> state.week?.let { week ->
             // Today's income once it's in, while the period shown includes today.
             val todayMinor = stats.days.firstOrNull { it.date == week.today }?.totalMinor?.takeIf { week.todayIn && it > 0 }
-            WeekCard(week, dates, todayMinor?.let { whole.format(it) }, onImport, onImportMonth, onToggleDayOff)
+            WeekCard(week, dates, todayMinor?.let { whole.format(it) }, onImport, onImportMonth, onToggleDayOff, onOpenDay)
         }
         HomeWidget.WEEK_PAYOUT -> state.payout?.let { WeekPayoutCard(it, state.platforms, state.fleet, whole) }
         HomeWidget.REAL_PER_HOUR -> state.realHourly?.let { RealHourlyCard(it, money) }
@@ -184,10 +185,10 @@ fun WidgetBody(
 }
 
 /**
- * Today and this week's screenshots in one row (owner, 16 Oct 2026): a dot per day, split into one slice per app,
- * each slice filled in its app's colour once that day is in. Days still to come are faint; a day off is a dash.
- * Above it, today: its button while it's missing, or its amount. Sits above money kept on Home: it's the day's job.
- * Tapping the card opens Import; tapping a past day without anything opens "Didn't drive" / Import.
+ * Today and this week's screenshots in one row (owner, 16 Oct 2026): each day's letter beside its dot, the dot split
+ * into one slice per app, each slice filled in its app's colour once that day is in. Days still to come are faint; a
+ * day off is a dash. Above it, today: its button while it's missing, or its amount. Sits above money kept on Home.
+ * Tapping a day that's in opens it; a past day with nothing in opens "Didn't drive" / Open day / Import.
  */
 @Composable
 private fun WeekCard(
@@ -197,29 +198,30 @@ private fun WeekCard(
     onImport: () -> Unit,
     onImportMonth: () -> Unit,
     onToggleDayOff: (LocalDate) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
 ) {
     val colours = week.apps.map { platformChartColor(it.colorArgb) }
-    OutlinedCard(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(R.string.week_today_title, dates.weekdayFull(week.today).lowercase(currentLocale())),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
+            // One row: today on the left; its button, amount or "Day off" on the right (owner, 16 Oct 2026: narrower).
+            Row(Modifier.heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.week_today_title, dates.weekdayFull(week.today).lowercase(currentLocale())),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                when {
+                    !week.todayIn -> FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
+                    else -> Text(
                         when {
                             week.today in week.daysOff -> stringResource(R.string.week_today_off)
-                            !week.todayIn -> stringResource(R.string.week_today_missing)
-                            today != null -> stringResource(R.string.week_today_amount, today)
+                            today != null -> today
                             else -> stringResource(R.string.week_today_in)
                         },
                         style = MaterialTheme.typography.titleMedium.tabular(),
+                        fontWeight = FontWeight.SemiBold,
                     )
-                }
-                if (!week.todayIn) {
-                    FilledTonalButton(onClick = onImport) { Text(stringResource(R.string.week_add_today)) }
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -231,13 +233,19 @@ private fun WeekCard(
                     val dayOffLabel = stringResource(R.string.day_off_label, dates.weekdayFull(day))
                     var menu by remember { mutableStateOf(false) }
                     Box {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.small)
-                                .then(if (!future && inDay.isEmpty()) Modifier.clickable { menu = true } else Modifier)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .then(
+                                    when {
+                                        future -> Modifier
+                                        inDay.isNotEmpty() -> Modifier.clickable(onClickLabel = stringResource(R.string.open_day)) { onOpenDay(day) }
+                                        else -> Modifier.clickable { menu = true }
+                                    },
+                                )
+                                .padding(horizontal = 2.dp, vertical = 6.dp)
                                 .semantics(mergeDescendants = true) {
                                     contentDescription = if (off) {
                                         dayOffLabel
@@ -249,11 +257,12 @@ private fun WeekCard(
                         ) {
                             Text(
                                 dates.weekdayNarrow(day),
+                                maxLines = 1,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
                                 if (off && inDay.isEmpty()) {
                                     // A day off: a dash, so it reads as done, not missing.
                                     Box(Modifier.width(12.dp).height(2.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
@@ -266,7 +275,7 @@ private fun WeekCard(
                                             isToday -> MaterialTheme.colorScheme.primary
                                             else -> MaterialTheme.colorScheme.outline
                                         },
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(16.dp),
                                     )
                                 }
                             }
@@ -283,21 +292,13 @@ private fun WeekCard(
                                 onClick = { menu = false; onToggleDayOff(day) },
                             )
                             DropdownMenuItem(
+                                text = { Text(stringResource(R.string.open_day)) },
+                                onClick = { menu = false; onOpenDay(day) },
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.import_title)) },
                                 onClick = { menu = false; onImport() },
                             )
-                        }
-                    }
-                }
-            }
-            // Which slice is which app, only when the dots are split.
-            if (week.apps.size > 1) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    week.apps.forEachIndexed { i, app ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            SplitDot(List(week.apps.size) { it == i }, colours, MaterialTheme.colorScheme.outlineVariant, Modifier.size(10.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(app.name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

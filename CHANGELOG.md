@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.0
+- **Screenshots card, narrower**: two rows. Today with its button, amount or "Day off" on the right, then the week with
+  each day's letter beside its dot (no legend: the halves are in the apps' colours). **Tap a day** that's in to open
+  it; a past day with nothing in offers Didn't drive, Open day and Import. **Swipe it away** and it's back tomorrow
+  (Customise removes it for good).
+- **Kept, fees and expenses as a ring**, right under money kept: the share you keep in the middle, the gross beside
+  it, then fees and expenses. A layout saved before moves it there once.
+- **One big number per screen**: money kept is the only headline on Home; the gross and the payout total are normal
+  figures, and the target line says just "Target 3,000 EUR" (the ring shows how far you are).
+
 ## 0.21.0
 - **A shorter Home** (owner, 16 Oct 2026: too many cards, too much text). Home now shows, in order:
   - **Today and this week's screenshots** at the top: "Today · Friday" with Add today (or today's amount once it's in),

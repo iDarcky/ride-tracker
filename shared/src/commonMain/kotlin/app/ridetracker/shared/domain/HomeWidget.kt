@@ -44,7 +44,7 @@ enum class HomeWidget(val id: String) {
          * What Home shows, in order (owner, 16 Oct 2026: a short Home). The other cards are on the Details page, and
          * Customise can bring any of them back.
          */
-        val DEFAULT: List<HomeWidget> = listOf(WEEK_SCREENSHOTS, WEEK_PAYOUT, MONTH_DETAIL)
+        val DEFAULT: List<HomeWidget> = listOf(WEEK_SCREENSHOTS, BREAKDOWN, WEEK_PAYOUT, MONTH_DETAIL)
 
         /** The full cards behind "See all", in order. */
         val DETAILS: List<HomeWidget> = listOf(
@@ -62,6 +62,12 @@ enum class HomeWidget(val id: String) {
 
         fun format(widgets: List<HomeWidget>): String = widgets.joinToString(",") { it.id }
 
+        /** Saved with the seen ids: the layout was saved after the ring card moved under money kept. */
+        const val RING_SEEN = "breakdown_ring"
+
+        /** What a saved layout records as seen: every card, plus the layout changes it already had. */
+        val SEEN: List<String> get() = entries.map { it.id } + RING_SEEN
+
         /**
          * A saved layout plus default cards the driver has never seen (added in a later version), each placed after the
          * default card before it, so new cards show up once instead of hiding until added. [seen] are ids the driver
@@ -71,6 +77,12 @@ enum class HomeWidget(val id: String) {
             val known = seen ?: (entries.takeWhile { it != COMPARISON }.map { it.id }.toSet())
             // A layout saved before the short Home switches to it once; saving a layout again keeps the driver's own.
             if (MONTH_DETAIL.id !in known) return DEFAULT
+            // The kept / fees / expenses ring moved under money kept (0.22.0): once, it goes there (added if missing).
+            if (RING_SEEN !in known) {
+                val rest = layout - BREAKDOWN
+                val at = if (rest.firstOrNull() == WEEK_SCREENSHOTS) 1 else 0
+                return rest.toMutableList().apply { add(at, BREAKDOWN) }
+            }
             val result = layout.toMutableList()
             DEFAULT.forEachIndexed { index, widget ->
                 if (widget in result || widget.id in known) return@forEachIndexed

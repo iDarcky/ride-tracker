@@ -34,7 +34,24 @@ class HomeWidgetTest {
         val before = HomeWidget.entries.map { it.id }.toSet() - HomeWidget.MONTH_DETAIL.id
         assertEquals(HomeWidget.DEFAULT, HomeWidget.withNew(custom, seen = before))
         // Once the driver saves a layout with every card seen, it stays theirs.
-        assertEquals(custom, HomeWidget.withNew(custom, seen = HomeWidget.entries.map { it.id }.toSet()))
+        assertEquals(custom, HomeWidget.withNew(custom, seen = HomeWidget.SEEN.toSet()))
+    }
+
+    @Test
+    fun theRingShowsUpOnceUnderMoneyKept() {
+        val saved = listOf(HomeWidget.WEEK_SCREENSHOTS, HomeWidget.WEEK_PAYOUT, HomeWidget.MONTH_DETAIL)
+        val before = HomeWidget.entries.map { it.id }.toSet()
+        assertEquals(
+            listOf(HomeWidget.WEEK_SCREENSHOTS, HomeWidget.BREAKDOWN, HomeWidget.WEEK_PAYOUT, HomeWidget.MONTH_DETAIL),
+            HomeWidget.withNew(saved, seen = before),
+        )
+        // Already there further down: it moves under money kept.
+        assertEquals(
+            listOf(HomeWidget.WEEK_SCREENSHOTS, HomeWidget.BREAKDOWN, HomeWidget.WEEK_PAYOUT, HomeWidget.MONTH_DETAIL),
+            HomeWidget.withNew(saved + HomeWidget.BREAKDOWN, seen = before),
+        )
+        // Removed after that, it stays removed.
+        assertEquals(saved, HomeWidget.withNew(saved, seen = HomeWidget.SEEN.toSet()))
     }
 
     @Test

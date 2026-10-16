@@ -919,7 +919,7 @@
     <string name="income_info">Venitul după comisioanele platformelor.</string>
     <string name="chip_vs_month">față de %1$s</string>
     <string name="chip_vs_last_week">față de săpt. trecută</string>
-    <string name="target_short">Țintă: %1$s din %2$s</string>
+    <string name="target_short">Țintă %1$s</string>
     <plurals name="target_per_day_short">
         <item quantity="one">%1$s/zi · %2$d zi</item>
         <item quantity="few">%1$s/zi · %2$d zile</item>
@@ -927,16 +927,15 @@
     </plurals>
     <string name="target_ahead_short">+%1$s peste ritm</string>
     <string name="target_behind_short">−%1$s sub ritm</string>
-    <string name="week_today_amount">Azi %1$s</string>
     <string name="payout_cash_short">numerar %1$s</string>
-    <string name="gross_short">Brut %1$s</string>
+    <string name="gross_label">Brut</string>
     <string name="widget_month_detail">În detaliu</string>
     <string name="detail_see_all">Vezi tot</string>
     <string name="details_title">Detalii</string>
     <string name="detail_activity">Ore · curse · distanță</string>
     <string name="detail_split">Pe aplicații</string>
     <string name="week_today_title">Azi · %1$s</string>
-    <string name="week_today_missing">Capturile de azi lipsesc</string>
-    <string name="week_today_in">Ziua de azi e adăugată</string>
+    <string name="week_today_in">Adăugată</string>
     <string name="week_today_off">Zi liberă</string>
+    <string name="week_hidden">Revine mâine. Din Personalizează Acasă îl scoți de tot.</string>
 </resources>

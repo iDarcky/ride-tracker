@@ -173,12 +173,21 @@ fun OverviewScreen(
     val week by viewModel.week.collectAsStateWithLifecycle()
     val monthEnd by viewModel.monthEnd.collectAsStateWithLifecycle()
     val payout by viewModel.payout.collectAsStateWithLifecycle()
+    val weekHidden by viewModel.weekHidden.collectAsStateWithLifecycle()
+    val weekHiddenText = stringResource(R.string.week_hidden)
     val dismissedText = stringResource(R.string.offer_dismissed)
     val state = baseState.copy(target = target, comparisonCard = comparisonCard, week = week, payout = payout)
     val attention by viewModel.attention.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val months by viewModel.months.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    // The screenshots card just swiped away: say when it's back and how to remove it for good.
+    var weekJustHidden by remember { mutableStateOf(false) }
+    LaunchedEffect(weekJustHidden) {
+        if (!weekJustHidden) return@LaunchedEffect
+        snackbar.showSnackbar(weekHiddenText, duration = SnackbarDuration.Short)
+        weekJustHidden = false
+    }
     val scope = rememberCoroutineScope()
     val addedText = stringResource(R.string.expense_added)
     // The card just swiped away: say where it went (Menu → Summaries). Shown here, not in the card, which has
@@ -412,10 +421,21 @@ fun OverviewScreen(
                 }
             }
             // Today's job first: this week's screenshots sit above money kept (still movable and removable in Customise).
-            val pinnedWeek = !editing && HomeWidget.WEEK_SCREENSHOTS in state.widgets && HomeWidget.WEEK_SCREENSHOTS.hasContent(state, attention)
-            if (pinnedWeek) {
-                item(key = "week") {
-                    Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) {
+            val weekOnHome = HomeWidget.WEEK_SCREENSHOTS in state.widgets
+            val pinnedWeek = !editing && weekOnHome && HomeWidget.WEEK_SCREENSHOTS.hasContent(state, attention)
+            if (pinnedWeek && !weekHidden) {
+                // Keyed by the day: swiped away, it's back tomorrow (and must not come back already swiped).
+                item(key = "week-${state.today}") {
+                    val dismiss = rememberSwipeToDismissBoxState()
+                    SwipeToDismissBox(
+                        state = dismiss,
+                        backgroundContent = {},
+                        onDismiss = {
+                            viewModel.hideWeekCard()
+                            weekJustHidden = true
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp),
+                    ) {
                         WidgetBody(
                             HomeWidget.WEEK_SCREENSHOTS, state, attention, money, dates, percent,
                             onOpenDay = viewModel::openDay,
@@ -647,12 +667,13 @@ private fun TotalCard(
     }
 }
 
-/** The target in two short lines: "Target: 1,810 of 3,000", then per day and days left (or reached / missed) and the pace. */
+/** The target in two short lines: "Target 3,000 EUR", then per day and days left (or reached / missed) and the pace. */
 @Composable
 private fun TargetLines(p: TargetProgress, money: MoneyFormat) {
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            stringResource(R.string.target_short, money.format(p.achievedMinor), money.format(p.targetMinor)),
+            // What's done is the ring's %; the amount would repeat a number on the screen.
+            stringResource(R.string.target_short, money.format(p.targetMinor)),
             style = MaterialTheme.typography.bodyLarge.tabular(),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {

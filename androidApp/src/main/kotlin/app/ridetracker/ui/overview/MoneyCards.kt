@@ -79,9 +79,10 @@ fun WeekPayoutCard(
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.payout_total), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    // Same size as the rows: money kept is the screen's one big number.
                     Text(
                         money.format(payout.toAccountMinor),
-                        style = MaterialTheme.typography.titleLarge.tabular(),
+                        style = MaterialTheme.typography.titleMedium.tabular(),
                         fontWeight = FontWeight.SemiBold,
                     )
                 }

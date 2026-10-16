@@ -7,8 +7,9 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.foundation.layout.FlowRow
 import app.ridetracker.ui.common.isLargeText
+import androidx.compose.foundation.layout.fillMaxSize
+import app.ridetracker.ui.theme.positiveColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -123,91 +124,86 @@ fun platformChartColor(argb: Long): Color {
     return if (abs(color.luminance() - surface.luminance()) < 0.2f) MaterialTheme.colorScheme.onSurface else color
 }
 
-/** Smallest share a segment gets on screen, so its label below always fits (the % shown stays exact). */
-private const val MIN_SEGMENT_SHARE = 0.34f
-
 /**
- * Gross split into kept, platform fees and expenses: one bar, and each segment's label sits directly under
- * it (tick in the segment's colour), so there is no separate legend to match up.
+ * Gross split into kept, platform fees and expenses (owner, 16 Oct 2026: option 3a): a ring with the share kept in the
+ * middle, and beside it the gross, then fees and expenses. The amount kept is in the card above, so it isn't repeated.
+ * What the gross is made of is behind ⓘ.
  */
 @Composable
 fun MoneyBreakdown(stats: HomeStats, expenseMinor: Long, tracksExpenses: Boolean, money: MoneyFormat, modifier: Modifier = Modifier) {
     val fees = -stats.feesMinor
     val kept = stats.grossMinor - fees - expenseMinor
     val percent = NumberFormat.getPercentInstance(currentLocale())
-    data class Part(val label: String, val amount: Long, val shown: Long, val color: Color)
-    val parts = buildList {
-        add(Part(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), kept, kept, keptColor()))
-        if (fees > 0) add(Part(stringResource(R.string.fees), fees, -fees, feesColor()))
-        if (expenseMinor > 0) add(Part(stringResource(R.string.nav_expenses), expenseMinor, -expenseMinor, expensesColor()))
+    val gross = buildList {
+        add(stringResource(R.string.gross_fares, money.format(stats.faresMinor)))
+        if (stats.bonusesAndTipsMinor != 0L) add(stringResource(R.string.gross_bonuses, money.format(stats.bonusesAndTipsMinor)))
+        if (stats.otherIncomeMinor != 0L) add(stringResource(R.string.gross_other, money.format(stats.otherIncomeMinor)))
     }
-    Column(modifier) {
-        if (stats.grossMinor > 0 && kept >= 0) {
-            val raw = parts.map { it.amount.toFloat() / stats.grossMinor }
-            val weights = raw.map { if (it > 0f) maxOf(it, MIN_SEGMENT_SHARE) else 0f }
-            val drawn = parts.indices.filter { weights[it] > 0f }
-            Row(Modifier.fillMaxWidth().height(10.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                drawn.forEach { i ->
-                    Box(Modifier.weight(weights[i]).height(10.dp).clip(RoundedCornerShape(5.dp)).background(parts[i].color))
-                }
-            }
-            if (isLargeText()) {
-                // Each label at its own width, wrapping, instead of squeezed under its (maybe thin) segment.
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+    val info = stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")) +
+        if (stats.feesKnownForAll) "" else "\n" + stringResource(R.string.fees_partial)
+    val keptColor = keptColor()
+    val feesColor = feesColor()
+    val expensesColor = expensesColor()
+    val ring = stats.grossMinor > 0 && kept >= 0
+    OutlinedCard(modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (ring) {
+                val keptLabel = stringResource(if (tracksExpenses) R.string.kept else R.string.earned)
+                val keptShare = percent.format(kept.toDouble() / stats.grossMinor)
+                Box(
+                    Modifier.size(104.dp).semantics(mergeDescendants = true) { contentDescription = "$keptLabel $keptShare" },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    drawn.forEach { i ->
-                        SegmentLabel(parts[i].label + " · " + percent.format(raw[i]), money.format(parts[i].shown), parts[i].color)
+                    val parts = listOf(kept to keptColor, fees to feesColor, expenseMinor to expensesColor).filter { it.first > 0 }
+                    Canvas(Modifier.fillMaxSize()) {
+                        val stroke = 12.dp.toPx()
+                        val inset = stroke / 2
+                        val arcSize = Size(size.width - stroke, size.height - stroke)
+                        val gap = if (parts.size > 1) 2f else 0f
+                        var start = -90f
+                        parts.forEach { (amount, color) ->
+                            val sweep = 360f * amount / stats.grossMinor
+                            drawArc(color, start + gap / 2, (sweep - gap).coerceAtLeast(0.5f), useCenter = false, topLeft = Offset(inset, inset), size = arcSize, style = Stroke(stroke))
+                            start += sweep
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(keptShare, style = MaterialTheme.typography.titleLarge.tabular(), fontWeight = FontWeight.SemiBold, color = positiveColor())
+                        Text(keptLabel.lowercase(currentLocale()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-            } else {
-                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    drawn.forEach { i ->
-                        SegmentLabel(
-                            label = parts[i].label + " · " + percent.format(raw[i]),
-                            value = money.format(parts[i].shown),
-                            color = parts[i].color,
-                            modifier = Modifier.weight(weights[i]),
-                        )
-                    }
+                Spacer(Modifier.width(20.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.gross_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    InfoButton(info)
                 }
+                // One big number per screen (owner, 16 Oct 2026): money kept above; the gross is a figure, not a headline.
+                Text(
+                    money.format(stats.grossMinor),
+                    style = MaterialTheme.typography.titleMedium.tabular(),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.height(4.dp))
+                // Without the ring (spent more than earned), kept gets its own line too.
+                if (!ring) PartRow(stringResource(if (tracksExpenses) R.string.kept else R.string.earned), money.format(kept), keptColor)
+                if (fees > 0) PartRow(stringResource(R.string.fees), money.format(fees), feesColor)
+                if (expenseMinor > 0) PartRow(stringResource(R.string.nav_expenses), money.format(expenseMinor), expensesColor)
             }
-        } else {
-            // Spent more than earned: no bar, just the figures.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                parts.forEach { SegmentLabel(it.label, money.format(it.shown), it.color, Modifier.weight(1f)) }
-            }
-        }
-        // Just the gross; what it's made of (and whether fees are known everywhere) is behind ⓘ.
-        val gross = buildList {
-            add(stringResource(R.string.gross_fares, money.format(stats.faresMinor)))
-            if (stats.bonusesAndTipsMinor != 0L) add(stringResource(R.string.gross_bonuses, money.format(stats.bonusesAndTipsMinor)))
-            if (stats.otherIncomeMinor != 0L) add(stringResource(R.string.gross_other, money.format(stats.otherIncomeMinor)))
-        }
-        val info = stringResource(R.string.of_gross, money.format(stats.grossMinor), gross.joinToString(" + ")) +
-            if (stats.feesKnownForAll) "" else "\n" + stringResource(R.string.fees_partial)
-        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.gross_short, money.format(stats.grossMinor)),
-                style = MaterialTheme.typography.bodySmall.tabular(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            InfoButton(info)
         }
     }
 }
 
-/** A coloured tick on the left ties the label to the segment above it. */
+/** "● Fees      346 EUR": a dot in the part's colour, its name and amount. */
 @Composable
-private fun SegmentLabel(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Row(modifier.height(IntrinsicSize.Min)) {
-        Box(Modifier.width(2.dp).fillMaxHeight().background(color))
-        Column(Modifier.padding(start = 8.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            Text(value, style = MaterialTheme.typography.titleSmall.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+private fun PartRow(label: String, value: String, color: Color) {
+    Row(Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(8.dp))
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleSmall.tabular())
     }
 }
 
