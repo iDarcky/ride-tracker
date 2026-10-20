@@ -59,6 +59,46 @@ class UberScreensTest {
     }
 
     @Test
+    fun aWeekWithOneBarIsThatDay() {
+        assertEquals(19, UberEarningsParser.dayShown(null, listOf(19)))
+        assertEquals(21, UberEarningsParser.dayShown(21, listOf(19, 21))) // a tapped day wins
+        assertNull(UberEarningsParser.dayShown(null, listOf(19, 20))) // two days: the week
+        assertNull(UberEarningsParser.dayShown(null, emptyList()))
+    }
+
+    @Test
+    fun readsAMondayWithNothingTapped() {
+        // The layout of a Monday screenshot: one bar, its amount over the chart, no day tapped.
+        val rows = listOf(
+            "Oct 19 - Oct 26 v",
+            "RON 180.40",
+            "RON 180.40",
+            "19 20 21 22 23 24 25",
+            "Mon Tue Wed Thu Fri Sat Sun",
+            "Stats",
+            "Online Trips",
+            "4 h 12 m 11",
+            "Points",
+            "20",
+            "How we calculate stats",
+            "Breakdown",
+            "Net Fare",
+            "RON 172.40",
+            "Tip",
+            "RON 8.00",
+            "Total Earnings RON 180.40",
+        )
+        val shown = UberEarningsParser.dayShown(null, listOf(19))
+        val day = assertNotNull(UberEarningsParser.parse(rows, LocalDate(2026, 10, 19), shown)?.asDay())
+        assertEquals(LocalDate(2026, 10, 19), day.date)
+        assertEquals(18040, day.earningsMinor)
+        val e = assertNotNull(UberEarningsParser.parse(rows, LocalDate(2026, 10, 19), shown))
+        assertEquals(4 * 60 + 12, e.onlineMinutes)
+        assertEquals(11, e.trips)
+        assertTrue(e.addsUp)
+    }
+
+    @Test
     fun readsTripsOnTheirOwnRow() {
         val rows = earningsRows.flatMap { if (it == "3 h 05 m 9") listOf("Trips", "3 h 05 m", "9") else if (it == "Online Trips") listOf("Online") else listOf(it) }
         val e = assertNotNull(UberEarningsParser.parse(rows, taken, null))
@@ -196,7 +236,7 @@ class UberScreensTest {
         assertEquals(25040, e.earningsMinor)
         assertEquals(6 * 60 + 12, e.onlineMinutes)
         assertEquals(17, e.trips)
-        assertEquals(listOf(IncomeLineKind.FARE to 24440L, IncomeLineKind.BONUS to 600L), e.lines.map { it.kind to it.amountMinor })
+        assertEquals(listOf(IncomeLineKind.FARE to 24440L, IncomeLineKind.TIP to 600L), e.lines.map { it.kind to it.amountMinor })
         assertTrue(e.addsUp)
     }
 }

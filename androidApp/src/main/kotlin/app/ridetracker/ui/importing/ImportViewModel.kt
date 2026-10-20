@@ -237,6 +237,7 @@ class ImportViewModel(
                     )
                     is ReadReport.UberWeek -> importRepository.saveSummary(
                         uber, ImportKind.UBER_WEEKLY_SCREENSHOT, r.fileHash, r.summary, now, onlineMinutes = r.onlineMinutes,
+                        tripCount = r.trips,
                     )
                     is ReadReport.UberPaymentsScreen -> r.week.asSummary()?.let {
                         importRepository.saveSummary(uber, ImportKind.UBER_PAYMENTS_SCREENSHOT, r.fileHash, it, now)

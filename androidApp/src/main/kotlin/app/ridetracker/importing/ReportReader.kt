@@ -77,8 +77,8 @@ sealed interface ReadReport {
     /** Uber's Earnings screen with a day tapped: that day, its hours and trips. */
     data class UberDay(override val fileHash: String, val day: ParsedDay, val onlineMinutes: Int?, val trips: Int?) : ReadReport
 
-    /** Uber's Earnings screen with no day tapped: the week's total and hours. */
-    data class UberWeek(override val fileHash: String, val summary: ParsedSummary, val onlineMinutes: Int?, val addsUp: Boolean) : ReadReport
+    /** Uber's Earnings screen with no day tapped: the week's total, hours and trips. */
+    data class UberWeek(override val fileHash: String, val summary: ParsedSummary, val onlineMinutes: Int?, val trips: Int?, val addsUp: Boolean) : ReadReport
 
     /**
      * Uber's Payments screen for a week (with Uber's fee). [joined] holds the hashes of other screenshots joined
@@ -138,12 +138,12 @@ class ReportReader(private val context: Context) {
             return UberPaymentsParser.parse(rows, reference)?.let { ReadReport.UberPaymentsScreen(hash, it) } ?: ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
         }
         if (UberEarningsParser.recognises(rows)) {
-            val earnings = UberEarningsParser.parse(rows, reference, bitmap?.let { selectedUberDay(text, it) })
+            val earnings = UberEarningsParser.parse(rows, reference, bitmap?.let { uberDayShown(text, it) })
             val day = earnings?.asDay()
             return when {
                 earnings == null -> ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
                 day != null -> ReadReport.UberDay(hash, day, earnings.onlineMinutes, earnings.trips)
-                else -> ReadReport.UberWeek(hash, earnings.asSummary(), earnings.onlineMinutes, earnings.addsUp)
+                else -> ReadReport.UberWeek(hash, earnings.asSummary(), earnings.onlineMinutes, earnings.trips, earnings.addsUp)
             }
         }
         return when (val result = BoltDailyParser.parse(rows, reference)) {
@@ -163,9 +163,10 @@ class ReportReader(private val context: Context) {
 
     /**
      * On Uber's Earnings screen a tapped day's label (its date and weekday under the bars) turns blue; with none
-     * tapped they're all grey and the screen shows the week. Returns the tapped day of the month, or null.
+     * tapped they're all grey and the screen shows the week. A week with a bar on one day only is that day too
+     * ([UberEarningsParser.dayShown]). Returns the day of the month shown, or null for the week.
      */
-    private fun selectedUberDay(text: Text, bitmap: Bitmap): Int? {
+    private fun uberDayShown(text: Text, bitmap: Bitmap): Int? {
         val words = text.textBlocks.flatMap { it.lines }.flatMap { it.elements }.filter { it.boundingBox != null }
         val weekdays = words.filter { ReportText.plain(it.text).trimEnd('.').take(3) in WEEKDAYS }
         // The row of weekday labels: the one with most of them on the same line.
@@ -173,6 +174,7 @@ class ReportReader(private val context: Context) {
             val box = w.boundingBox!!
             weekdays.filter { kotlin.math.abs(it.boundingBox!!.centerY() - box.centerY()) < box.height() / 2 }
         }.maxByOrNull { it.size }?.takeIf { it.size >= 5 } ?: return null
+        // Each column: its date, how blue its label is, and whether there's a bar above it.
         val columns = row.mapNotNull { weekday ->
             val box = weekday.boundingBox!!
             // The date sits just above its weekday, in the same column.
@@ -181,11 +183,15 @@ class ReportReader(private val context: Context) {
                 w.text.trim().toIntOrNull() in 1..31 && b.bottom <= box.top + box.height() / 2 &&
                     box.top - b.bottom < box.height() * 2 && b.centerX() in box.left - box.width()..box.right + box.width()
             }.minByOrNull { kotlin.math.abs(it.boundingBox!!.centerX() - box.centerX()) } ?: return@mapNotNull null
-            number.text.trim().toInt() to maxOf(blueShare(bitmap, box), blueShare(bitmap, number.boundingBox!!))
+            val n = number.boundingBox!!
+            // The bars stand on a line just above the dates, about ten label heights tall; a strip up the column's middle.
+            val strip = Rect(n.centerX() - n.width() / 4, n.top - n.height() * 12, n.centerX() + n.width() / 4 + 1, n.top - n.height() / 3)
+            Triple(number.text.trim().toInt(), maxOf(blueShare(bitmap, box), blueShare(bitmap, n)), blueShare(bitmap, strip) > 0.01f)
         }
-        val best = columns.maxByOrNull { it.second } ?: return null
+        val best = columns.maxByOrNull { it.second }
         val others = columns.filter { it !== best }.maxOfOrNull { it.second } ?: 0f
-        return best.first.takeIf { best.second > 0.04f && best.second > others * 3 }
+        val selected = best?.takeIf { it.second > 0.04f && it.second > others * 3 }?.first
+        return UberEarningsParser.dayShown(selected, columns.filter { it.third }.map { it.first })
     }
 
     /** Share of a box's pixels that are Uber's blue (selected text), not grey or black. */

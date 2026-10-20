@@ -129,7 +129,14 @@ object UberEarningsParser {
         return hasTotal && hasStats
     }
 
-    /** [selectedDayOfMonth]: the day whose label is highlighted, or null when none is (the week). */
+    /**
+     * The day the screen shows: the tapped one, or else the only day with a bar. With nothing tapped Uber shows the
+     * week, but a week with one driving day so far (a Monday screenshot) is that day: same money, hours and trips.
+     */
+    fun dayShown(selectedDayOfMonth: Int?, daysWithBars: Collection<Int>): Int? =
+        selectedDayOfMonth ?: daysWithBars.distinct().singleOrNull()
+
+    /** [selectedDayOfMonth]: the day shown ([dayShown]), or null for the week. */
     fun parse(rows: List<String>, reference: LocalDate, selectedDayOfMonth: Int?): UberEarnings? {
         if (!recognises(rows)) return null
         val week = rows.firstNotNullOfOrNull { UberWeekLabel.parse(it, reference) } ?: return null
@@ -183,9 +190,10 @@ object UberEarningsParser {
         val l = ReportText.plain(label)
         return when {
             "fare" in l || "tarif" in l -> IncomeLineKind.FARE
-            "tip" in l || "bacsis" in l -> IncomeLineKind.TIP
+            // Romanian Uber calls the tip „Recompensă” (same screen in both languages, owner, 20 Oct 2026).
+            "tip" in l || "bacsis" in l || "recompens" in l -> IncomeLineKind.TIP
             "quest" in l || "boost" in l || "promotion" in l || "promotie" in l || "incentive" in l || "surge" in l ||
-                "recompens" in l || "reward" in l -> IncomeLineKind.BONUS
+                "reward" in l -> IncomeLineKind.BONUS
             "cancel" in l || "anulare" in l -> IncomeLineKind.CANCELLATION_FEE
             "toll" in l -> IncomeLineKind.TOLL
             "airport" in l || "aeroport" in l -> IncomeLineKind.AIRPORT_FEE

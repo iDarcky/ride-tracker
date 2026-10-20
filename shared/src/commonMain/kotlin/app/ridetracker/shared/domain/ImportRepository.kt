@@ -317,7 +317,7 @@ class ImportRepository(private val database: AppDatabase) {
     }
 
     /** Online time for a period, as its own total; it replaces an older one for the same period. */
-    private suspend fun insertOnlineTime(platformId: Long, batchId: Long, time: OnlineTime, distanceMeters: Long? = null) {
+    private suspend fun insertOnlineTime(platformId: Long, batchId: Long, time: OnlineTime, distanceMeters: Long? = null, tripCount: Int? = null) {
         val start = time.range.start.toEpochDays()
         val end = time.range.endInclusive.toEpochDays()
         imports.deleteOnlineTime(platformId, start, end)
@@ -325,7 +325,7 @@ class ImportRepository(private val database: AppDatabase) {
             listOf(
                 PeriodSummaryEntity(
                     platformId = platformId, importBatchId = batchId, periodStart = start, periodEnd = end, onlineMinutes = time.minutes,
-                    distanceMeters = distanceMeters,
+                    distanceMeters = distanceMeters, tripCount = tripCount,
                 ),
             ),
         )
@@ -338,8 +338,9 @@ class ImportRepository(private val database: AppDatabase) {
         fileHash: String,
         summary: ParsedSummary,
         nowEpochMillis: Long,
-        /** Hours online for the same period, when the screenshot shows them (Uber's Earnings screen, a week). */
+        /** Hours online and trips for the same period, when the screenshot shows them (Uber's Earnings screen, a week). */
         onlineMinutes: Int? = null,
+        tripCount: Int? = null,
     ): ImportOutcome = transaction {
         if (imports.hasFile(fileHash)) return@transaction ImportOutcome.AlreadyImported
         val start = summary.periodStart.toEpochDays()
@@ -361,7 +362,7 @@ class ImportRepository(private val database: AppDatabase) {
             ),
         )
         onlineMinutes?.takeIf { it > 0 }?.let {
-            insertOnlineTime(platformId, batchId, OnlineTime(DateRange(summary.periodStart, summary.periodEnd), it))
+            insertOnlineTime(platformId, batchId, OnlineTime(DateRange(summary.periodStart, summary.periodEnd), it), tripCount = tripCount)
         }
         ImportOutcome.Saved(batchId, saved = 1, skipped = 0)
     }

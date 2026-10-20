@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.2
+- **A Monday's Uber screenshot is that day**: with no day tapped Uber shows the week, but when only one day has a bar
+  (so far), it's imported as that day, with its money, online time and trips.
+- **Trips from Uber's week screenshot**: saved with its hours and counted on Home when that week's days have no trip
+  counts of their own.
+- **Romanian Uber's „Recompensă” is the tip** (it was read as a bonus).
+
 ## 0.22.1
 - **The ring's green part has its line**: "Kept" with its amount, above fees and expenses, so every colour on the ring
   is named.

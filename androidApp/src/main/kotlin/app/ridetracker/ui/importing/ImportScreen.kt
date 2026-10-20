@@ -842,7 +842,7 @@ private fun Details(
             HorizontalDivider()
             s.tipsMinor?.let { Figure(stringResource(R.string.line_tip), money.format(it)) }
             s.bonusMinor?.let { Figure(stringResource(R.string.line_bonus), money.format(it)) }
-            UberStats(report.onlineMinutes, trips = null)
+            UberStats(report.onlineMinutes, report.trips)
             Note(Icons.Outlined.Info, stringResource(R.string.import_uber_week_note))
         }
         is ReadReport.UberPaymentsScreen -> {

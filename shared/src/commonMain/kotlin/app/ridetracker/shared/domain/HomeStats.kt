@@ -134,10 +134,9 @@ object HomeStatsCalculator {
         val onlineTotals = summaries.filter { (it.onlineMinutes ?: 0) > 0 && it.earningsMinor == null && it.grossFareMinor == null }
         val start = range.start.toEpochDays()
         val end = range.endInclusive.toEpochDays()
-        for ((platformId, own) in onlineTotals.groupBy { it.platformId }) {
-            if (platformId in hourPlatforms) continue
-            // Totals that start inside the period (a week still in progress counts), longest first (month, week,
-            // day), never overlapping; the newest import wins for the same span.
+        // Totals that start inside the period (a week still in progress counts), longest first (month, week,
+        // day), never overlapping; the newest import wins for the same span.
+        fun pick(own: List<PeriodSummaryEntity>): List<PeriodSummaryEntity> {
             val picked = mutableListOf<PeriodSummaryEntity>()
             own.filter { it.periodStart in start..end }
                 .groupBy { it.periodStart to it.periodEnd }.map { (_, list) -> list.maxBy { it.id } }
@@ -145,7 +144,11 @@ object HomeStatsCalculator {
                 .forEach { candidate ->
                     if (picked.none { candidate.periodStart <= it.periodEnd && it.periodStart <= candidate.periodEnd }) picked += candidate
                 }
-            if (picked.isEmpty()) continue
+            return picked
+        }
+        val ownByPlatform = onlineTotals.groupBy { it.platformId }.mapValues { (_, own) -> pick(own) }.filterValues { it.isNotEmpty() }
+        for ((platformId, picked) in ownByPlatform) {
+            if (platformId in hourPlatforms) continue
             minutes += picked.sumOf { it.onlineMinutes ?: 0 }
             timedIncome += entries.filter { e -> e.platformId == platformId && picked.any { e.date in it.periodStart..it.periodEnd } }
                 .sumOf { it.amountMinor }
@@ -167,6 +170,10 @@ object HomeStatsCalculator {
 
         val importedTripPlatformDays = trips.map { it.platformId to it.date }.toSet()
         val reportedTrips = entries.filter { (it.platformId to it.date) !in importedTripPlatformDays && (it.tripCount ?: 0) > 0 }
+        // Platforms with no trips on their days: the trip count shown with their hours (Uber's Earnings screen, a week).
+        val dayTripPlatforms = (trips.map { it.platformId } + reportedTrips.map { it.platformId }).toSet()
+        val ownTrips = ownByPlatform.filterKeys { it !in dayTripPlatforms }
+            .mapValues { (_, picked) -> picked.sumOf { it.tripCount ?: 0 } }.filterValues { it > 0 }
 
         val byDay = entries.groupBy { it.date }
         val tripsByDay = trips.groupBy { it.date }
@@ -215,7 +222,7 @@ object HomeStatsCalculator {
             faresMinor = fares,
             bonusesAndTipsMinor = bonuses,
             otherIncomeMinor = gross - fares - bonuses,
-            tripCount = trips.size + reportedTrips.sumOf { it.tripCount ?: 0 },
+            tripCount = trips.size + reportedTrips.sumOf { it.tripCount ?: 0 } + ownTrips.values.sum(),
             averageFareMinor = if (trips.isEmpty()) null else trips.sumOf { it.fareMinor } / trips.size,
             onlineMinutes = minutes.takeIf { it > 0 },
             perHourMinor = if (minutes > 0 && timedIncome > 0) (timedIncome * 60 + minutes / 2) / minutes else null,
@@ -223,7 +230,7 @@ object HomeStatsCalculator {
             distanceMeters = meters.takeIf { it > 0 },
             perKmMinor = if (meters > 0 && kmIncome > 0) (kmIncome * 1000 + meters / 2) / meters else null,
             incomePlatformIds = entries.filter { it.amountMinor != 0L }.map { it.platformId }.toSet(),
-            tripPlatformIds = (trips.map { it.platformId } + reportedTrips.map { it.platformId }).toSet(),
+            tripPlatformIds = dayTripPlatforms + ownTrips.keys,
             hourPlatformIds = hourPlatforms,
             kmPlatformIds = metersByPlatform.keys,
             days = days,

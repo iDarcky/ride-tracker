@@ -172,6 +172,21 @@ class HomeStatsTest {
     }
 
     @Test
+    fun tripsFromAWeeksOwnTotalOnlyWithoutDayTrips() {
+        // Uber's Earnings screen for a week: hours and trips saved together.
+        val own = app.ridetracker.shared.data.PeriodSummaryEntity(
+            platformId = 1, importBatchId = 1, periodStart = week.start.toEpochDays(), periodEnd = week.endInclusive.toEpochDays(),
+            onlineMinutes = 300, tripCount = 12,
+        )
+        val s = HomeStatsCalculator.compute(week, listOf(entry(1, 1, 0, 100)), emptyList(), listOf(trip(1, 600, 500)), listOf(own))
+        assertEquals(13, s.tripCount) // the week's 12 for platform 1 + 1 imported for platform 2
+        assertEquals(setOf(1L, 2L), s.tripPlatformIds)
+        // Days that have their own trip count win: the week's is not added on top.
+        val withDays = HomeStatsCalculator.compute(week, listOf(entry(1, 1, 0, 100).copy(tripCount = 5)), emptyList(), emptyList(), listOf(own))
+        assertEquals(5, withDays.tripCount)
+    }
+
+    @Test
     fun longRangesChartMonths() {
         val range = DateRange(LocalDate(2026, 7, 20), LocalDate(2026, 10, 9)) // 82 days
         val entries = listOf(
