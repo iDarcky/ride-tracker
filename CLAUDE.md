@@ -11,7 +11,7 @@ Ride-sharing income and expenses tracker for drivers (Romania first). Product sc
 
 ## Where we are (15 October 2026)
 - Name: **Ridely** (owner 15 Oct, "for now"; ring icon). Code, package and repo keep `ridetracker`.
-- App **0.22.2** (live and beta); database version **10**, backup format **10**. What each version added: [CHANGELOG.md](CHANGELOG.md).
+- App **0.22.3** beta (live on 0.22.2); database version **10**, backup format **10**. What each version added: [CHANGELOG.md](CHANGELOG.md).
 - Direction (owner, 13 Oct): **screenshots first**: after each driving day, one screenshot per app (Bolt Daily,
   Uber's day). A missing day counts as 0; no estimates (the estimating code is kept but not called). PDF/CSV import
   still works from Import's "End of month" page (reworked in 0.18.0: two steps per app, monthly total + hours). Parsers in
@@ -32,7 +32,7 @@ Two apps (owner, 9 Oct 2026): **Ride Tracker** (`app.ridetracker`, the owner's l
 to Beta first; the live app gets the same version only when the owner says so.
 1. Bump `VERSION_NAME`, add a CHANGELOG entry (and update the brief's "Next up" if scope moved).
 2. Tests, `lintBeta`, `assembleBeta`, `adb install -r` the beta APK on the emulator (test there, not in the live app),
-   check on screen. Copy to `~/Desktop/Ride Tracker APKs/RideTracker-<version>-beta.apk`.
+   check on screen. Copy to `~/Desktop/Projects/Ridely/Ride Tracker APKs/RideTracker-<version>-beta.apk`.
 3. Schema bump ⇒ upgrade test: install the previous version with data, then the new one (both apps).
 4. Commit (noreply author) and push to `main`; CI must pass (wait for the run of *this* commit).
 5. Publish Beta: `gh release create v<version>-beta "RideTracker-<version>-beta.apk" --prerelease --target main

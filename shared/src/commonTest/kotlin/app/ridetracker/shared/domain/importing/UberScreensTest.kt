@@ -60,10 +60,35 @@ class UberScreensTest {
 
     @Test
     fun aWeekWithOneBarIsThatDay() {
-        assertEquals(19, UberEarningsParser.dayShown(null, listOf(19)))
-        assertEquals(21, UberEarningsParser.dayShown(21, listOf(19, 21))) // a tapped day wins
-        assertNull(UberEarningsParser.dayShown(null, listOf(19, 20))) // two days: the week
-        assertNull(UberEarningsParser.dayShown(null, emptyList()))
+        fun week(blue: Int? = null, bars: Set<Int> = emptySet()) = (0..6).map { i ->
+            UberDayColumn(i, 19 + i, if (i == blue) 0.3f else 0f, i in bars)
+        }
+        assertEquals(0, UberEarningsParser.dayShown(week(bars = setOf(0)))?.weekday)
+        assertEquals(2, UberEarningsParser.dayShown(week(blue = 2, bars = setOf(0, 2)))?.weekday) // a tapped day wins
+        assertNull(UberEarningsParser.dayShown(week(bars = setOf(0, 1)))) // two days: the week
+        assertNull(UberEarningsParser.dayShown(week()))
+        assertNull(UberEarningsParser.dayShown(emptyList()))
+    }
+
+    @Test
+    fun aTappedDayWithItsDateSkippedByTextRecognition() {
+        // Text recognition can skip the tapped (blue) date over "Sun": the weekday says which day it is.
+        val columns = (0..6).map { i -> UberDayColumn(i, if (i == 6) null else 2 + i, if (i == 6) 0.3f else 0f, i in setOf(1, 3, 4, 5, 6)) }
+        val shown = assertNotNull(UberEarningsParser.dayShown(columns))
+        assertEquals(6, shown.weekday)
+        val day = UberEarningsParser.parse(promotionsRows(listOf("Promotions", "RON 15.00")), LocalDate(2026, 11, 9), shown.dayOfMonth, shown.weekday)
+        assertEquals(LocalDate(2026, 11, 8), day?.day)
+        // A week across two months: the weekday still gives the right date.
+        val e = assertNotNull(UberEarningsParser.parse(earningsRows.map { if (it == "Oct 5 - Oct 12") "Sep 28 - Oct 5" else it }, taken, null, 6))
+        assertEquals(LocalDate(2026, 10, 4), e.day)
+    }
+
+    @Test
+    fun weekdayLabels() {
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6), listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").map { UberEarningsParser.weekdayIndex(it) })
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6), listOf("L", "Ma", "Mi", "J", "V", "S", "D").map { UberEarningsParser.weekdayIndex(it) })
+        assertEquals(1, UberEarningsParser.weekdayIndex("mar."))
+        assertNull(UberEarningsParser.weekdayIndex("Stats"))
     }
 
     @Test
@@ -88,7 +113,7 @@ class UberScreensTest {
             "RON 8.00",
             "Total Earnings RON 180.40",
         )
-        val shown = UberEarningsParser.dayShown(null, listOf(19))
+        val shown = UberEarningsParser.dayShown((0..6).map { UberDayColumn(it, 19 + it, 0f, it == 0) })?.dayOfMonth
         val day = assertNotNull(UberEarningsParser.parse(rows, LocalDate(2026, 10, 19), shown)?.asDay())
         assertEquals(LocalDate(2026, 10, 19), day.date)
         assertEquals(18040, day.earningsMinor)
@@ -120,6 +145,55 @@ class UberScreensTest {
         assertEquals(LocalDate(2026, 10, 8), e.day)
         assertEquals(65, e.onlineMinutes)
         assertEquals(9, e.trips)
+    }
+
+    /** A day with Promotions, as text recognition reads it; [promotions] are the rows between Net Fare and Tip. */
+    private fun promotionsRows(promotions: List<String>) = listOf(
+        "Nov 2 - Nov 9",
+        "RON 150.00",
+        "2 3 4 5 6 7 8",
+        "Mon Tue Wed Thu Fri Sat Sun",
+        "Stats",
+        "Online Trips",
+        "4 h 10 m 12",
+        "Points",
+        "15",
+        "Breakdown",
+        "Net Fare",
+        "RON 130.00",
+    ) + promotions + listOf(
+        "Tip",
+        "RON 5.00",
+        "Total Earnings RON 150.00",
+    )
+
+    @Test
+    fun anOpenedGroupCountsItsPartsOnce() {
+        // Promotions opened: its parts replace it, in the group's kind.
+        val opened = promotionsRows(listOf("Promotions", "RON 15.00", "Pro Perk RON 10.00", "Quest RON 5.00"))
+        val e = assertNotNull(UberEarningsParser.parse(opened, LocalDate(2026, 11, 9), 8))
+        assertEquals(
+            listOf("Net Fare" to 13000L, "Pro Perk" to 1000L, "Quest" to 500L, "Tip" to 500L),
+            e.lines.map { it.label to it.amountMinor },
+        )
+        assertEquals(IncomeLineKind.BONUS, e.lines[1].kind)
+        assertTrue(e.addsUp)
+        // Closed: the group itself.
+        val closed = assertNotNull(UberEarningsParser.parse(promotionsRows(listOf("Promotions", "RON 15.00")), LocalDate(2026, 11, 9), 8))
+        assertEquals(listOf(13000L, 1500L, 500L), closed.lines.map { it.amountMinor })
+        assertTrue(closed.addsUp)
+        // Parts that don't add up to the group (a misread): the group stays.
+        val off = assertNotNull(UberEarningsParser.parse(promotionsRows(listOf("Promotions", "RON 15.00", "Pro Perk RON 1.00")), LocalDate(2026, 11, 9), 8))
+        assertEquals(listOf("Net Fare", "Promotions", "Tip"), off.lines.map { it.label })
+    }
+
+    @Test
+    fun readsADecimalPointReadAsL() {
+        val e = assertNotNull(UberEarningsParser.parse(promotionsRows(listOf("Promotions", "RON 15l00")), LocalDate(2026, 11, 9), 8))
+        assertEquals(1500, e.lines[1].amountMinor)
+        assertTrue(e.addsUp)
+        assertEquals("RON 351.69", UberEarningsParser.decimalReadAsL("RON 351.69"))
+        assertEquals("RON 35l.69", UberEarningsParser.decimalReadAsL("RON 35l.69")) // a 1 read as l: not this case
     }
 
     @Test

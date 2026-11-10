@@ -111,6 +111,12 @@ internal object UberWeekLabel {
     }
 }
 
+/**
+ * One day under the bars of Uber's Earnings screen, as the screenshot shows it: its weekday (0 = Monday), its date
+ * when text recognition read it, how much of its label is Uber's blue (tapped), and whether it has a bar.
+ */
+data class UberDayColumn(val weekday: Int, val dayOfMonth: Int?, val labelBlue: Float, val hasBar: Boolean)
+
 object UberEarningsParser {
 
     /** "2 h 20 m", "45 m"; text recognition can read a 1 as "l" or "i" ("lh 33 m"). */
@@ -129,19 +135,41 @@ object UberEarningsParser {
         return hasTotal && hasStats
     }
 
-    /**
-     * The day the screen shows: the tapped one, or else the only day with a bar. With nothing tapped Uber shows the
-     * week, but a week with one driving day so far (a Monday screenshot) is that day: same money, hours and trips.
-     */
-    fun dayShown(selectedDayOfMonth: Int?, daysWithBars: Collection<Int>): Int? =
-        selectedDayOfMonth ?: daysWithBars.distinct().singleOrNull()
+    /** The weekday under a bar, 0 = Monday: "Mon", "Sun", Romanian "L", "Ma", "Mi", "J", "V", "S", "D"; null otherwise. */
+    fun weekdayIndex(label: String): Int? {
+        val l = ReportText.plain(label).trim().trimEnd('.')
+        return WEEKDAYS.indexOfFirst { names -> l in names || (l.length >= 3 && l.take(3) in names) }.takeIf { it >= 0 }
+    }
 
-    /** [selectedDayOfMonth]: the day shown ([dayShown]), or null for the week. */
-    fun parse(rows: List<String>, reference: LocalDate, selectedDayOfMonth: Int?): UberEarnings? {
+    private val WEEKDAYS = listOf(
+        setOf("mon", "lun", "l"), setOf("tue", "mar", "ma"), setOf("wed", "mie", "mi"), setOf("thu", "joi", "j"),
+        setOf("fri", "vin", "v"), setOf("sat", "sam", "s"), setOf("sun", "dum", "d"),
+    )
+
+    /**
+     * The day the screen shows: the tapped one (its label turns blue), or else the only day with a bar. With nothing
+     * tapped Uber shows the week, but a week with one driving day so far (a Monday screenshot) is that day: same
+     * money, hours and trips. Null for the week.
+     */
+    fun dayShown(columns: List<UberDayColumn>): UberDayColumn? {
+        val best = columns.maxByOrNull { it.labelBlue }
+        val others = columns.filter { it !== best }.maxOfOrNull { it.labelBlue } ?: 0f
+        return best?.takeIf { it.labelBlue > 0.04f && it.labelBlue > others * 3 }
+            ?: columns.filter { it.hasBar }.distinctBy { it.weekday }.singleOrNull()
+    }
+
+    /**
+     * [selectedDayOfMonth] and [selectedWeekday] (0 = Monday): the day shown ([dayShown]), both null for the week.
+     * The date wins when text recognition read it; the weekday is enough (it can skip the tapped date, owner, 9 Nov 2026).
+     */
+    fun parse(rows: List<String>, reference: LocalDate, selectedDayOfMonth: Int?, selectedWeekday: Int? = null): UberEarnings? {
         if (!recognises(rows)) return null
         val week = rows.firstNotNullOfOrNull { UberWeekLabel.parse(it, reference) } ?: return null
-        val day = selectedDayOfMonth?.let { d ->
-            (0..6).map { week.start.plus(DatePeriod(days = it)) }.firstOrNull { it.day == d } ?: return null
+        val days = (0..6).map { week.start.plus(DatePeriod(days = it)) }
+        val day = when {
+            selectedDayOfMonth != null -> days.firstOrNull { it.day == selectedDayOfMonth } ?: return null
+            selectedWeekday != null -> days.getOrNull(selectedWeekday) ?: return null
+            else -> null
         }
         val plain = rows.map(ReportText::plain)
 
@@ -164,27 +192,49 @@ object UberEarningsParser {
         }
 
         // Breakdown: a label on one row, its amount on the next ("Net Fare" / "RON 120.00"), up to "Total Earnings".
+        // An opened group ("Promotions" with its arrow) lists its parts under it, label and amount on one row
+        // ("Pro Perk RON 12.69"): they replace the group when they add up to it, so nothing counts twice.
         val start = plain.indexOfFirst { it == "breakdown" || it == "defalcare" || it == "detaliere" }
         val end = plain.indexOfFirst { it.startsWith("total earnings") || it.startsWith("castiguri totale") || it.startsWith("total castiguri") }
         if (end < 0) return null
-        val total = ReportText.amountRow(rows[end])?.amountMinor ?: return null
+        val total = ReportText.amountRow(decimalReadAsL(rows[end]))?.amountMinor ?: return null
         val lines = mutableListOf<ParsedLine>()
         if (start in 0 until end) {
             var label: String? = null
+            var group: ParsedLine? = null
+            val parts = mutableListOf<ParsedLine>()
+            fun closeGroup() {
+                val g = group ?: return
+                if (parts.isNotEmpty() && parts.sumOf { it.amountMinor } == g.amountMinor) lines += parts else lines += g
+                group = null
+                parts.clear()
+            }
             for (row in rows.subList(start + 1, end)) {
-                val amount = ReportText.amountRow(row)
+                val amount = ReportText.amountRow(decimalReadAsL(row))
                 when {
                     amount != null && amount.label.isEmpty() && label != null -> {
-                        lines += ParsedLine(kindOf(label), amount.amountMinor, false, label)
+                        closeGroup()
+                        group = ParsedLine(kindOf(label), amount.amountMinor, false, label)
                         label = null
                     }
-                    amount != null && amount.label.isNotEmpty() -> lines += ParsedLine(kindOf(amount.label), amount.amountMinor, false, amount.label)
+                    amount != null && amount.label.isNotEmpty() -> group?.let { g ->
+                        // A part of the group above: Uber's own name for it, the group's kind.
+                        parts += ParsedLine(g.kind, amount.amountMinor, false, amount.label)
+                    } ?: run { lines += ParsedLine(kindOf(amount.label), amount.amountMinor, false, amount.label) }
                     amount == null -> label = row.trim()
                 }
             }
+            closeGroup()
         }
         return UberEarnings(week, day, total, lines, online, trips)
     }
+
+    /**
+     * Text recognition can read an amount's decimal point as "l" ("RON 101l05" for RON 101.05, owner's screenshot,
+     * 9 Nov 2026). Amounts on this screen always have two decimals, so "l" (or "I", "|") before the last two
+     * digits is the point.
+     */
+    internal fun decimalReadAsL(row: String): String = row.replace(Regex("""(\d)[lI|](\d{2})\s*$"""), "$1.$2")
 
     private fun kindOf(label: String): IncomeLineKind {
         val l = ReportText.plain(label)

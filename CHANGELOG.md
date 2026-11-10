@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.3
+- **Uber's tapped day is found again on full-size screenshots**: text recognition can skip the tapped day's blue
+  date, which made the screenshot a week; the day now comes from its weekday under the bars.
+- **Promotions opened (Pro Perk…) count once**: Uber's parts of a group replace the group instead of adding to it.
+- **"RON 101l05" reads as 101.05**: a decimal point read as "l" no longer breaks the day's total.
+
 ## 0.22.2
 - **A Monday's Uber screenshot is that day**: with no day tapped Uber shows the week, but when only one day has a bar
   (so far), it's imported as that day, with its money, online time and trips.

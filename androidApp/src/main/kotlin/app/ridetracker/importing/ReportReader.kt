@@ -9,6 +9,7 @@ import android.graphics.Rect
 import app.ridetracker.shared.domain.importing.ScreenshotDiagnosis
 import app.ridetracker.shared.domain.importing.UnrecognisedReason
 import app.ridetracker.shared.domain.importing.ReportText
+import app.ridetracker.shared.domain.importing.UberDayColumn
 import app.ridetracker.shared.domain.importing.UberEarningsParser
 import app.ridetracker.shared.domain.importing.UberPaymentsParser
 import app.ridetracker.shared.domain.importing.UberPaymentsWeek
@@ -138,7 +139,8 @@ class ReportReader(private val context: Context) {
             return UberPaymentsParser.parse(rows, reference)?.let { ReadReport.UberPaymentsScreen(hash, it) } ?: ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
         }
         if (UberEarningsParser.recognises(rows)) {
-            val earnings = UberEarningsParser.parse(rows, reference, bitmap?.let { uberDayShown(text, it) })
+            val shown = bitmap?.let { uberDayShown(text, it) }
+            val earnings = UberEarningsParser.parse(rows, reference, shown?.dayOfMonth, shown?.weekday)
             val day = earnings?.asDay()
             return when {
                 earnings == null -> ReadReport.Unknown(hash, ScreenshotDiagnosis.reason(rows))
@@ -163,35 +165,38 @@ class ReportReader(private val context: Context) {
 
     /**
      * On Uber's Earnings screen a tapped day's label (its date and weekday under the bars) turns blue; with none
-     * tapped they're all grey and the screen shows the week. A week with a bar on one day only is that day too
-     * ([UberEarningsParser.dayShown]). Returns the day of the month shown, or null for the week.
+     * tapped they're all grey and the screen shows the week. A week with a bar on one day only is that day too.
+     * See [UberEarningsParser.dayShown]; null for the week.
      */
-    private fun uberDayShown(text: Text, bitmap: Bitmap): Int? {
+    private fun uberDayShown(text: Text, bitmap: Bitmap): UberDayColumn? {
         val words = text.textBlocks.flatMap { it.lines }.flatMap { it.elements }.filter { it.boundingBox != null }
-        val weekdays = words.filter { ReportText.plain(it.text).trimEnd('.').take(3) in WEEKDAYS }
+        val weekdays = words.filter { UberEarningsParser.weekdayIndex(it.text) != null }
         // The row of weekday labels: the one with most of them on the same line.
         val row = weekdays.map { w ->
             val box = w.boundingBox!!
             weekdays.filter { kotlin.math.abs(it.boundingBox!!.centerY() - box.centerY()) < box.height() / 2 }
         }.maxByOrNull { it.size }?.takeIf { it.size >= 5 } ?: return null
-        // Each column: its date, how blue its label is, and whether there's a bar above it.
-        val columns = row.mapNotNull { weekday ->
+        val columns = row.map { weekday ->
             val box = weekday.boundingBox!!
-            // The date sits just above its weekday, in the same column.
+            // The date sits just above its weekday, in the same column; text recognition may skip it (a blue one).
             val number = words.filter { w ->
                 val b = w.boundingBox!!
                 w.text.trim().toIntOrNull() in 1..31 && b.bottom <= box.top + box.height() / 2 &&
                     box.top - b.bottom < box.height() * 2 && b.centerX() in box.left - box.width()..box.right + box.width()
-            }.minByOrNull { kotlin.math.abs(it.boundingBox!!.centerX() - box.centerX()) } ?: return@mapNotNull null
-            val n = number.boundingBox!!
+            }.minByOrNull { kotlin.math.abs(it.boundingBox!!.centerX() - box.centerX()) }
+            val n = number?.boundingBox
             // The bars stand on a line just above the dates, about ten label heights tall; a strip up the column's middle.
-            val strip = Rect(n.centerX() - n.width() / 4, n.top - n.height() * 12, n.centerX() + n.width() / 4 + 1, n.top - n.height() / 3)
-            Triple(number.text.trim().toInt(), maxOf(blueShare(bitmap, box), blueShare(bitmap, n)), blueShare(bitmap, strip) > 0.01f)
+            val h = box.height()
+            val bottom = n?.top ?: (box.top - h * 3 / 2)
+            val strip = Rect(box.centerX() - h / 2, bottom - h * 12, box.centerX() + h / 2 + 1, bottom - h / 3)
+            UberDayColumn(
+                weekday = UberEarningsParser.weekdayIndex(weekday.text)!!,
+                dayOfMonth = number?.text?.trim()?.toInt(),
+                labelBlue = maxOf(blueShare(bitmap, box), n?.let { blueShare(bitmap, it) } ?: 0f),
+                hasBar = blueShare(bitmap, strip) > 0.01f,
+            )
         }
-        val best = columns.maxByOrNull { it.second }
-        val others = columns.filter { it !== best }.maxOfOrNull { it.second } ?: 0f
-        val selected = best?.takeIf { it.second > 0.04f && it.second > others * 3 }?.first
-        return UberEarningsParser.dayShown(selected, columns.filter { it.third }.map { it.first })
+        return UberEarningsParser.dayShown(columns)
     }
 
     /** Share of a box's pixels that are Uber's blue (selected text), not grey or black. */
@@ -315,14 +320,6 @@ class ReportReader(private val context: Context) {
         bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte() -> String(bytes, Charsets.UTF_16LE).removePrefix("\uFEFF")
         bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte() -> String(bytes, Charsets.UTF_16BE).removePrefix("\uFEFF")
         else -> bytes.decodeToString()
-    }
-
-    private companion object {
-        // Romanian Uber labels the days with one or two letters: L, Ma, Mi, J, V, S, D.
-        val WEEKDAYS = setOf(
-            "mon", "tue", "wed", "thu", "fri", "sat", "sun", "lun", "mar", "mie", "joi", "vin", "sam", "dum",
-            "l", "ma", "mi", "j", "v", "s", "d",
-        )
     }
 
     private fun sha256(bytes: ByteArray): String =
